@@ -38,13 +38,14 @@ export class DropSystem {
    * @param {number} qualityMin - エリアの最低品質
    * @param {number} qualityMax - エリアの最高品質
    */
-  constructor(areaDropTable, traitPool = [], qualityMin = 10, qualityMax = 40) {
+  constructor(areaDropTable, traitPool = [], qualityMin = 10, qualityMax = 40, dropRateMultiplier = 1) {
     this.pool = new ObjectPool(() => new Drop(), 300);
     this.dropTable = areaDropTable;
     this.totalWeight = areaDropTable.reduce((sum, d) => sum + d.weight, 0);
     this.traitPool = traitPool;
     this.qualityMin = qualityMin;
     this.qualityMax = qualityMax;
+    this.dropRateMultiplier = dropRateMultiplier;
     this.collectedMaterials = []; // ラン中に集めた素材リスト
   }
 
@@ -62,7 +63,7 @@ export class DropSystem {
     expDrop.radius = 4;
 
     // 素材ドロップ判定
-    const chance = GameConfig.run.dropChance + dropRateBonus;
+    const chance = (GameConfig.run.dropChance + dropRateBonus) * this.dropRateMultiplier;
     if (Math.random() < chance) {
       const matDrop = this.pool.get();
       const mat = this._pickMaterial();

@@ -28,7 +28,7 @@ export const GameConfig = {
     magnetRange: 60,            // 経験値ジェム吸引範囲
     expScale: 1.5,              // レベルアップ経験値曲線指数
     expBase: 10,                // Lv1→2に必要な経験値
-    maxEnemies: 300,
+    maxEnemies: ('ontouchstart' in globalThis || navigator.maxTouchPoints > 0) ? 150 : 300,
     spawnRateStart: 1.0,        // 敵/秒（開始時）
     spawnRateEnd: 6.0,          // 敵/秒（10分時点）
     dropChance: 0.05,           // 素材ドロップ確率
@@ -39,9 +39,9 @@ export const GameConfig = {
 
   // --- ゴールド ---
   gold: {
-    perKill: 1,           // 通常敵1体あたり
-    bossBonus: 200,       // ボス撃破ボーナス
-    survivalBonus: 50,    // 2.5分生存ごとのボーナス
+    perKill: 2,           // 通常敵1体あたり
+    bossBonus: 150,       // ボス撃破ボーナス
+    survivalBonus: 60,    // 2.5分生存ごとのボーナス
     survivalInterval: 150, // 2.5分
   },
 
@@ -59,12 +59,12 @@ export const GameConfig = {
 
   // --- 武器種別デフォルト ---
   weaponTypes: {
-    sword:  { baseRange: 100, baseCooldown: 1.0, arc: Math.PI * 0.7, pattern: 'cleave' },
-    spear:  { baseRange: 150, baseCooldown: 1.2, arc: Math.PI / 8, pattern: 'thrust' },
-    bow:    { baseRange: 250, baseCooldown: 0.7, arc: 0, pattern: 'projectile' },
-    staff:  { baseRange: 130, baseCooldown: 0.9, arc: Math.PI * 2, pattern: 'orbit' },
-    dagger: { baseRange: 60, baseCooldown: 0.25, arc: Math.PI / 3, pattern: 'flurry' },
-    shield: { baseRange: 90, baseCooldown: 1.8, arc: Math.PI * 2, pattern: 'pulse' },
+    sword:  { baseRange: 100, baseCooldown: 0.95, arc: Math.PI * 0.7, pattern: 'cleave' },
+    spear:  { baseRange: 150, baseCooldown: 1.1, arc: Math.PI / 8, pattern: 'thrust' },
+    bow:    { baseRange: 250, baseCooldown: 0.65, arc: 0, pattern: 'projectile' },
+    staff:  { baseRange: 130, baseCooldown: 0.85, arc: Math.PI * 2, pattern: 'orbit' },
+    dagger: { baseRange: 60, baseCooldown: 0.30, arc: Math.PI / 3, pattern: 'flurry' },
+    shield: { baseRange: 90, baseCooldown: 1.5, arc: Math.PI * 2, pattern: 'pulse' },
   },
 
   // --- 武器スキル説明（UI表示用） ---

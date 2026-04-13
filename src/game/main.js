@@ -17,6 +17,8 @@ import { RunManager } from './run/RunManager.js';
 import { RunHUD } from './ui/RunHUD.js';
 import { LevelUpModal } from './ui/LevelUpModal.js';
 import { RunResultScreen } from './ui/RunResultScreen.js';
+import { AchievementSystem } from './AchievementSystem.js';
+import { TutorialOverlay } from './ui/TutorialOverlay.js';
 
 class Game {
   constructor() {
@@ -30,7 +32,27 @@ class Game {
     this.weaponSlots = [null, null, null, null];
     this.equippedArmor = null;
     this.equippedAccessory = null;
-    this.stats = { totalRuns: 0, totalKills: 0, bestSurvivalTime: 0, totalMaterialsCollected: 0 };
+    this.stats = {
+      totalRuns: 0,
+      totalKills: 0,
+      bestSurvivalTime: 0,
+      totalMaterialsCollected: 0,
+      totalGoldEarned: 0,
+      totalBossesDefeated: 0,
+      totalDeaths: 0,
+      totalSurvivals: 0,
+      totalCrafted: 0,
+      totalPlayTime: 0,
+      highestLevel: 0,
+      highestDamageDealt: 0,
+      perArea: {},
+      perWeaponType: {},
+      hardModeClears: 0,
+      firstPlayDate: null,
+    };
+
+    // 実績
+    this.achievements = null;
 
     // アクティブなUI/システム
     this.hubManager = null;
@@ -53,7 +75,7 @@ class Game {
     });
 
     // SE
-    eventBus.on('item:crafted', () => SoundManager.playCraftSuccess());
+    eventBus.on('item:crafted', () => { SoundManager.playCraftSuccess(); this.stats.totalCrafted++; });
     eventBus.on('enemy:killed', () => SoundManager.playBattleAdvAttack());
     eventBus.on('player:damaged', () => SoundManager.playBattleDamage());
     eventBus.on('levelup:show', () => SoundManager.playLevelUp());
@@ -107,6 +129,8 @@ class Game {
           this.equippedArmor = saveData.restoredEquipment.armor;
           this.equippedAccessory = saveData.restoredEquipment.accessory;
         }
+        // 実績復元
+        this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
       }
     } else {
       // ニューゲーム: 初期装備（石斧）を武器スロット1に自動装備
@@ -114,9 +138,18 @@ class Game {
       if (axe) {
         this.weaponSlots = [axe, null, null, null];
       }
+      this.achievements = new AchievementSystem(this.stats, []);
+      this.tutorialCompleted = false;
     }
 
     this._showHub();
+
+    // ニューゲーム時にチュートリアル表示
+    if (mode === 'new' && !this.tutorialCompleted) {
+      new TutorialOverlay(this.uiRoot, () => {
+        this.tutorialCompleted = true;
+      });
+    }
   }
 
   _showHub() {
@@ -124,7 +157,7 @@ class Game {
     this.canvas.style.display = 'none';
     this._clearUI();
 
-    this.hubManager = new HubManager(this.uiRoot, this.inventory);
+    this.hubManager = new HubManager(this.uiRoot, this.inventory, this.stats, this.achievements);
     this.hubManager.weaponSlots = [...this.weaponSlots];
     this.hubManager.equippedArmor = this.equippedArmor;
     this.hubManager.equippedAccessory = this.equippedAccessory;
@@ -135,7 +168,7 @@ class Game {
     SoundManager.startGameBGM();
   }
 
-  _startRun({ weaponSlots, areaId, consumables }) {
+  _startRun({ weaponSlots, areaId, consumables, hardMode }) {
     this.scene = 'run';
     this._clearUI();
 
@@ -145,7 +178,7 @@ class Game {
     this.canvas.height = window.innerHeight;
 
     // ランシステム初期化
-    this.runManager = new RunManager(this.canvas, weaponSlots, areaId, this.equippedArmor, this.equippedAccessory, consumables || []);
+    this.runManager = new RunManager(this.canvas, weaponSlots, areaId, this.equippedArmor, this.equippedAccessory, consumables || [], hardMode || false);
 
     // ランUI
     this.runHUD = new RunHUD(this.uiRoot);
@@ -170,9 +203,55 @@ class Game {
     // 統計更新
     this.stats.totalKills += resultData.killCount;
     this.stats.totalMaterialsCollected += resultData.materials.length;
+    this.stats.totalGoldEarned += resultData.goldEarned || 0;
+    this.stats.totalPlayTime += resultData.elapsed || 0;
     if (resultData.elapsed > this.stats.bestSurvivalTime) {
       this.stats.bestSurvivalTime = resultData.elapsed;
     }
+    if ((resultData.level || 0) > this.stats.highestLevel) {
+      this.stats.highestLevel = resultData.level;
+    }
+    if ((resultData.highestDamage || 0) > this.stats.highestDamageDealt) {
+      this.stats.highestDamageDealt = resultData.highestDamage;
+    }
+    if (resultData.reason === 'death') {
+      this.stats.totalDeaths++;
+    } else if (resultData.reason === 'timeout') {
+      this.stats.totalSurvivals++;
+    }
+    if (resultData.bossDefeated) {
+      this.stats.totalBossesDefeated++;
+    }
+    if (resultData.hardMode && resultData.reason === 'timeout') {
+      this.stats.hardModeClears++;
+    }
+    // エリア別統計
+    const areaId = resultData.areaId;
+    if (areaId) {
+      if (!this.stats.perArea[areaId]) {
+        this.stats.perArea[areaId] = { runs: 0, clears: 0, bestTime: 0, kills: 0 };
+      }
+      const areaStats = this.stats.perArea[areaId];
+      areaStats.runs++;
+      areaStats.kills += resultData.killCount;
+      if (resultData.reason === 'timeout') areaStats.clears++;
+      if (resultData.elapsed > areaStats.bestTime) areaStats.bestTime = resultData.elapsed;
+    }
+    // 武器種別統計
+    if (resultData.weaponTypesUsed) {
+      for (const wtype of resultData.weaponTypesUsed) {
+        if (!this.stats.perWeaponType[wtype]) {
+          this.stats.perWeaponType[wtype] = { runsUsed: 0, kills: 0 };
+        }
+        this.stats.perWeaponType[wtype].runsUsed++;
+      }
+    }
+    if (!this.stats.firstPlayDate) {
+      this.stats.firstPlayDate = Date.now();
+    }
+
+    // 実績チェック
+    if (this.achievements) this.achievements.check();
 
     // リザルト画面表示
     this.resultScreen = new RunResultScreen(this.uiRoot);
@@ -226,6 +305,7 @@ class Game {
       equippedArmorUid: this.equippedArmor?.uid || null,
       equippedAccessoryUid: this.equippedAccessory?.uid || null,
       stats: this.stats,
+      achievements: this.achievements ? this.achievements.getUnlockedIds() : [],
     });
   }
 }

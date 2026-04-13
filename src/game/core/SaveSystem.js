@@ -10,6 +10,25 @@ import { Progression } from '../data/progression.js';
 
 const SAVE_KEY = 'alchemy_survivors_save_v1';
 
+const DEFAULT_STATS = {
+  totalRuns: 0,
+  totalKills: 0,
+  bestSurvivalTime: 0,
+  totalMaterialsCollected: 0,
+  totalGoldEarned: 0,
+  totalBossesDefeated: 0,
+  totalDeaths: 0,
+  totalSurvivals: 0,
+  totalCrafted: 0,
+  totalPlayTime: 0,
+  highestLevel: 0,
+  highestDamageDealt: 0,
+  perArea: {},
+  perWeaponType: {},
+  hardModeClears: 0,
+  firstPlayDate: null,
+};
+
 export class SaveSystem {
   constructor(inventorySystem) {
     this.inventory = inventorySystem;
@@ -17,7 +36,7 @@ export class SaveSystem {
 
   save(extraData = {}) {
     const data = {
-      version: 1,
+      version: 2,
       timestamp: Date.now(),
       gold: this.inventory.gold,
       maxCapacity: this.inventory.maxCapacity,
@@ -38,12 +57,10 @@ export class SaveSystem {
         .map(([id]) => id),
       defeatedBosses: Progression.getDefeatedBosses(),
       purchasedUpgrades: Progression.getPurchasedUpgrades ? [...Progression.getPurchasedUpgrades()] : [],
-      stats: extraData.stats || {
-        totalRuns: 0,
-        totalKills: 0,
-        bestSurvivalTime: 0,
-        totalMaterialsCollected: 0,
-      },
+      stats: extraData.stats || { ...DEFAULT_STATS },
+      achievements: extraData.achievements || [],
+      hardModeUnlocked: extraData.hardModeUnlocked || [],
+      tutorialCompleted: extraData.tutorialCompleted || false,
     };
 
     try {
@@ -66,8 +83,25 @@ export class SaveSystem {
     }
   }
 
+  /** v1 → v2 マイグレーション */
+  static _migrate(data) {
+    if (!data) return null;
+    if (data.version === 1) {
+      // v1→v2: 統計フィールド拡張 + 実績/ハードモード/チュートリアル追加
+      data.version = 2;
+      data.stats = { ...DEFAULT_STATS, ...(data.stats || {}) };
+      data.achievements = [];
+      data.hardModeUnlocked = [];
+      data.tutorialCompleted = false;
+    }
+    return data;
+  }
+
   applySaveData(data) {
-    if (!data || data.version !== 1) return false;
+    if (!data) return false;
+    // マイグレーション適用
+    data = SaveSystem._migrate(data);
+    if (!data || data.version !== 2) return false;
 
     // インベントリ復元
     this.inventory.items.length = 0;
@@ -116,6 +150,9 @@ export class SaveSystem {
     if (data.equippedAccessoryUid) {
       restoredEquipment.accessory = this.inventory.getItemByUid(data.equippedAccessoryUid);
     }
+
+    // stats のフィールド補完（新規追加分のデフォルト値を確保）
+    data.stats = { ...DEFAULT_STATS, ...(data.stats || {}) };
 
     return { ...data, restoredEquipment };
   }

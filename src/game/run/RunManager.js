@@ -15,6 +15,8 @@ import { RunCanvas } from './RunCanvas.js';
 import { GameConfig } from '../data/config.js';
 import { AreaDefs } from '../data/areas.js';
 import { eventBus } from '../core/EventBus.js';
+import { ItemBlueprints } from '../data/items.js';
+import { HardModeModifiers } from '../data/hardmode.js';
 import { BossSystem } from './BossSystem.js';
 import { ConsumableSystem } from './ConsumableSystem.js';
 import { DamageNumberSystem } from './DamageNumberSystem.js';
@@ -27,28 +29,47 @@ export class RunManager {
    * @param {object|null} equippedArmor - 装備中の防具
    * @param {object|null} equippedAccessory - 装備中のアクセサリ
    */
-  constructor(canvasEl, weaponSlots, areaId, equippedArmor = null, equippedAccessory = null, consumables = []) {
+  constructor(canvasEl, weaponSlots, areaId, equippedArmor = null, equippedAccessory = null, consumables = [], hardMode = false) {
     this.areaId = areaId;
     this.area = AreaDefs[areaId];
+    this.hardMode = hardMode;
     this.state = 'running';
     this.elapsed = 0;
     this.killCount = 0;
     this.goldEarned = 0;
 
+    const modifiers = hardMode ? HardModeModifiers : null;
+
     // サブシステム初期化
     this.canvas = new RunCanvas(canvasEl);
     this.camera = new Camera(this.canvas.width, this.canvas.height);
     this.player = new PlayerController(equippedArmor, equippedAccessory);
-    this.spawner = new EnemySpawner(areaId);
+    this.spawner = new EnemySpawner(areaId, modifiers);
     this.weapon = new WeaponSystem(this.player, weaponSlots);
     this.player.applyWeaponTraits(weaponSlots);
     this.collision = new CollisionSystem(64);
-    this.drops = new DropSystem(this.area.dropTable, this.area.traitPool || [], this.area.qualityMin || 10, this.area.qualityMax || 40);
+    const qMin = (this.area.qualityMin || 10) + (modifiers ? modifiers.qualityBonusMin : 0);
+    const qMax = (this.area.qualityMax || 40) + (modifiers ? modifiers.qualityBonusMax : 0);
+    this.drops = new DropSystem(this.area.dropTable, this.area.traitPool || [], qMin, qMax, modifiers ? modifiers.dropRateMultiplier : 1);
     this.levelUp = new LevelUpSystem(this.player, this.weapon);
-    this.bossSystem = new BossSystem(areaId);
+    this.bossSystem = new BossSystem(areaId, modifiers);
     this.consumables = consumables.length > 0 ? new ConsumableSystem(this.player, consumables) : null;
     this.damageNumbers = new DamageNumberSystem();
     this.materialCount = 0;
+    this.highestDamage = 0;
+    // 毎フレーム再利用するオブジェクト（GC削減）
+    this._tickData = {
+      elapsed: 0, remaining: 0, killCount: 0, hp: 0, maxHp: 0,
+      goldEarned: 0, materialCount: 0, weaponSlots: null, player: null,
+      bossSpawnTimes: GameConfig.run.bossSpawnTimes,
+    };
+    this._allEnemies = [];
+    this.weaponTypesUsed = [...new Set(
+      weaponSlots.filter(Boolean).map(w => {
+        const bp = ItemBlueprints[w.blueprintId];
+        return bp?.equipType || 'sword';
+      })
+    )];
 
     // ゲームループ
     this.gameLoop = new GameLoop(
@@ -78,6 +99,9 @@ export class RunManager {
       }),
       eventBus.on('material:collected', () => {
         this.materialCount++;
+      }),
+      eventBus.on('enemy:damaged', ({ damage }) => {
+        if (damage > this.highestDamage) this.highestDamage = damage;
       }),
       eventBus.on('consumable:used', ({ type, value }) => {
         if (type === 'heal') {
@@ -159,8 +183,11 @@ export class RunManager {
       }
     }
 
-    // 全敵リスト（通常敵 + ボス）を構築
-    const allEnemies = [...this.spawner.enemies, ...this.bossSystem.getActiveBosses()];
+    // 全敵リスト（通常敵 + ボス）を構築 — 配列再利用でGC削減
+    this._allEnemies.length = 0;
+    for (const e of this.spawner.enemies) this._allEnemies.push(e);
+    for (const b of this.bossSystem.getActiveBosses()) this._allEnemies.push(b);
+    const allEnemies = this._allEnemies;
 
     this.weapon.update(dt, allEnemies, this.collision);
 
@@ -195,18 +222,18 @@ export class RunManager {
       this._lastSurvivalBonusCount = bonusCount;
     }
 
-    eventBus.emit('run:tick', {
-      elapsed: this.elapsed,
-      remaining: GameConfig.run.duration - this.elapsed,
-      killCount: this.killCount,
-      hp: this.player.hp,
-      maxHp: this.player.effectiveMaxHp,
-      goldEarned: this.goldEarned,
-      materialCount: this.materialCount,
-      weaponSlots: this.weapon.getSlotInfo(),
-      player: this.player,
-      bossSpawnTimes: GameConfig.run.bossSpawnTimes,
-    });
+    // tick データ再利用（GC削減）
+    const td = this._tickData;
+    td.elapsed = this.elapsed;
+    td.remaining = GameConfig.run.duration - this.elapsed;
+    td.killCount = this.killCount;
+    td.hp = this.player.hp;
+    td.maxHp = this.player.effectiveMaxHp;
+    td.goldEarned = this.goldEarned;
+    td.materialCount = this.materialCount;
+    td.weaponSlots = this.weapon.getSlotInfo();
+    td.player = this.player;
+    eventBus.emit('run:tick', td);
   }
 
   _render(alpha) {
@@ -224,9 +251,10 @@ export class RunManager {
 
   _onEnemyKilled(enemy) {
     this.killCount++;
-    this.goldEarned += GameConfig.gold.perKill;
+    const goldMult = this.hardMode ? HardModeModifiers.goldMultiplier : 1;
+    this.goldEarned += Math.floor(GameConfig.gold.perKill * goldMult);
     if (enemy.isBoss) {
-      this.goldEarned += GameConfig.gold.bossBonus;
+      this.goldEarned += Math.floor(GameConfig.gold.bossBonus * goldMult);
     }
     // ボス撃破チェック
     if (enemy.isBoss && this.bossSystem) {
@@ -271,6 +299,9 @@ export class RunManager {
       materials: this.drops.collectedMaterials,
       areaId: this.areaId,
       bossDefeated: this.bossSystem?.bossDefeated || false,
+      highestDamage: this.highestDamage,
+      weaponTypesUsed: this.weaponTypesUsed,
+      hardMode: this.hardMode || false,
     });
   }
 

@@ -21,9 +21,10 @@ const BOSS_UNLOCK_MAP = {
 };
 
 export class BossSystem {
-  constructor(areaId) {
+  constructor(areaId, modifiers = null) {
     this.areaId = areaId;
     this.area = AreaDefs[areaId];
+    this.modifiers = modifiers;
     this.boss = null;
     this.bossEntity = new BossEntity();
     this.spawnTimes = [...GameConfig.run.bossSpawnTimes]; // [300, 600, 900]
@@ -69,6 +70,14 @@ export class BossSystem {
     const sy = playerY - camH / 2 - 100;
 
     this.bossEntity.initBoss(bossDef, sx, sy);
+
+    // ハードモード倍率適用
+    if (this.modifiers) {
+      this.bossEntity.maxHp = Math.floor(this.bossEntity.maxHp * this.modifiers.bossHpMultiplier);
+      this.bossEntity.hp = this.bossEntity.maxHp;
+      this.bossEntity.damage = Math.floor(this.bossEntity.damage * this.modifiers.bossDamageMultiplier);
+    }
+
     this.spawnerPaused = true;
 
     eventBus.emit('boss:intro', { name: bossDef.name, icon: bossDef.icon });

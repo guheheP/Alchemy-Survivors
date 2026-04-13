@@ -1,0 +1,57 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]:
+      - generic [ref=e13]: 💰 100G
+      - generic [ref=e14]: 📦 1 / 60
+  - generic [ref=e15]:
+    - button "🔮 錬金工房" [ref=e16] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e17] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e18] [cursor=pointer]
+    - button "📦 倉庫" [ref=e19] [cursor=pointer]
+    - button "🏪 ショップ" [ref=e20] [cursor=pointer]
+    - button "📖 図鑑" [ref=e21] [cursor=pointer]
+    - button "📊 統計" [ref=e22] [cursor=pointer]
+    - button "🏅 実績" [ref=e23] [cursor=pointer]
+    - button "⚙ 設定" [ref=e24] [cursor=pointer]
+  - generic [ref=e27]:
+    - generic [ref=e28]:
+      - heading "レシピ一覧" [level=3] [ref=e29]
+      - generic [ref=e30]:
+        - button "全て" [ref=e31] [cursor=pointer]
+        - button "装備" [ref=e32] [cursor=pointer]
+        - button "消耗品" [ref=e33] [cursor=pointer]
+        - button "アクセサリ" [ref=e34] [cursor=pointer]
+        - button "素材" [ref=e35] [cursor=pointer]
+      - generic [ref=e36]:
+        - generic [ref=e38] [cursor=pointer]:
+          - text: 木の盾
+          - generic [ref=e39]: 2素材 不足
+        - generic [ref=e41] [cursor=pointer]:
+          - text: 回復薬
+          - generic [ref=e42]: 2素材 不足
+        - generic [ref=e44] [cursor=pointer]:
+          - text: 木の弓
+          - generic [ref=e45]: 2素材 不足
+        - generic [ref=e47] [cursor=pointer]:
+          - text: ハーブティー
+          - generic [ref=e48]: 2素材 不足
+        - generic [ref=e50] [cursor=pointer]:
+          - text: 石斧
+          - generic [ref=e51]: 2素材 不足
+        - generic [ref=e53] [cursor=pointer]:
+          - text: 粘土の壺
+          - generic [ref=e54]: 2素材 不足
+        - generic [ref=e56] [cursor=pointer]:
+          - text: 毒消し薬
+          - generic [ref=e57]: 2素材 不足
+        - generic [ref=e59] [cursor=pointer]:
+          - text: 泥団子
+          - generic [ref=e60]: 2素材 不足
+        - generic [ref=e62] [cursor=pointer]:
+          - text: 合板
+          - generic [ref=e63]: 2素材 不足
+        - generic [ref=e65] [cursor=pointer]:
+          - text: 薬草エキス
+          - generic [ref=e66]: 2素材 不足
+    - paragraph [ref=e69]: ← レシピを選択してください

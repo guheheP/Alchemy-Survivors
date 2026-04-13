@@ -9,12 +9,17 @@ import { RunPrepScreen } from './RunPrepScreen.js';
 import { WarehouseScreen } from './WarehouseScreen.js';
 import { UpgradeShopScreen } from './UpgradeShopScreen.js';
 import { CollectionScreen } from './CollectionScreen.js';
+import { StatsScreen } from './StatsScreen.js';
+import { AchievementScreen } from './AchievementScreen.js';
+import { SettingsScreen } from './SettingsScreen.js';
 import { eventBus } from '../core/EventBus.js';
 
 export class HubManager {
-  constructor(container, inventorySystem) {
+  constructor(container, inventorySystem, stats = null, achievementSystem = null) {
     this.container = container;
     this.inventory = inventorySystem;
+    this.stats = stats;
+    this.achievementSystem = achievementSystem;
     this.el = document.createElement('div');
     this.el.id = 'hub-screen';
     this.activeTab = 'craft';
@@ -52,6 +57,9 @@ export class HubManager {
         <button class="hub-tab ${this.activeTab === 'warehouse' ? 'active' : ''}" data-tab="warehouse">📦 倉庫</button>
         <button class="hub-tab ${this.activeTab === 'shop' ? 'active' : ''}" data-tab="shop">🏪 ショップ</button>
         <button class="hub-tab ${this.activeTab === 'collection' ? 'active' : ''}" data-tab="collection">📖 図鑑</button>
+        <button class="hub-tab ${this.activeTab === 'stats' ? 'active' : ''}" data-tab="stats">📊 統計</button>
+        <button class="hub-tab ${this.activeTab === 'achievements' ? 'active' : ''}" data-tab="achievements">🏅 実績</button>
+        <button class="hub-tab ${this.activeTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙ 設定</button>
       </div>
       <div class="hub-content" id="hub-content"></div>
     `;
@@ -116,6 +124,28 @@ export class HubManager {
         const screen = new CollectionScreen(content, this.inventory);
         screen.render();
         this.screens.collection = screen;
+        break;
+      }
+      case 'stats': {
+        if (this.stats) {
+          const screen = new StatsScreen(content, this.stats);
+          screen.render();
+          this.screens.stats = screen;
+        }
+        break;
+      }
+      case 'achievements': {
+        if (this.achievementSystem) {
+          const screen = new AchievementScreen(content, this.achievementSystem);
+          screen.render();
+          this.screens.achievements = screen;
+        }
+        break;
+      }
+      case 'settings': {
+        const screen = new SettingsScreen(content);
+        screen.render();
+        this.screens.settings = screen;
         break;
       }
     }

@@ -5,6 +5,7 @@
 
 import { AreaDefs } from '../data/areas.js';
 import { ItemBlueprints } from '../data/items.js';
+import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 
 export class RunPrepScreen {
@@ -18,6 +19,7 @@ export class RunPrepScreen {
     this.el = document.createElement('div');
     this.el.className = 'prep-screen';
     this.selectedArea = 'plains';
+    this.hardMode = false;
   }
 
   render() {
@@ -100,6 +102,15 @@ export class RunPrepScreen {
               <div class="prep-row"><span>難易度:</span><span>${'★'.repeat(area.difficulty + 1)}</span></div>
               <div class="prep-row"><span>ドロップ品質:</span><span>Q${area.qualityMin}〜Q${area.qualityMax}</span></div>
               <div class="prep-row"><span>ボス:</span><span>${area.boss ? `${area.boss.icon} ${area.boss.name} (HP${area.boss.maxHp})` : 'なし'}</span></div>
+              ${this._canHardMode() ? `
+                <div class="prep-hard-mode">
+                  <label class="hard-mode-toggle">
+                    <input type="checkbox" id="hard-mode-check" ${this.hardMode ? 'checked' : ''}>
+                    <span class="hard-mode-label">🔥 ハードモード</span>
+                  </label>
+                  ${this.hardMode ? '<div class="hard-mode-desc">敵HP2倍 / 敵攻撃力1.5倍 / スポーン率1.5倍<br>ドロップ率1.3倍 / ゴールド2倍 / 品質+10〜20</div>' : ''}
+                </div>
+              ` : ''}
             </div>
           </div>
           ${!canStart ? '<p class="prep-warning">武器を1つ以上装備してください</p>' : ''}
@@ -131,6 +142,15 @@ export class RunPrepScreen {
       });
     });
 
+    // ハードモードトグル
+    const hardCheck = this.el.querySelector('#hard-mode-check');
+    if (hardCheck) {
+      hardCheck.addEventListener('change', () => {
+        this.hardMode = hardCheck.checked;
+        this.render();
+      });
+    }
+
     const startBtn = this.el.querySelector('.prep-start-btn');
     if (startBtn && canStart) {
       startBtn.addEventListener('click', () => {
@@ -138,6 +158,7 @@ export class RunPrepScreen {
           weaponSlots: weaponSlots.filter(w => w !== null),
           areaId: this.selectedArea,
           consumables: [...this.selectedConsumables],
+          hardMode: this.hardMode,
         });
       });
     }
@@ -194,6 +215,12 @@ export class RunPrepScreen {
     });
 
     document.body.appendChild(overlay);
+  }
+
+  /** 選択中エリアのボスが撃破済みならハードモード選択可能 */
+  _canHardMode() {
+    const area = AreaDefs[this.selectedArea];
+    return area?.boss && Progression.isBossDefeated(area.boss.id);
   }
 
   _describeBattleEffect(fx) {

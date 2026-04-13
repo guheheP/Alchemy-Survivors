@@ -144,6 +144,11 @@ export class RunCanvas {
     if (damageNumbers) {
       damageNumbers.render(ctx, camera);
     }
+
+    // モバイルスティック（スクリーン座標で描画）
+    if (player.mobileControls) {
+      player.mobileControls.render(ctx);
+    }
   }
 
   _drawGrid(ctx, camera) {

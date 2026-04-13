@@ -1,0 +1,110 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]:
+      - generic [ref=e13]: 💰 100G
+      - generic [ref=e14]: 📦 1 / 60
+  - generic [ref=e15]:
+    - button "🔮 錬金工房" [ref=e16] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e17] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e18] [cursor=pointer]
+    - button "📦 倉庫" [ref=e19] [cursor=pointer]
+    - button "🏪 ショップ" [ref=e20] [cursor=pointer]
+    - button "📖 図鑑" [ref=e21] [cursor=pointer]
+    - button "📊 統計" [active] [ref=e22] [cursor=pointer]
+    - button "🏅 実績" [ref=e23] [cursor=pointer]
+  - generic [ref=e85]:
+    - heading "統計・記録" [level=3] [ref=e86]
+    - generic [ref=e87]:
+      - heading "総合統計" [level=4] [ref=e88]
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - generic [ref=e91]: 総ラン数
+          - generic [ref=e92]: "0"
+        - generic [ref=e93]:
+          - generic [ref=e94]: 総討伐数
+          - generic [ref=e95]: "0"
+        - generic [ref=e96]:
+          - generic [ref=e97]: 総プレイ時間
+          - generic [ref=e98]: 0時間0分
+        - generic [ref=e99]:
+          - generic [ref=e100]: 総ゴールド獲得
+          - generic [ref=e101]: 0G
+        - generic [ref=e102]:
+          - generic [ref=e103]: 総素材収集
+          - generic [ref=e104]: "0"
+        - generic [ref=e105]:
+          - generic [ref=e106]: 総クラフト数
+          - generic [ref=e107]: "0"
+        - generic [ref=e108]:
+          - generic [ref=e109]: 生存回数
+          - generic [ref=e110]: "0"
+        - generic [ref=e111]:
+          - generic [ref=e112]: 死亡回数
+          - generic [ref=e113]: "0"
+        - generic [ref=e114]:
+          - generic [ref=e115]: ボス撃破数
+          - generic [ref=e116]: "0"
+        - generic [ref=e117]:
+          - generic [ref=e118]: ハードクリア
+          - generic [ref=e119]: "0"
+    - generic [ref=e120]:
+      - heading "ベスト記録" [level=4] [ref=e121]
+      - generic [ref=e122]:
+        - generic [ref=e123]:
+          - generic [ref=e124]: 最長生存
+          - generic [ref=e125]: 0分0秒
+        - generic [ref=e126]:
+          - generic [ref=e127]: 最高レベル
+          - generic [ref=e128]: Lv.0
+        - generic [ref=e129]:
+          - generic [ref=e130]: 最大ダメージ
+          - generic [ref=e131]: "0"
+    - generic [ref=e132]:
+      - heading "エリア別統計" [level=4] [ref=e133]
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - generic [ref=e136]: 🌿 草原
+          - generic [ref=e137]: 未挑戦
+        - generic [ref=e138]:
+          - generic [ref=e139]: ⛏️ 地底洞窟
+          - generic [ref=e140]: 未挑戦
+        - generic [ref=e141]:
+          - generic [ref=e142]: 🌲 妖精の森
+          - generic [ref=e143]: 未挑戦
+        - generic [ref=e144]:
+          - generic [ref=e145]: 🌋 灼熱の火山
+          - generic [ref=e146]: 未挑戦
+        - generic [ref=e147]:
+          - generic [ref=e148]: 🌊 深海の遺跡
+          - generic [ref=e149]: 未挑戦
+        - generic [ref=e150]:
+          - generic [ref=e151]: 🐉 竜の巣
+          - generic [ref=e152]: 未挑戦
+        - generic [ref=e153]:
+          - generic [ref=e154]: ☁️ 天空の塔
+          - generic [ref=e155]: 未挑戦
+        - generic [ref=e156]:
+          - generic [ref=e157]: ⏳ 時の回廊
+          - generic [ref=e158]: 未挑戦
+    - generic [ref=e159]:
+      - heading "武器種別統計" [level=4] [ref=e160]
+      - generic [ref=e161]:
+        - generic [ref=e162]:
+          - generic [ref=e163]: 剣
+          - generic [ref=e164]: 未使用
+        - generic [ref=e165]:
+          - generic [ref=e166]: 槍
+          - generic [ref=e167]: 未使用
+        - generic [ref=e168]:
+          - generic [ref=e169]: 弓
+          - generic [ref=e170]: 未使用
+        - generic [ref=e171]:
+          - generic [ref=e172]: 杖
+          - generic [ref=e173]: 未使用
+        - generic [ref=e174]:
+          - generic [ref=e175]: 短剣
+          - generic [ref=e176]: 未使用
+        - generic [ref=e177]:
+          - generic [ref=e178]: 盾
+          - generic [ref=e179]: 未使用

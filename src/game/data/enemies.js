@@ -95,22 +95,22 @@ export const EnemyDefs = {
   coral_guardian: { id: 'coral_guardian', name: '珊瑚の番人', hp: 90, speed: 20, damage: 16, expValue: 5, radius: 20, color: '#f8a' },
 
   // --- 竜の巣 ---
-  drake: { id: 'drake', name: 'ドレイク', hp: 60, speed: 70, damage: 16, expValue: 5, radius: 14, color: '#a44' },
-  wyvern: { id: 'wyvern', name: 'ワイバーン', hp: 40, speed: 90, damage: 12, expValue: 4, radius: 12, color: '#866' },
-  dragon_hatchling: { id: 'dragon_hatchling', name: '幼竜', hp: 100, speed: 30, damage: 20, expValue: 6, radius: 20, color: '#c62' },
-  fire_wisp: { id: 'fire_wisp', name: '竜火ウィスプ', hp: 15, speed: 110, damage: 6, expValue: 3, radius: 6, color: '#fa4' },
+  drake: { id: 'drake', name: 'ドレイク', hp: 55, speed: 68, damage: 15, expValue: 6, radius: 14, color: '#a44' },
+  wyvern: { id: 'wyvern', name: 'ワイバーン', hp: 35, speed: 88, damage: 11, expValue: 5, radius: 12, color: '#866' },
+  dragon_hatchling: { id: 'dragon_hatchling', name: '幼竜', hp: 90, speed: 28, damage: 18, expValue: 8, radius: 20, color: '#c62' },
+  fire_wisp: { id: 'fire_wisp', name: '竜火ウィスプ', hp: 14, speed: 105, damage: 6, expValue: 4, radius: 6, color: '#fa4' },
 
   // --- 天空 ---
-  sky_knight: { id: 'sky_knight', name: '天空騎士', hp: 70, speed: 60, damage: 18, expValue: 5, radius: 14, color: '#aaf' },
-  thunder_hawk: { id: 'thunder_hawk', name: '雷鷹', hp: 30, speed: 110, damage: 12, expValue: 4, radius: 10, color: '#ff6' },
-  cloud_golem: { id: 'cloud_golem', name: '雲のゴーレム', hp: 120, speed: 20, damage: 22, expValue: 7, radius: 22, color: '#cce' },
-  wind_spirit: { id: 'wind_spirit', name: '風の精霊', hp: 25, speed: 95, damage: 8, expValue: 3, radius: 8, color: '#afa' },
+  sky_knight: { id: 'sky_knight', name: '天空騎士', hp: 65, speed: 58, damage: 16, expValue: 7, radius: 14, color: '#aaf' },
+  thunder_hawk: { id: 'thunder_hawk', name: '雷鷹', hp: 28, speed: 105, damage: 11, expValue: 5, radius: 10, color: '#ff6' },
+  cloud_golem: { id: 'cloud_golem', name: '雲のゴーレム', hp: 100, speed: 18, damage: 20, expValue: 9, radius: 22, color: '#cce' },
+  wind_spirit: { id: 'wind_spirit', name: '風の精霊', hp: 22, speed: 92, damage: 7, expValue: 4, radius: 8, color: '#afa' },
 
   // --- 時の回廊 ---
-  time_phantom: { id: 'time_phantom', name: '時の亡霊', hp: 50, speed: 80, damage: 18, expValue: 5, radius: 12, color: '#a6f' },
-  chrono_golem: { id: 'chrono_golem', name: '時空ゴーレム', hp: 150, speed: 25, damage: 25, expValue: 8, radius: 24, color: '#86a' },
-  paradox_wisp: { id: 'paradox_wisp', name: 'パラドクスウィスプ', hp: 20, speed: 120, damage: 10, expValue: 4, radius: 6, color: '#f6f' },
-  void_walker: { id: 'void_walker', name: 'ヴォイドウォーカー', hp: 80, speed: 65, damage: 20, expValue: 6, radius: 16, color: '#426' },
+  time_phantom: { id: 'time_phantom', name: '時の亡霊', hp: 48, speed: 78, damage: 16, expValue: 7, radius: 12, color: '#a6f' },
+  chrono_golem: { id: 'chrono_golem', name: '時空ゴーレム', hp: 130, speed: 22, damage: 22, expValue: 10, radius: 24, color: '#86a' },
+  paradox_wisp: { id: 'paradox_wisp', name: 'パラドクスウィスプ', hp: 18, speed: 115, damage: 9, expValue: 5, radius: 6, color: '#f6f' },
+  void_walker: { id: 'void_walker', name: 'ヴォイドウォーカー', hp: 75, speed: 62, damage: 18, expValue: 8, radius: 16, color: '#426' },
 };
 
 /** エリアごとの敵スポーン設定 */

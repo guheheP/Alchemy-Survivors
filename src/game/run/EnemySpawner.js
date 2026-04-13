@@ -8,11 +8,12 @@ import { EnemyDefs, AreaEnemyConfig } from '../data/enemies.js';
 import { GameConfig } from '../data/config.js';
 
 export class EnemySpawner {
-  constructor(areaId) {
+  constructor(areaId, modifiers = null) {
     this.areaConfig = AreaEnemyConfig[areaId];
     this.pool = new ObjectPool(() => new Enemy(), 100);
     this.spawnTimer = 0;
     this.elapsed = 0;
+    this.modifiers = modifiers; // ハードモード修飾子
   }
 
   /** 現在のウェーブ設定を取得 */
@@ -41,19 +42,32 @@ export class EnemySpawner {
 
     // スポーンレート（時間とともに増加）
     const t = Math.min(this.elapsed / GameConfig.run.duration, 1);
-    const rate = GameConfig.run.spawnRateStart + (GameConfig.run.spawnRateEnd - GameConfig.run.spawnRateStart) * t;
+    let rate = GameConfig.run.spawnRateStart + (GameConfig.run.spawnRateEnd - GameConfig.run.spawnRateStart) * t;
+    if (this.modifiers) rate *= this.modifiers.spawnRateMultiplier;
 
     this.spawnTimer += dt;
     const interval = 1 / rate;
+    const maxEnemies = this.modifiers ? this.modifiers.maxEnemies : GameConfig.run.maxEnemies;
 
-    while (this.spawnTimer >= interval && this.pool.activeCount < GameConfig.run.maxEnemies) {
+    let spawnedThisFrame = 0;
+    while (this.spawnTimer >= interval && this.pool.activeCount < maxEnemies && spawnedThisFrame < 5) {
       this.spawnTimer -= interval;
       this._spawn(playerX, playerY, cameraWidth, cameraHeight);
+      spawnedThisFrame++;
     }
+    // 超過分はリセット（大量スポーン蓄積を防止）
+    if (this.spawnTimer > interval * 3) this.spawnTimer = 0;
 
-    // 全敵を更新
+    // 全敵を更新 + 遠方敵をリサイクル
+    const despawnDist = Math.max(cameraWidth, cameraHeight) * 1.5;
+    const despawnDistSq = despawnDist * despawnDist;
     for (const enemy of this.pool.activeList) {
       enemy.update(dt, playerX, playerY);
+      const edx = enemy.x - playerX;
+      const edy = enemy.y - playerY;
+      if (edx * edx + edy * edy > despawnDistSq) {
+        this.pool.release(enemy);
+      }
     }
   }
 
@@ -87,6 +101,14 @@ export class EnemySpawner {
     }
 
     enemy.init(def, sx, sy);
+
+    // ハードモード修飾子の適用
+    if (this.modifiers) {
+      enemy.maxHp = Math.floor(enemy.maxHp * this.modifiers.enemyHpMultiplier);
+      enemy.hp = enemy.maxHp;
+      enemy.damage = Math.floor(enemy.damage * this.modifiers.enemyDamageMultiplier);
+      enemy.speed = Math.floor(enemy.speed * this.modifiers.enemySpeedMultiplier);
+    }
   }
 
   get enemies() { return this.pool.activeList; }

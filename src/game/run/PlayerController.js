@@ -6,6 +6,7 @@ import { Entity } from './Entity.js';
 import { GameConfig } from '../data/config.js';
 import { eventBus } from '../core/EventBus.js';
 import { ItemBlueprints, TraitDefs } from '../data/items.js';
+import { MobileControls } from '../ui/MobileControls.js';
 
 export class PlayerController extends Entity {
   constructor(equippedArmor = null, equippedAccessory = null) {
@@ -82,6 +83,9 @@ export class PlayerController extends Entity {
     this._onKeyUp = (e) => this._keys.delete(e.code);
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup', this._onKeyUp);
+
+    // モバイル入力
+    this.mobileControls = new MobileControls();
   }
 
   get speed() {
@@ -109,18 +113,24 @@ export class PlayerController extends Entity {
       this.hp = Math.min(this.effectiveMaxHp, this.hp + this.passives.regenPerSec * dt);
     }
 
-    // 移動入力
+    // 移動入力（キーボード）
     let dx = 0, dy = 0;
     if (this._keys.has('KeyW') || this._keys.has('ArrowUp')) dy -= 1;
     if (this._keys.has('KeyS') || this._keys.has('ArrowDown')) dy += 1;
     if (this._keys.has('KeyA') || this._keys.has('ArrowLeft')) dx -= 1;
     if (this._keys.has('KeyD') || this._keys.has('ArrowRight')) dx += 1;
 
+    // モバイル仮想スティック入力を統合
+    if (this.mobileControls?.active && (this.mobileControls.dx !== 0 || this.mobileControls.dy !== 0)) {
+      dx += this.mobileControls.dx;
+      dy += this.mobileControls.dy;
+    }
+
     // 斜め移動の正規化
-    if (dx !== 0 && dy !== 0) {
-      const inv = 1 / Math.SQRT2;
-      dx *= inv;
-      dy *= inv;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len > 1) {
+      dx /= len;
+      dy /= len;
     }
 
     // 移動適用
@@ -185,5 +195,6 @@ export class PlayerController extends Entity {
   destroy() {
     window.removeEventListener('keydown', this._onKeyDown);
     window.removeEventListener('keyup', this._onKeyUp);
+    if (this.mobileControls) this.mobileControls.destroy();
   }
 }
