@@ -1,13 +1,14 @@
 import { ItemBlueprints, Recipes, TraitDefs, TraitFusionTable, MaterialCategories } from './data/items.js';
 import { GameConfig } from './data/config.js';
 import { eventBus } from './core/EventBus.js';
+import { Progression } from './data/progression.js';
 
 // Re-export for convenience
 export { ItemBlueprints, Recipes };
 
-/** 現在の装備品質上限（Phase 1: 固定100） */
+/** 現在の装備品質上限（ボス撃破で段階的に解放） */
 export function getCurrentQualityCap() {
-  return 100;
+  return Progression.getQualityCap();
 }
 
 /** カテゴリスロットかどうか判定 */

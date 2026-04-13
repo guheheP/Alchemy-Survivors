@@ -15,6 +15,7 @@ class Drop extends Entity {
     this.value = 0;
     this.blueprintId = null;
     this.quality = 0;
+    this.traits = [];
     this.radius = 4;
     this.color = '#ff0';
   }
@@ -25,15 +26,25 @@ class Drop extends Entity {
     this.value = 0;
     this.blueprintId = null;
     this.quality = 0;
+    this.traits = [];
     this.color = '#ff0';
   }
 }
 
 export class DropSystem {
-  constructor(areaDropTable) {
+  /**
+   * @param {object[]} areaDropTable - ドロップテーブル
+   * @param {string[]} traitPool - エリアの特性プール
+   * @param {number} qualityMin - エリアの最低品質
+   * @param {number} qualityMax - エリアの最高品質
+   */
+  constructor(areaDropTable, traitPool = [], qualityMin = 10, qualityMax = 40) {
     this.pool = new ObjectPool(() => new Drop(), 300);
     this.dropTable = areaDropTable;
     this.totalWeight = areaDropTable.reduce((sum, d) => sum + d.weight, 0);
+    this.traitPool = traitPool;
+    this.qualityMin = qualityMin;
+    this.qualityMax = qualityMax;
     this.collectedMaterials = []; // ラン中に集めた素材リスト
   }
 
@@ -61,8 +72,9 @@ export class DropSystem {
       matDrop.prevY = matDrop.y;
       matDrop.dropType = 'material';
       matDrop.blueprintId = mat.blueprintId;
-      matDrop.quality = Math.floor(Math.random() * 30) + 10;
-      matDrop.color = '#0cf';
+      matDrop.quality = Math.floor(Math.random() * (this.qualityMax - this.qualityMin + 1)) + this.qualityMin;
+      matDrop.traits = this._rollTraits();
+      matDrop.color = matDrop.traits.length > 0 ? '#0ff' : '#0cf';
       matDrop.radius = 5;
     }
   }
@@ -74,6 +86,17 @@ export class DropSystem {
       if (roll <= 0) return entry;
     }
     return this.dropTable[0];
+  }
+
+  /** エリアのtraitPoolからランダムに特性を付与（25%の確率で1つ） */
+  _rollTraits() {
+    if (this.traitPool.length === 0) return [];
+    const traits = [];
+    if (Math.random() < GameConfig.run.traitChance) {
+      const idx = Math.floor(Math.random() * this.traitPool.length);
+      traits.push(this.traitPool[idx]);
+    }
+    return traits;
   }
 
   /** プレイヤーとの接触判定・マグネット吸引 */
@@ -100,6 +123,7 @@ export class DropSystem {
           this.collectedMaterials.push({
             blueprintId: drop.blueprintId,
             quality: drop.quality,
+            traits: [...drop.traits],
           });
           eventBus.emit('material:collected', { blueprintId: drop.blueprintId });
         }

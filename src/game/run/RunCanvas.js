@@ -20,7 +20,7 @@ export class RunCanvas {
     this.canvas.height = window.innerHeight;
   }
 
-  render(alpha, camera, player, enemies, drops, weaponSystem) {
+  render(alpha, camera, player, enemies, drops, weaponSystem, bossSystem) {
     const ctx = this.ctx;
     const w = this.width;
     const h = this.height;
@@ -61,6 +61,53 @@ export class RunCanvas {
         ctx.fillRect(sx - barW / 2, barY, barW, barH);
         ctx.fillStyle = '#f44';
         ctx.fillRect(sx - barW / 2, barY, barW * (enemy.hp / enemy.maxHp), barH);
+      }
+    }
+
+    // ボス描画
+    if (bossSystem) {
+      for (const boss of bossSystem.getActiveBosses()) {
+        if (!boss.active) continue;
+        const bx = camera.worldToScreenX(boss.lerpX(alpha));
+        const by = camera.worldToScreenY(boss.lerpY(alpha));
+        if (bx < -60 || bx > w + 60 || by < -60 || by > h + 60) continue;
+
+        const br = boss.radius;
+
+        // テレグラフ表示（スキル予告円）
+        if (boss.telegraphTimer > 0 && boss.telegraphPos) {
+          const tx = camera.worldToScreenX(boss.telegraphPos.x);
+          const ty = camera.worldToScreenY(boss.telegraphPos.y);
+          const skill = boss.activeSkill;
+          const telegraphRadius = skill?.type === 'aoe' ? 80 * (skill.damageMult || 1) : skill?.type === 'heavy' ? 50 : 30;
+          ctx.save();
+          ctx.globalAlpha = 0.3 + Math.sin(boss.telegraphTimer * 12) * 0.15;
+          ctx.fillStyle = '#f44';
+          ctx.beginPath();
+          ctx.arc(tx, ty, telegraphRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // ボス本体（大きめ四角）
+        ctx.fillStyle = boss.hitFlashTimer > 0 ? '#fff' : boss.color;
+        ctx.fillRect(bx - br, by - br, br * 2, br * 2);
+
+        // ボス外枠
+        ctx.strokeStyle = '#f80';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bx - br - 1, by - br - 1, br * 2 + 2, br * 2 + 2);
+
+        // 死神は黒い大きな四角 + 赤オーラ
+        if (boss.enemyId === 'reaper') {
+          ctx.save();
+          ctx.globalAlpha = 0.3 + Math.sin(Date.now() * 0.005) * 0.15;
+          ctx.fillStyle = '#800';
+          ctx.beginPath();
+          ctx.arc(bx, by, br + 15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
       }
     }
 

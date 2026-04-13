@@ -5,6 +5,7 @@
 import { ItemBlueprints } from '../data/items.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
+import { AreaDefs } from '../data/areas.js';
 
 export class RunResultScreen {
   constructor(container) {
@@ -17,6 +18,9 @@ export class RunResultScreen {
 
   show(resultData) {
     const { reason, elapsed, killCount, level, materials } = resultData;
+    const area = AreaDefs[resultData.areaId];
+    const areaName = area ? `${area.icon} ${area.name}` : resultData.areaId;
+    const bossText = resultData.bossDefeated ? 'ボス撃破！' : '';
     const mins = Math.floor(elapsed / 60);
     const secs = Math.floor(elapsed % 60);
     const timeStr = `${mins}:${String(secs).padStart(2, '0')}`;
@@ -37,6 +41,7 @@ export class RunResultScreen {
       <div class="result-overlay"></div>
       <div class="result-content">
         <h2 class="result-title">${reasonText}</h2>
+        <p class="result-area">${areaName}${bossText ? ` — ${bossText}` : ''}</p>
         <div class="result-stats">
           <div class="result-stat">
             <span class="result-label">生存時間</span>
@@ -45,6 +50,10 @@ export class RunResultScreen {
           <div class="result-stat">
             <span class="result-label">討伐数</span>
             <span class="result-value">${killCount}</span>
+          </div>
+          <div class="result-stat">
+            <span class="result-label">獲得ゴールド</span>
+            <span class="result-value">${resultData.goldEarned || 0}G</span>
           </div>
           <div class="result-stat">
             <span class="result-label">到達レベル</span>

@@ -67,4 +67,20 @@ export const PassiveDefs = [
     maxStacks: 5,
     effect: { stat: 'dropRateBonus', value: 0.10 },
   },
+  {
+    id: 'extra_projectile',
+    name: '追加射出+1',
+    description: '弓・杖の射出数を+1',
+    icon: '🔱',
+    maxStacks: 3,
+    effect: { stat: 'extraProjectile', value: 1 },
+  },
+  {
+    id: 'crit_chance',
+    name: 'クリティカル率+5%',
+    description: 'クリティカルヒット確率を5%増加（ダメージ2倍）',
+    icon: '💥',
+    maxStacks: 8,
+    effect: { stat: 'critChance', value: 0.05 },
+  },
 ];

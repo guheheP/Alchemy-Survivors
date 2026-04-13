@@ -6,7 +6,7 @@
 export const GameConfig = {
   // --- インベントリ ---
   initialInventoryCapacity: 60,
-  initialGold: 0,
+  initialGold: 100,
 
   // --- クラフト ---
   maxTraitSlots: 3,
@@ -16,7 +16,7 @@ export const GameConfig = {
 
   // --- ラン設定 ---
   run: {
-    duration: 300,              // 5分（秒）
+    duration: 1200,             // 20分（秒）
     playerBaseHp: 100,
     playerBaseSpeed: 150,       // px/sec
     playerBaseDamage: 10,
@@ -28,10 +28,21 @@ export const GameConfig = {
     magnetRange: 60,            // 経験値ジェム吸引範囲
     expScale: 1.5,              // レベルアップ経験値曲線指数
     expBase: 10,                // Lv1→2に必要な経験値
-    maxEnemies: 200,
+    maxEnemies: 300,
     spawnRateStart: 1.0,        // 敵/秒（開始時）
-    spawnRateEnd: 5.0,          // 敵/秒（5分時点）
-    dropChance: 0.15,           // 素材ドロップ確率
+    spawnRateEnd: 6.0,          // 敵/秒（20分時点）
+    dropChance: 0.05,           // 素材ドロップ確率
+    traitChance: 0.25,          // ドロップ素材に特性が付く確率
+    bossSpawnTimes: [300, 600, 900],  // 5/10/15分にボス出現（Phase 2-D用）
+    reaperSpawnTime: 1200,             // 20分に死神出現
+  },
+
+  // --- ゴールド ---
+  gold: {
+    perKill: 1,           // 通常敵1体あたり
+    bossBonus: 200,       // ボス撃破ボーナス
+    survivalBonus: 50,    // 5分生存ごとのボーナス
+    survivalInterval: 300, // 5分
   },
 
   // --- 武器ステータス計算（企画書 Section 4.1） ---
@@ -56,18 +67,8 @@ export const GameConfig = {
     shield:{ baseRange: 50, baseCooldown: 2.0, arc: Math.PI * 2, pattern: 'pulse' },
   },
 
-  // --- 初期インベントリ（ラン無しでも剣が作れる素材） ---
+  // --- 初期インベントリ（初期装備の石斧のみ） ---
   initialItems: [
-    { blueprintId: 'stone', quality: 15, traits: [] },
-    { blueprintId: 'wood', quality: 20, traits: [] },
-    { blueprintId: 'wood', quality: 18, traits: [] },
-    { blueprintId: 'herb', quality: 18, traits: [] },
-    { blueprintId: 'clay', quality: 10, traits: [] },
-    { blueprintId: 'sand', quality: 25, traits: [] },
-    { blueprintId: 'slime_jelly', quality: 12, traits: [] },
-    { blueprintId: 'flower_petal', quality: 15, traits: [] },
-    { blueprintId: 'bug_shell', quality: 14, traits: [] },
-    { blueprintId: 'feather_small', quality: 16, traits: [] },
-    { blueprintId: 'mushroom', quality: 13, traits: [] },
+    { blueprintId: 'stone_axe', quality: 20, traits: [] },
   ],
 };

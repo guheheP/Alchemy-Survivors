@@ -361,83 +361,83 @@ export const TraitDefs = {
   // ═══════════════════════════════════════════════
   //  Common (コモン) — 全系統の起点
   // ═══════════════════════════════════════════════
-  '闘志': { name: '闘志', rarity: 'common', color: 'gray', description: 'バトル攻撃力が少しUP', effects: { battleAtk: 3 } },
-  '堅固': { name: '堅固', rarity: 'common', color: 'gray', description: 'バトル防御力が少しUP', effects: { battleDef: 2 } },
-  '活力': { name: '活力', rarity: 'common', color: 'gray', description: 'バトル最大HPが少しUP', effects: { battleHp: 10 } },
+  '闘志': { name: '闘志', rarity: 'common', color: 'gray', description: 'バトル攻撃力が少しUP', effects: { battleAtk: 3, runDamageFlat: 3 } },
+  '堅固': { name: '堅固', rarity: 'common', color: 'gray', description: 'バトル防御力が少しUP', effects: { battleDef: 2, runDamageReduction: 1 } },
+  '活力': { name: '活力', rarity: 'common', color: 'gray', description: 'バトル最大HPが少しUP', effects: { battleHp: 10, runMaxHpFlat: 10 } },
   '光る': { name: '光る', rarity: 'common', color: 'gray', description: '売値+10%', effects: { sellBonus: 10 } },
-  '丈夫': { name: '丈夫', rarity: 'common', color: 'gray', description: '探索成功率+3%', effects: { exploreSuccess: 3 } },
-  '軽い': { name: '軽い', rarity: 'common', color: 'gray', description: '探索速度+8%', effects: { speedBonus: 8 } },
-  '水溶性': { name: '水溶性', rarity: 'common', color: 'gray', description: '調合品質+2', effects: { craftQualityBonus: 2 } },
-  '幸運': { name: '幸運', rarity: 'common', color: 'gray', description: '特性付与率+8%', effects: { traitChanceBonus: 8 } },
-  '薬草の香り': { name: '薬草の香り', rarity: 'common', color: 'gray', description: 'アイテム回復量が少しUP', effects: { battleHealBonus: 10 } },
+  '丈夫': { name: '丈夫', rarity: 'common', color: 'gray', description: '探索成功率+3%', effects: { exploreSuccess: 3, runDodge: 0.015 } },
+  '軽い': { name: '軽い', rarity: 'common', color: 'gray', description: '探索速度+8%', effects: { speedBonus: 8, runMoveSpeed: 0.04 } },
+  '水溶性': { name: '水溶性', rarity: 'common', color: 'gray', description: '調合品質+2', effects: { craftQualityBonus: 2, runExpBonus: 0.04 } },
+  '幸運': { name: '幸運', rarity: 'common', color: 'gray', description: '特性付与率+8%', effects: { traitChanceBonus: 8, runDropRate: 0.016 } },
+  '薬草の香り': { name: '薬草の香り', rarity: 'common', color: 'gray', description: 'アイテム回復量が少しUP', effects: { battleHealBonus: 10, runRegenPerSec: 0.2 } },
   '滋養': { name: '滋養', rarity: 'common', color: 'gray', description: 'アイテム使用時に味方を微回復', effects: { battleHealFlat: 8 } },
-  '硬い': { name: '硬い', rarity: 'common', color: 'gray', description: '成功率+2%, 調合+1', effects: { exploreSuccess: 2, craftQualityBonus: 1 } },
+  '硬い': { name: '硬い', rarity: 'common', color: 'gray', description: '成功率+2%, 調合+1', effects: { exploreSuccess: 2, craftQualityBonus: 1, runDodge: 0.01, runExpBonus: 0.02 } },
   '丹念': { name: '丹念', rarity: 'common', color: 'gray', description: 'バトル使用回数+1', effects: { battleItemUses: 1 } },
 
   // ═══════════════════════════════════════════════
   //  Uncommon (アンコモン) — 各系統の中位
   // ═══════════════════════════════════════════════
-  '攻撃力+': { name: '攻撃力+', rarity: 'uncommon', color: 'green', description: 'バトル攻撃力UP', effects: { battleAtk: 8 } },
-  '防御力+': { name: '防御力+', rarity: 'uncommon', color: 'green', description: 'バトル防御力UP', effects: { battleDef: 5 } },
-  'HP回復+': { name: 'HP回復+', rarity: 'uncommon', color: 'green', description: 'バトル最大HP UP', effects: { battleHp: 20 } },
+  '攻撃力+': { name: '攻撃力+', rarity: 'uncommon', color: 'green', description: 'バトル攻撃力UP', effects: { battleAtk: 8, runDamageFlat: 8 } },
+  '防御力+': { name: '防御力+', rarity: 'uncommon', color: 'green', description: 'バトル防御力UP', effects: { battleDef: 5, runDamageReduction: 2.5 } },
+  'HP回復+': { name: 'HP回復+', rarity: 'uncommon', color: 'green', description: 'バトル最大HP UP', effects: { battleHp: 20, runMaxHpFlat: 20 } },
   '売値UP': { name: '売値UP', rarity: 'uncommon', color: 'green', description: '売値+20%', effects: { sellBonus: 20 } },
-  '猛毒': { name: '猛毒', rarity: 'uncommon', color: 'green', description: '探索成功率+6%', effects: { exploreSuccess: 6 } },
-  '燃えやすい': { name: '燃えやすい', rarity: 'uncommon', color: 'green', description: '速度+12%, 成功率-3%', effects: { speedBonus: 12, exploreSuccess: -3 } },
-  '練磨': { name: '練磨', rarity: 'uncommon', color: 'green', description: '調合品質+3', effects: { craftQualityBonus: 3 } },
-  '強運': { name: '強運', rarity: 'uncommon', color: 'green', description: '特性付与率+15%', effects: { traitChanceBonus: 15 } },
-  '癒しの力': { name: '癒しの力', rarity: 'uncommon', color: 'green', description: 'アイテム回復量UP', effects: { battleHealBonus: 20 } },
+  '猛毒': { name: '猛毒', rarity: 'uncommon', color: 'green', description: '探索成功率+6%', effects: { exploreSuccess: 6, runDodge: 0.03 } },
+  '燃えやすい': { name: '燃えやすい', rarity: 'uncommon', color: 'green', description: '速度+12%, 成功率-3%', effects: { speedBonus: 12, exploreSuccess: -3, runMoveSpeed: 0.06, runDodge: -0.015 } },
+  '練磨': { name: '練磨', rarity: 'uncommon', color: 'green', description: '調合品質+3', effects: { craftQualityBonus: 3, runExpBonus: 0.06 } },
+  '強運': { name: '強運', rarity: 'uncommon', color: 'green', description: '特性付与率+15%', effects: { traitChanceBonus: 15, runDropRate: 0.03 } },
+  '癒しの力': { name: '癒しの力', rarity: 'uncommon', color: 'green', description: 'アイテム回復量UP', effects: { battleHealBonus: 20, runRegenPerSec: 0.4 } },
   '命の露': { name: '命の露', rarity: 'uncommon', color: 'green', description: 'アイテム使用時に味方全体を微回復', effects: { battleHealFlat: 12 } },
   // スタンドアロン (融合チェーンなし)
-  '採取量UP': { name: '採取量UP', rarity: 'uncommon', color: 'green', description: 'ドロップ+1', effects: { dropBonus: 1 } },
-  '先制': { name: '先制', rarity: 'uncommon', color: 'green', description: 'バトル開始時ATB+25', effects: { startAtb: 25 } },
-  '体力強化': { name: '体力強化', rarity: 'uncommon', color: 'green', description: 'バトル最大HP UP, 防御力UP', effects: { battleHp: 30, battleDef: 3 } },
+  '採取量UP': { name: '採取量UP', rarity: 'uncommon', color: 'green', description: 'ドロップ+1', effects: { dropBonus: 1, runDropRate: 0.05 } },
+  '先制': { name: '先制', rarity: 'uncommon', color: 'green', description: 'バトル開始時ATB+25', effects: { startAtb: 25, runStartInvincible: 2.5 } },
+  '体力強化': { name: '体力強化', rarity: 'uncommon', color: 'green', description: 'バトル最大HP UP, 防御力UP', effects: { battleHp: 30, battleDef: 3, runMaxHpFlat: 30, runDamageReduction: 1.5 } },
   '練成': { name: '練成', rarity: 'uncommon', color: 'green', description: 'バトル使用回数+2', effects: { battleItemUses: 2 } },
 
   // ═══════════════════════════════════════════════
   //  Rare (レア) — 各系統の上位
   // ═══════════════════════════════════════════════
-  '攻撃力++': { name: '攻撃力++', rarity: 'rare', color: 'blue', description: 'バトル攻撃力大UP', effects: { battleAtk: 16 } },
-  '防御力++': { name: '防御力++', rarity: 'rare', color: 'blue', description: 'バトル防御力大UP', effects: { battleDef: 10 } },
-  'HP回復++': { name: 'HP回復++', rarity: 'rare', color: 'blue', description: 'バトル最大HP大UP', effects: { battleHp: 40 } },
+  '攻撃力++': { name: '攻撃力++', rarity: 'rare', color: 'blue', description: 'バトル攻撃力大UP', effects: { battleAtk: 16, runDamageFlat: 16 } },
+  '防御力++': { name: '防御力++', rarity: 'rare', color: 'blue', description: 'バトル防御力大UP', effects: { battleDef: 10, runDamageReduction: 5 } },
+  'HP回復++': { name: 'HP回復++', rarity: 'rare', color: 'blue', description: 'バトル最大HP大UP', effects: { battleHp: 40, runMaxHpFlat: 40 } },
   '売値UP+': { name: '売値UP+', rarity: 'rare', color: 'blue', description: '売値+40%', effects: { sellBonus: 40 } },
-  '聖なる力': { name: '聖なる力', rarity: 'rare', color: 'blue', description: '成功率+8%, 調合+3', effects: { exploreSuccess: 8, craftQualityBonus: 3 } },
-  '風の加護': { name: '風の加護', rarity: 'rare', color: 'blue', description: '速度+15%, 成功率+5%', effects: { speedBonus: 15, exploreSuccess: 5 } },
-  '熟練': { name: '熟練', rarity: 'rare', color: 'blue', description: '調合品質+5', effects: { craftQualityBonus: 5 } },
-  '天運': { name: '天運', rarity: 'rare', color: 'blue', description: '特性付与率+25%', effects: { traitChanceBonus: 25 } },
-  '慈愛': { name: '慈愛', rarity: 'rare', color: 'blue', description: 'アイテム回復量大UP', effects: { battleHealBonus: 40 } },
+  '聖なる力': { name: '聖なる力', rarity: 'rare', color: 'blue', description: '成功率+8%, 調合+3', effects: { exploreSuccess: 8, craftQualityBonus: 3, runDodge: 0.04, runExpBonus: 0.06 } },
+  '風の加護': { name: '風の加護', rarity: 'rare', color: 'blue', description: '速度+15%, 成功率+5%', effects: { speedBonus: 15, exploreSuccess: 5, runMoveSpeed: 0.075, runDodge: 0.025 } },
+  '熟練': { name: '熟練', rarity: 'rare', color: 'blue', description: '調合品質+5', effects: { craftQualityBonus: 5, runExpBonus: 0.1 } },
+  '天運': { name: '天運', rarity: 'rare', color: 'blue', description: '特性付与率+25%', effects: { traitChanceBonus: 25, runDropRate: 0.05 } },
+  '慈愛': { name: '慈愛', rarity: 'rare', color: 'blue', description: 'アイテム回復量大UP', effects: { battleHealBonus: 40, runRegenPerSec: 0.8 } },
   '生命の雫': { name: '生命の雫', rarity: 'rare', color: 'blue', description: 'アイテム使用時に味方全体を小回復', effects: { battleHealFlat: 15 } },
   // スタンドアロン
-  '雷撃': { name: '雷撃', rarity: 'rare', color: 'blue', description: 'バトル素早さ+20', effects: { battleSpd: 20 } },
-  '吸血': { name: '吸血', rarity: 'rare', color: 'blue', description: '成功率+5%, 売値+15%', effects: { exploreSuccess: 5, sellBonus: 15 } },
-  '鉄壁': { name: '鉄壁', rarity: 'rare', color: 'blue', description: 'バトルダメージ軽減+4', effects: { battleDmgReduction: 4 } },
-  '疾走': { name: '疾走', rarity: 'rare', color: 'blue', description: 'バトル素早さ+18, ATB+15', effects: { battleSpd: 18, startAtb: 15 } },
+  '雷撃': { name: '雷撃', rarity: 'rare', color: 'blue', description: 'バトル素早さ+20', effects: { battleSpd: 20, runAttackSpeed: 0.2 } },
+  '吸血': { name: '吸血', rarity: 'rare', color: 'blue', description: '成功率+5%, 売値+15%', effects: { exploreSuccess: 5, sellBonus: 15, runDodge: 0.025 } },
+  '鉄壁': { name: '鉄壁', rarity: 'rare', color: 'blue', description: 'バトルダメージ軽減+4', effects: { battleDmgReduction: 4, runDamageReduction: 4 } },
+  '疾走': { name: '疾走', rarity: 'rare', color: 'blue', description: 'バトル素早さ+18, ATB+15', effects: { battleSpd: 18, startAtb: 15, runAttackSpeed: 0.18, runStartInvincible: 1.5 } },
   '達人の業': { name: '達人の業', rarity: 'rare', color: 'blue', description: 'バトル使用回数+3', effects: { battleItemUses: 3 } },
 
   // ═══════════════════════════════════════════════
   //  Epic (エピック) — 融合でのみ入手可能
   // ═══════════════════════════════════════════════
-  '攻撃力+++': { name: '攻撃力+++', rarity: 'epic', color: 'purple', description: 'バトル攻撃力超UP', effects: { battleAtk: 28 } },
-  '防御力+++': { name: '防御力+++', rarity: 'epic', color: 'purple', description: 'バトル防御力超UP', effects: { battleDef: 18 } },
-  '生命の泉': { name: '生命の泉', rarity: 'epic', color: 'purple', description: 'バトル最大HP超UP + 自動回復', effects: { battleHp: 60, battleRegen: 1 } },
+  '攻撃力+++': { name: '攻撃力+++', rarity: 'epic', color: 'purple', description: 'バトル攻撃力超UP', effects: { battleAtk: 28, runDamageFlat: 28 } },
+  '防御力+++': { name: '防御力+++', rarity: 'epic', color: 'purple', description: 'バトル防御力超UP', effects: { battleDef: 18, runDamageReduction: 9 } },
+  '生命の泉': { name: '生命の泉', rarity: 'epic', color: 'purple', description: 'バトル最大HP超UP + 自動回復', effects: { battleHp: 60, battleRegen: 1, runMaxHpFlat: 60, runRegenPerSec: 1 } },
   '黄金の輝き': { name: '黄金の輝き', rarity: 'epic', color: 'purple', description: '売値+60%', effects: { sellBonus: 60 } },
-  '冒険の極意': { name: '冒険の極意', rarity: 'epic', color: 'purple', description: '成功率+15%, 速度+10%', effects: { exploreSuccess: 15, speedBonus: 10 } },
-  '疾風': { name: '疾風', rarity: 'epic', color: 'purple', description: '速度+20%, 成功率+8%', effects: { speedBonus: 20, exploreSuccess: 8 } },
-  '名匠の技': { name: '名匠の技', rarity: 'epic', color: 'purple', description: '調合品質+8', effects: { craftQualityBonus: 8 } },
-  '運命の導き': { name: '運命の導き', rarity: 'epic', color: 'purple', description: '特性付与率+40%', effects: { traitChanceBonus: 40 } },
-  '聖癒': { name: '聖癒', rarity: 'epic', color: 'purple', description: '回復量超UP + 使用時全体回復', effects: { battleHealBonus: 60, battleHealFlat: 25 } },
+  '冒険の極意': { name: '冒険の極意', rarity: 'epic', color: 'purple', description: '成功率+15%, 速度+10%', effects: { exploreSuccess: 15, speedBonus: 10, runDodge: 0.075, runMoveSpeed: 0.05 } },
+  '疾風': { name: '疾風', rarity: 'epic', color: 'purple', description: '速度+20%, 成功率+8%', effects: { speedBonus: 20, exploreSuccess: 8, runMoveSpeed: 0.1, runDodge: 0.04 } },
+  '名匠の技': { name: '名匠の技', rarity: 'epic', color: 'purple', description: '調合品質+8', effects: { craftQualityBonus: 8, runExpBonus: 0.16 } },
+  '運命の導き': { name: '運命の導き', rarity: 'epic', color: 'purple', description: '特性付与率+40%', effects: { traitChanceBonus: 40, runDropRate: 0.08 } },
+  '聖癒': { name: '聖癒', rarity: 'epic', color: 'purple', description: '回復量超UP + 使用時全体回復', effects: { battleHealBonus: 60, battleHealFlat: 25, runRegenPerSec: 1.2 } },
   '生命の奔流': { name: '生命の奔流', rarity: 'epic', color: 'purple', description: 'アイテム使用時に味方全体を大回復', effects: { battleHealFlat: 35 } },
   '無尽蔵': { name: '無尽蔵', rarity: 'epic', color: 'purple', description: 'バトル使用回数+5', effects: { battleItemUses: 5 } },
   // スタンドアロン Epic
-  '混沌': { name: '混沌', rarity: 'epic', color: 'purple', description: '成功率+15%, 売値-10%', effects: { exploreSuccess: 15, sellBonus: -10 } },
-  '再生': { name: '再生', rarity: 'epic', color: 'purple', description: 'バトル中HP2/秒回復', effects: { battleRegen: 2 } },
+  '混沌': { name: '混沌', rarity: 'epic', color: 'purple', description: '成功率+15%, 売値-10%', effects: { exploreSuccess: 15, sellBonus: -10, runDodge: 0.075 } },
+  '再生': { name: '再生', rarity: 'epic', color: 'purple', description: 'バトル中HP2/秒回復', effects: { battleRegen: 2, runRegenPerSec: 2 } },
 
   // ═══════════════════════════════════════════════
   //  Legendary (レジェンダリー) — 特殊入手
   // ═══════════════════════════════════════════════
-  '時の祝福': { name: '時の祝福', rarity: 'legendary', color: 'gold', description: '速度+25%, 成功率+25%', effects: { speedBonus: 25, exploreSuccess: 25 } },
-  '星の輝き': { name: '星の輝き', rarity: 'legendary', color: 'gold', description: '売値+100%, 調合+15', effects: { sellBonus: 100, craftQualityBonus: 15 } },
-  '武神': { name: '武神', rarity: 'legendary', color: 'gold', description: '攻撃力・素早さ・先制 大UP', effects: { battleAtk: 15, battleSpd: 15, startAtb: 20 } },
-  '不死鳥': { name: '不死鳥', rarity: 'legendary', color: 'gold', description: 'HP自動回復・防御力・HP 大UP', effects: { battleRegen: 4, battleDef: 12, battleHp: 30 } },
+  '時の祝福': { name: '時の祝福', rarity: 'legendary', color: 'gold', description: '速度+25%, 成功率+25%', effects: { speedBonus: 25, exploreSuccess: 25, runMoveSpeed: 0.125, runDodge: 0.125 } },
+  '星の輝き': { name: '星の輝き', rarity: 'legendary', color: 'gold', description: '売値+100%, 調合+15', effects: { sellBonus: 100, craftQualityBonus: 15, runExpBonus: 0.3 } },
+  '武神': { name: '武神', rarity: 'legendary', color: 'gold', description: '攻撃力・素早さ・先制 大UP', effects: { battleAtk: 15, battleSpd: 15, startAtb: 20, runDamageFlat: 15, runAttackSpeed: 0.15, runStartInvincible: 2 } },
+  '不死鳥': { name: '不死鳥', rarity: 'legendary', color: 'gold', description: 'HP自動回復・防御力・HP 大UP', effects: { battleRegen: 4, battleDef: 12, battleHp: 30, runRegenPerSec: 4, runDamageReduction: 6, runMaxHpFlat: 30 } },
 };
 
 /**

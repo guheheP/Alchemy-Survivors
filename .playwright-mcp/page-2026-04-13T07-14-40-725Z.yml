@@ -1,0 +1,59 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 9 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [active] [ref=e16] [cursor=pointer]
+  - generic [ref=e413]:
+    - generic [ref=e414]:
+      - heading "ステージ選択" [level=3] [ref=e415]
+      - generic [ref=e416]:
+        - generic [ref=e417] [cursor=pointer]:
+          - generic [ref=e418]: 🌿
+          - generic [ref=e419]: 草原
+        - generic [ref=e420]:
+          - generic [ref=e421]: ⛏️
+          - generic [ref=e422]: 地底洞窟
+          - generic [ref=e423]: 🔒
+        - generic [ref=e424]:
+          - generic [ref=e425]: 🌲
+          - generic [ref=e426]: 妖精の森
+          - generic [ref=e427]: 🔒
+        - generic [ref=e428]:
+          - generic [ref=e429]: 🌋
+          - generic [ref=e430]: 灼熱の火山
+          - generic [ref=e431]: 🔒
+        - generic [ref=e432]:
+          - generic [ref=e433]: 🌊
+          - generic [ref=e434]: 深海の遺跡
+          - generic [ref=e435]: 🔒
+        - generic [ref=e436]:
+          - generic [ref=e437]: 🐉
+          - generic [ref=e438]: 竜の巣
+          - generic [ref=e439]: 🔒
+        - generic [ref=e440]:
+          - generic [ref=e441]: ☁️
+          - generic [ref=e442]: 天空の塔
+          - generic [ref=e443]: 🔒
+        - generic [ref=e444]:
+          - generic [ref=e445]: ⏳
+          - generic [ref=e446]: 時の回廊
+          - generic [ref=e447]: 🔒
+    - generic [ref=e448]:
+      - heading "出撃準備" [level=3] [ref=e449]
+      - generic [ref=e450]:
+        - generic [ref=e451]:
+          - generic [ref=e452]: "ステージ:"
+          - generic [ref=e453]: 🌿 草原
+        - generic [ref=e454]:
+          - generic [ref=e455]: "武器 (1/4):"
+          - generic [ref=e457]: 1. 石斧 (Q17)
+        - generic [ref=e458]:
+          - generic [ref=e459]: "防具:"
+          - generic [ref=e460]: 未装備
+        - generic [ref=e461]:
+          - generic [ref=e462]: "アクセサリ:"
+          - generic [ref=e463]: 💍 粘土の壺 (Q17)
+      - button "出撃！" [ref=e464] [cursor=pointer]

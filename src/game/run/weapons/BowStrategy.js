@@ -68,9 +68,16 @@ export class BowStrategy extends WeaponStrategy {
       ? Math.atan2(nearest.y - py, nearest.x - px)
       : this.player.facingAngle;
 
-    this.projectiles.push({
-      x: px, y: py, angle, life: 2.0, hit: false,
-    });
+    const count = 1 + this.player.passives.extraProjectile;
+    const spreadAngle = count > 1 ? 0.15 : 0; // slight spread for multiple arrows
+
+    for (let n = 0; n < count; n++) {
+      if (this.projectiles.length >= this.maxProjectiles) break;
+      const spread = count > 1 ? (n - (count - 1) / 2) * spreadAngle : 0;
+      this.projectiles.push({
+        x: px, y: py, angle: angle + spread, life: 2.0, hit: false,
+      });
+    }
 
     // Add to visual effects list for rendering
     this.effects.push({

@@ -28,6 +28,8 @@ class Game {
     this.inventory = null;
     this.saveSystem = null;
     this.weaponSlots = [null, null, null, null];
+    this.equippedArmor = null;
+    this.equippedAccessory = null;
     this.stats = { totalRuns: 0, totalKills: 0, bestSurvivalTime: 0, totalMaterialsCollected: 0 };
 
     // アクティブなUI/システム
@@ -41,13 +43,36 @@ class Game {
     eventBus.on('run:start', (data) => this._startRun(data));
     eventBus.on('run:complete', (data) => this._onRunComplete(data));
     eventBus.on('result:continue', (data) => this._returnToHub(data));
-    eventBus.on('equipment:changed', ({ weaponSlots }) => { this.weaponSlots = [...weaponSlots]; });
+    eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => { this.weaponSlots = [...weaponSlots]; this.equippedArmor = armor; this.equippedAccessory = accessory; });
 
     // レベルアップ選択の橋渡し
     eventBus.on('levelup:choose', ({ passiveId }) => {
       if (this.runManager?.levelUp) {
         this.runManager.levelUp.selectPassive(passiveId);
       }
+    });
+
+    // SE
+    eventBus.on('item:crafted', () => SoundManager.playSE('success'));
+    eventBus.on('enemy:killed', () => SoundManager.playSE('hit', 1.2, 0.05));
+    eventBus.on('player:damaged', () => SoundManager.playSE('hit', 0.8, 0.1));
+    eventBus.on('levelup:show', () => SoundManager.playSE('success', 1.5, 0.15));
+    eventBus.on('boss:spawned', () => SoundManager.playSE('beep', 0.6, 0.3));
+    eventBus.on('boss:defeated', ({ bossId }) => {
+      SoundManager.playSE('success', 1.0, 0.2);
+      // Boss BGM → normal BGM
+      SoundManager.startGameBGM();
+    });
+    eventBus.on('boss:intro', ({ name }) => {
+      // Switch to battle BGM if it's a real boss (not reaper)
+      if (name !== '死神') {
+        SoundManager.startBattleBGM();
+      }
+    });
+
+    // トースト通知
+    eventBus.on('toast', ({ message, type }) => {
+      this._showToast(message, type);
     });
   }
 
@@ -76,20 +101,22 @@ class Game {
       if (data) {
         const saveData = this.saveSystem.applySaveData(data);
         this.stats = saveData.stats || this.stats;
-        // 装備復元は後でUID照合
+        // 装備復元
+        if (saveData.restoredEquipment) {
+          this.weaponSlots = saveData.restoredEquipment.weaponSlots;
+          this.equippedArmor = saveData.restoredEquipment.armor;
+          this.equippedAccessory = saveData.restoredEquipment.accessory;
+        }
       }
     } else {
-      // ニューゲーム: 初期レシピを解放
-      this._unlockInitialRecipes();
+      // ニューゲーム: 初期装備（石斧）を武器スロット1に自動装備
+      const axe = this.inventory.items.find(i => i.blueprintId === 'stone_axe');
+      if (axe) {
+        this.weaponSlots = [axe, null, null, null];
+      }
     }
 
     this._showHub();
-  }
-
-  _unlockInitialRecipes() {
-    // Rank 1のレシピは unlocked: true で既に定義済み
-    // plains エリアも unlocked: true
-    // 追加で stone_axe レシピ（sword タイプ）が初期解放されていることを確認
   }
 
   _showHub() {
@@ -99,13 +126,16 @@ class Game {
 
     this.hubManager = new HubManager(this.uiRoot, this.inventory);
     this.hubManager.weaponSlots = [...this.weaponSlots];
+    this.hubManager.equippedArmor = this.equippedArmor;
+    this.hubManager.equippedAccessory = this.equippedAccessory;
     this.hubManager.render();
 
     // 自動セーブ
     this._autoSave();
+    SoundManager.startGameBGM();
   }
 
-  _startRun({ weaponSlots, areaId }) {
+  _startRun({ weaponSlots, areaId, consumables }) {
     this.scene = 'run';
     this._clearUI();
 
@@ -115,7 +145,7 @@ class Game {
     this.canvas.height = window.innerHeight;
 
     // ランシステム初期化
-    this.runManager = new RunManager(this.canvas, weaponSlots, areaId);
+    this.runManager = new RunManager(this.canvas, weaponSlots, areaId, this.equippedArmor, this.equippedAccessory, consumables || []);
 
     // ランUI
     this.runHUD = new RunHUD(this.uiRoot);
@@ -123,6 +153,7 @@ class Game {
 
     // ラン開始
     this.runManager.start();
+    SoundManager.startGameBGM();
     this.stats.totalRuns++;
   }
 
@@ -149,11 +180,16 @@ class Game {
   }
 
   _returnToHub(resultData) {
+    // ゴールド追加
+    if (resultData.goldEarned) {
+      this.inventory.addGold(resultData.goldEarned);
+    }
+
     // 獲得素材をインベントリに追加
     if (resultData.materials) {
       this.inventory.beginBatch();
       for (const mat of resultData.materials) {
-        const item = createItemInstance(mat.blueprintId, mat.quality, []);
+        const item = createItemInstance(mat.blueprintId, mat.quality, mat.traits || []);
         this.inventory.forceAddItem(item);
       }
       this.inventory.endBatch();
@@ -162,6 +198,18 @@ class Game {
     if (this.resultScreen) { this.resultScreen.destroy(); this.resultScreen = null; }
 
     this._showHub();
+  }
+
+  _showToast(message, type = 'default') {
+    const toast = document.createElement('div');
+    toast.className = `game-toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('visible'), 10);
+    setTimeout(() => {
+      toast.classList.remove('visible');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
 
   _clearUI() {
@@ -175,6 +223,8 @@ class Game {
   _autoSave() {
     this.saveSystem.save({
       equippedWeaponUids: this.weaponSlots.map(w => w?.uid || null),
+      equippedArmorUid: this.equippedArmor?.uid || null,
+      equippedAccessoryUid: this.equippedAccessory?.uid || null,
       stats: this.stats,
     });
   }

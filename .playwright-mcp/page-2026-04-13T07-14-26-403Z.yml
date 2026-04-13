@@ -1,0 +1,49 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 9 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e370]:
+    - generic [ref=e371]:
+      - heading "装備セット" [level=3] [ref=e372]
+      - paragraph [ref=e373]: 武器4枠 + 防具 + アクセサリ。武器はレベルアップで順番に解放。
+      - heading "武器スロット" [level=4] [ref=e374]
+      - generic [ref=e375]:
+        - generic [ref=e376]:
+          - generic [ref=e377]: "1"
+          - generic [ref=e378]: 石斧
+          - generic [ref=e379]: ATK:6.2 Q17
+          - button "✕" [ref=e380] [cursor=pointer]
+        - generic [ref=e381]:
+          - generic [ref=e382]: "2"
+          - generic [ref=e383]: 空きスロット
+        - generic [ref=e384]:
+          - generic [ref=e385]: "3"
+          - generic [ref=e386]: 空きスロット
+        - generic [ref=e387]:
+          - generic [ref=e388]: "4"
+          - generic [ref=e389]: 空きスロット
+      - heading "防具・アクセサリ" [level=4] [ref=e390]
+      - generic [ref=e391]:
+        - generic [ref=e392]:
+          - generic [ref=e393]: 🛡
+          - generic [ref=e394]: 防具スロット
+        - generic [ref=e395]:
+          - generic [ref=e396]: 💍
+          - generic [ref=e397]: 粘土の壺
+          - generic [ref=e398]: SPD:+6.1% Q17
+          - button "✕" [ref=e399] [cursor=pointer]
+    - generic [ref=e400]:
+      - heading "装備可能アイテム" [level=4] [ref=e401]
+      - generic [ref=e402]:
+        - button "武器" [ref=e403] [cursor=pointer]
+        - button "防具" [ref=e404] [cursor=pointer]
+        - button "アクセサリ" [ref=e405] [cursor=pointer]
+      - generic [ref=e407] [cursor=pointer]:
+        - generic [ref=e408]:
+          - generic [ref=e409]: 石斧
+          - generic [ref=e410]: Q17
+        - generic [ref=e411]: 装備中

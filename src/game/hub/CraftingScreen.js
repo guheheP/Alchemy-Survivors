@@ -65,18 +65,38 @@ export class CraftingScreen {
       if (!bp) continue;
       if (filter !== 'all' && bp.type !== filter) continue;
 
+      const craftable = this._hasEnoughMaterials(recipe);
       const card = document.createElement('div');
-      card.className = 'recipe-card' + (id === this.selectedRecipeId ? ' selected' : '');
+      card.className = 'recipe-card' + (id === this.selectedRecipeId ? ' selected' : '') + (craftable ? '' : ' unavailable');
       card.innerHTML = `
         <img src="${bp.image ? assetPath(bp.image) : ''}" class="recipe-icon" onerror="this.style.display='none'" alt="">
         <div class="recipe-info">
           <span class="recipe-name">${bp.name}</span>
-          <span class="recipe-mats">${recipe.materials.length}素材</span>
+          <span class="recipe-mats">${recipe.materials.length}素材${craftable ? '' : ' <span class="recipe-lacking">不足</span>'}</span>
         </div>
       `;
       card.addEventListener('click', () => this._selectRecipe(id));
       listEl.appendChild(card);
     }
+  }
+
+  /** レシピに必要な素材が全て揃っているか判定 */
+  _hasEnoughMaterials(recipe) {
+    const available = this.inventory.getItemsByType('material');
+    const used = new Set();
+    for (const slot of recipe.materials) {
+      let found = false;
+      for (const item of available) {
+        if (used.has(item.uid)) continue;
+        if (materialMatchesSlot(item.blueprintId, slot)) {
+          used.add(item.uid);
+          found = true;
+          break;
+        }
+      }
+      if (!found) return false;
+    }
+    return true;
   }
 
   _selectRecipe(recipeId) {
@@ -125,6 +145,7 @@ export class CraftingScreen {
         }).join('')}
       </div>
       <div class="craft-traits" id="craft-traits"></div>
+      <div class="craft-preview" id="craft-preview"></div>
       <button class="craft-btn" id="craft-execute" ${this._canCraft() ? '' : 'disabled'}>
         調合する
       </button>
@@ -148,6 +169,7 @@ export class CraftingScreen {
 
     // 特性表示
     this._renderTraits();
+    this._renderPreview();
   }
 
   _openMaterialPicker(slotIndex) {
@@ -219,10 +241,19 @@ export class CraftingScreen {
         ${[...traitSet].map(t => {
           const def = TraitDefs[t];
           const selected = this.selectedTraits.includes(t);
-          return `<button class="trait-toggle ${selected ? 'selected' : ''} rarity-${def?.rarity || 'common'}"
+          const runFx = this._getTraitRunEffects(def);
+          return `<div class="trait-item-wrap">
+            <button class="trait-toggle ${selected ? 'selected' : ''} rarity-${def?.rarity || 'common'}"
                     data-trait="${t}" ${this.selectedTraits.length >= GameConfig.maxTraitSlots && !selected ? 'disabled' : ''}>
-            ${t}
-          </button>`;
+              ${t}
+            </button>
+            <div class="trait-tooltip">
+              <span class="trait-tt-name rarity-${def?.rarity || 'common'}">${t}</span>
+              <span class="trait-tt-rarity">${def?.rarity || ''}</span>
+              <p class="trait-tt-desc">${def?.description || ''}</p>
+              ${runFx ? `<p class="trait-tt-run">${runFx}</p>` : ''}
+            </div>
+          </div>`;
         }).join('')}
       </div>
     `;
@@ -239,6 +270,94 @@ export class CraftingScreen {
         this._renderWorkspace();
       });
     });
+  }
+
+  _renderPreview() {
+    const preview = this.el.querySelector('#craft-preview');
+    if (!preview || !this._canCraft()) {
+      if (preview) preview.innerHTML = '';
+      return;
+    }
+
+    const recipe = Recipes[this.selectedRecipeId];
+    const bp = ItemBlueprints[recipe.targetId];
+
+    // 品質予測
+    const totalQ = this.assignedMaterials.reduce((sum, m) => sum + (m?.quality || 0), 0);
+    const avgQ = this.assignedMaterials.length > 0 ? Math.floor(totalQ / this.assignedMaterials.length) : 0;
+
+    let html = `<h4>完成品プレビュー</h4>`;
+    html += `<div class="preview-stats">`;
+    html += `<div class="preview-row"><span>予測品質:</span><span class="preview-val">Q${avgQ}</span></div>`;
+
+    if (bp.type === 'equipment' && bp.equipType) {
+      const wc = GameConfig.weapon;
+      const dmg = (bp.baseValue / wc.damageBaseDivisor + avgQ / wc.damageQualityDivisor).toFixed(1);
+      const spd = (wc.speedBase + avgQ / wc.speedQualityDivisor).toFixed(2);
+      const typeConfig = GameConfig.weaponTypes[bp.equipType];
+      if (typeConfig) {
+        const range = (typeConfig.baseRange * (1 + avgQ / wc.rangeQualityDivisor)).toFixed(0);
+        html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${dmg}</span></div>`;
+        html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd}x</span></div>`;
+        html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range}px</span></div>`;
+        html += `<div class="preview-row"><span>パターン:</span><span class="preview-val">${this._getPatternName(bp.equipType)}</span></div>`;
+      }
+    } else if (bp.type === 'accessory') {
+      const spdBonus = (bp.baseValue / 500 + avgQ / 1000);
+      html += `<div class="preview-row"><span>移動速度:</span><span class="preview-val">+${(spdBonus * 100).toFixed(1)}%</span></div>`;
+    }
+
+    // 選択中特性のラン効果
+    if (this.selectedTraits.length > 0) {
+      html += `<div class="preview-traits-section"><h5>特性のラン効果</h5>`;
+      for (const t of this.selectedTraits) {
+        const def = TraitDefs[t];
+        if (!def?.effects) continue;
+        const runEffects = [];
+        for (const [key, val] of Object.entries(def.effects)) {
+          if (key.startsWith('run')) {
+            const label = {
+              runDamageFlat: 'ダメージ', runDamageReduction: '軽減',
+              runMaxHpFlat: 'HP', runMoveSpeed: '速度', runRegenPerSec: '回復/秒',
+              runDodge: '回避', runDropRate: 'ドロップ率', runAttackSpeed: '攻速',
+              runExpBonus: '経験値', runStartInvincible: '開始無敵',
+            }[key] || key;
+            runEffects.push(`${label}+${typeof val === 'number' && val < 1 ? (val * 100).toFixed(0) + '%' : val}`);
+          }
+        }
+        if (runEffects.length > 0) {
+          html += `<div class="preview-trait-fx"><span class="rarity-${def.rarity}">${t}</span>: ${runEffects.join(', ')}</div>`;
+        }
+      }
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    preview.innerHTML = html;
+  }
+
+  _getPatternName(equipType) {
+    const names = { sword: '前方扇型斬撃', spear: '前方直線突き', bow: '追尾矢', staff: '周回オーブ', dagger: '高速連続斬り', shield: '全方位波動' };
+    return names[equipType] || equipType;
+  }
+
+  _getTraitRunEffects(def) {
+    if (!def?.effects) return '';
+    const labels = {
+      runDamageFlat: 'ダメージ', runDamageReduction: '軽減', runMaxHpFlat: 'HP',
+      runMoveSpeed: '速度', runRegenPerSec: '回復/秒', runDodge: '回避',
+      runDropRate: 'ドロップ率', runAttackSpeed: '攻速', runExpBonus: '経験値',
+      runStartInvincible: '開始無敵(秒)',
+    };
+    const parts = [];
+    for (const [key, val] of Object.entries(def.effects)) {
+      if (key.startsWith('run') && labels[key]) {
+        const display = typeof val === 'number' && val < 1 && val > 0
+          ? `+${(val * 100).toFixed(0)}%` : `+${val}`;
+        parts.push(`${labels[key]}${display}`);
+      }
+    }
+    return parts.length > 0 ? `ラン効果: ${parts.join(', ')}` : '';
   }
 
   _canCraft() {

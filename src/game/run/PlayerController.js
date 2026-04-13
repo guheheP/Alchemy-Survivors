@@ -5,9 +5,10 @@
 import { Entity } from './Entity.js';
 import { GameConfig } from '../data/config.js';
 import { eventBus } from '../core/EventBus.js';
+import { ItemBlueprints, TraitDefs } from '../data/items.js';
 
 export class PlayerController extends Entity {
-  constructor() {
+  constructor(equippedArmor = null, equippedAccessory = null) {
     super();
     this.type = 'player';
     this.radius = GameConfig.run.playerRadius;
@@ -38,7 +39,41 @@ export class PlayerController extends Entity {
       cooldownReduction: 0,
       regenPerSec: 0,
       dropRateBonus: 0,
+      damageReduction: 0,
+      dodge: 0,
+      extraProjectile: 0,
+      critChance: 0,
     };
+
+    // 防具・アクセサリ
+    this.equippedArmor = equippedArmor;
+    this.equippedAccessory = equippedAccessory;
+
+    // 防具効果適用
+    if (equippedArmor) {
+      const bp = ItemBlueprints[equippedArmor.blueprintId];
+      if (bp) {
+        this.passives.damageReduction += bp.baseValue / 12 + equippedArmor.quality / 8;
+        this.maxHp += equippedArmor.quality * 0.5;
+        this.hp = this.maxHp;
+      }
+    }
+
+    // アクセサリ効果適用
+    if (equippedAccessory) {
+      const bp = ItemBlueprints[equippedAccessory.blueprintId];
+      if (bp) {
+        this.passives.moveSpeedMultiplier += bp.baseValue / 500 + equippedAccessory.quality / 1000;
+      }
+    }
+
+    // 防具・アクセサリの特性からrun*パッシブを適用
+    this._applyTraitPassives([equippedArmor, equippedAccessory]);
+  }
+
+  /** 武器スロットの特性もパッシブに適用（RunManagerから呼ぶ） */
+  applyWeaponTraits(weaponSlots) {
+    this._applyTraitPassives(weaponSlots);
 
     // 入力
     this._keys = new Set();
@@ -98,9 +133,15 @@ export class PlayerController extends Entity {
   takeDamage(amount) {
     if (this.invincibleTimer > 0) return false;
 
-    this.hp -= amount;
+    // 回避判定
+    if (this.passives.dodge > 0 && Math.random() < this.passives.dodge) return false;
+
+    // ダメージ軽減
+    const effectiveDamage = Math.max(1, amount - this.passives.damageReduction);
+
+    this.hp -= effectiveDamage;
     this.invincibleTimer = GameConfig.run.invincibilityDuration;
-    eventBus.emit('player:damaged', { hp: this.hp, maxHp: this.effectiveMaxHp, damage: amount });
+    eventBus.emit('player:damaged', { hp: this.hp, maxHp: this.effectiveMaxHp, damage: effectiveDamage });
 
     if (this.hp <= 0) {
       this.hp = 0;
@@ -117,6 +158,26 @@ export class PlayerController extends Entity {
     // maxHp増加時は現HPも回復
     if (stat === 'maxHpFlat') {
       this.hp = Math.min(this.effectiveMaxHp, this.hp + value);
+    }
+  }
+
+  _applyTraitPassives(items) {
+    for (const item of items) {
+      if (!item || !item.traits) continue;
+      for (const traitName of item.traits) {
+        const def = TraitDefs[traitName];
+        if (!def || !def.effects) continue;
+        const fx = def.effects;
+        if (fx.runDamageFlat) this.passives.damageReduction += 0; // damage flat goes to weapons
+        if (fx.runDamageReduction) this.passives.damageReduction += fx.runDamageReduction;
+        if (fx.runMaxHpFlat) { this.maxHp += fx.runMaxHpFlat; this.hp = this.maxHp; }
+        if (fx.runMoveSpeed) this.passives.moveSpeedMultiplier += fx.runMoveSpeed;
+        if (fx.runRegenPerSec) this.passives.regenPerSec += fx.runRegenPerSec;
+        if (fx.runDodge) this.passives.dodge += fx.runDodge;
+        if (fx.runDropRate) this.passives.dropRateBonus += fx.runDropRate;
+        if (fx.runAttackSpeed) this.passives.cooldownReduction += fx.runAttackSpeed;
+        if (fx.runExpBonus) this.passives.magnetMultiplier += fx.runExpBonus; // reuse magnet as general bonus
+      }
     }
   }
 

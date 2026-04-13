@@ -6,6 +6,7 @@
 import { createItemInstance } from '../ItemSystem.js';
 import { Recipes } from '../data/items.js';
 import { AreaDefs } from '../data/areas.js';
+import { Progression } from '../data/progression.js';
 
 const SAVE_KEY = 'alchemy_survivors_save_v1';
 
@@ -26,13 +27,17 @@ export class SaveSystem {
         traits: [...item.traits],
         locked: item.locked || false,
       })),
-      equippedWeaponUid: extraData.equippedWeaponUid || null,
+      equippedWeaponUids: extraData.equippedWeaponUids || [null, null, null, null],
+      equippedArmorUid: extraData.equippedArmorUid || null,
+      equippedAccessoryUid: extraData.equippedAccessoryUid || null,
       unlockedRecipes: Object.entries(Recipes)
         .filter(([, r]) => r.unlocked)
         .map(([id]) => id),
       unlockedAreas: Object.entries(AreaDefs)
         .filter(([, a]) => a.unlocked)
         .map(([id]) => id),
+      defeatedBosses: Progression.getDefeatedBosses(),
+      purchasedUpgrades: Progression.getPurchasedUpgrades ? [...Progression.getPurchasedUpgrades()] : [],
       stats: extraData.stats || {
         totalRuns: 0,
         totalKills: 0,
@@ -86,7 +91,33 @@ export class SaveSystem {
       area.unlocked = (data.unlockedAreas || []).includes(id);
     }
 
-    return data;
+    // 撃破ボス復元
+    Progression.loadDefeatedBosses(data.defeatedBosses || []);
+
+    // アップグレード復元
+    if (Progression.loadPurchasedUpgrades) {
+      Progression.loadPurchasedUpgrades(data.purchasedUpgrades || []);
+    }
+
+    // 装備復元（UID → アイテム参照の再構築）
+    const restoredEquipment = { weaponSlots: [null, null, null, null], armor: null, accessory: null };
+    if (data.equippedWeaponUids) {
+      for (let i = 0; i < data.equippedWeaponUids.length; i++) {
+        const uid = data.equippedWeaponUids[i];
+        if (uid) {
+          const item = this.inventory.getItemByUid(uid);
+          if (item) restoredEquipment.weaponSlots[i] = item;
+        }
+      }
+    }
+    if (data.equippedArmorUid) {
+      restoredEquipment.armor = this.inventory.getItemByUid(data.equippedArmorUid);
+    }
+    if (data.equippedAccessoryUid) {
+      restoredEquipment.accessory = this.inventory.getItemByUid(data.equippedAccessoryUid);
+    }
+
+    return { ...data, restoredEquipment };
   }
 
   static hasSaveData() {

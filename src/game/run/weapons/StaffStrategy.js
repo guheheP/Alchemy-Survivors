@@ -58,11 +58,12 @@ export class StaffStrategy extends WeaponStrategy {
 
   _spawnOrbs() {
     const baseAngle = Math.random() * Math.PI * 2;
-    for (let i = 0; i < this.orbCount; i++) {
+    const count = this.orbCount + this.player.passives.extraProjectile;
+    for (let i = 0; i < count; i++) {
       this.orbs.push({
         x: this.player.x,
         y: this.player.y,
-        angle: baseAngle + (Math.PI * 2 / this.orbCount) * i,
+        angle: baseAngle + (Math.PI * 2 / count) * i,
         radius: this.range,
         speed: 2.5, // radians/sec
         life: 3.0,
