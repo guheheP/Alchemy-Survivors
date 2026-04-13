@@ -27,7 +27,8 @@ export class BowStrategy extends WeaponStrategy {
           const dx = p.x - enemy.x;
           const dy = p.y - enemy.y;
           if (dx * dx + dy * dy < (4 + enemy.radius) * (4 + enemy.radius)) {
-            if (enemy.takeDamage(this.damage)) this._emitKill(enemy);
+            const dmg = this.damage;
+            if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
             p.hit = true;
             break;
           }

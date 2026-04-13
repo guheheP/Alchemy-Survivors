@@ -35,7 +35,7 @@ export class ConsumableSystem {
 
     // 初期状態をHUDに通知
     if (this.slots.length > 0) {
-      eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo() });
+      eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo(), buffs: this.getActiveBuffs() });
     }
   }
 
@@ -46,6 +46,7 @@ export class ConsumableSystem {
     }
 
     // バフタイマー更新
+    let buffChanged = false;
     for (let i = this._activeBuffs.length - 1; i >= 0; i--) {
       this._activeBuffs[i].remaining -= dt;
       if (this._activeBuffs[i].remaining <= 0) {
@@ -55,7 +56,13 @@ export class ConsumableSystem {
         else if (buff.stat === 'def') this.player.passives.damageReduction -= buff.value;
         else if (buff.stat === 'spd') this.player.passives.moveSpeedMultiplier -= buff.value;
         this._activeBuffs.splice(i, 1);
+        buffChanged = true;
       }
+    }
+
+    // スロット情報を毎tick通知（クールダウン進行表示のため）
+    if (this.slots.length > 0) {
+      eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo(), buffs: this.getActiveBuffs() });
     }
   }
 
@@ -102,18 +109,35 @@ export class ConsumableSystem {
         eventBus.emit('consumable:debuff', { x: this.player.x, y: this.player.y, radius: 100, stat: 'spd', amount: -999, duration: fx.duration });
         eventBus.emit('consumable:used', { slot: slotIndex, type: 'stun' });
         break;
+
+      case 'healfull':
+        // 全回復
+        this.player.hp = this.player.effectiveMaxHp;
+        eventBus.emit('consumable:used', { slot: slotIndex, type: 'heal', value: 'MAX' });
+        break;
     }
 
-    eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo() });
+    eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo(), buffs: this.getActiveBuffs() });
   }
 
   getSlotInfo() {
     return this.slots.map(s => ({
       name: s.item.name,
+      blueprintId: s.item.blueprintId,
       usesRemaining: s.usesRemaining,
+      usesMax: s.effect?.uses || 3,
       cooldown: s.cooldown,
       cooldownMax: s.cooldownMax,
       effectType: s.effect?.type || 'unknown',
+      effectStat: s.effect?.stat || null,
+    }));
+  }
+
+  /** アクティブバフの残り時間情報 */
+  getActiveBuffs() {
+    return this._activeBuffs.map(b => ({
+      stat: b.stat,
+      remaining: b.remaining,
     }));
   }
 

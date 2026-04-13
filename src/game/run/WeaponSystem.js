@@ -69,6 +69,19 @@ export class WeaponSystem {
     }
   }
 
+  /** HUD用の武器スロット情報 */
+  getSlotInfo() {
+    return this.strategies.map((s, i) => ({
+      name: s.weaponName,
+      equipType: s.equipType,
+      blueprintId: s.weaponItem.blueprintId,
+      unlocked: i < this.unlockedCount,
+      cooldownPct: i < this.unlockedCount
+        ? Math.max(0, s.cooldownTimer / s.cooldown)
+        : 0,
+    }));
+  }
+
   /** 全武器のエフェクト（後方互換用） */
   get slashEffects() {
     const all = [];

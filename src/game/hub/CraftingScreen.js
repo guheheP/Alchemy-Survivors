@@ -123,8 +123,15 @@ export class CraftingScreen {
       this.assignedMaterials = new Array(recipe.materials.length).fill(null);
     }
 
+    // 消耗品の効果説明
+    let effectHtml = '';
+    if (bp.battleEffect) {
+      effectHtml = `<div class="craft-effect-info">${this._describeBattleEffect(bp.battleEffect)}</div>`;
+    }
+
     detail.innerHTML = `
       <h3>${bp.name}</h3>
+      ${effectHtml}
       <div class="craft-slots">
         <h4>素材スロット</h4>
         ${recipe.materials.map((slot, i) => {
@@ -337,7 +344,7 @@ export class CraftingScreen {
   }
 
   _getPatternName(equipType) {
-    const names = { sword: '前方扇型斬撃', spear: '前方直線突き', bow: '追尾矢', staff: '周回オーブ', dagger: '高速連続斬り', shield: '全方位波動' };
+    const names = { sword: '回転斬り（前方弧+360°交互）', spear: '長距離貫通突き', bow: '追尾矢', staff: '周回オーブ', dagger: '3方向乱舞斬り', shield: '守護波動+自動反撃' };
     return names[equipType] || equipType;
   }
 
@@ -358,6 +365,19 @@ export class CraftingScreen {
       }
     }
     return parts.length > 0 ? `ラン効果: ${parts.join(', ')}` : '';
+  }
+
+  _describeBattleEffect(fx) {
+    const statNames = { atk: '攻撃力', def: '防御力', spd: '速度' };
+    switch (fx.type) {
+      case 'heal': return `💚 HP ${fx.value} 回復`;
+      case 'healfull': return `💚 HP全回復`;
+      case 'buff': return `⬆️ ${statNames[fx.stat] || fx.stat}+${fx.amount} (${fx.duration}秒)`;
+      case 'debuff': return `⬇️ 敵の${statNames[fx.stat] || fx.stat}${fx.amount} (${fx.duration}秒)`;
+      case 'damage': return `💥 周囲にダメージ ${fx.value}`;
+      case 'stun': return `⚡ 周囲の敵をスタン (${fx.duration}秒)`;
+      default: return `使用効果あり`;
+    }
   }
 
   _canCraft() {

@@ -17,6 +17,7 @@ import { AreaDefs } from '../data/areas.js';
 import { eventBus } from '../core/EventBus.js';
 import { BossSystem } from './BossSystem.js';
 import { ConsumableSystem } from './ConsumableSystem.js';
+import { DamageNumberSystem } from './DamageNumberSystem.js';
 
 export class RunManager {
   /**
@@ -46,6 +47,8 @@ export class RunManager {
     this.levelUp = new LevelUpSystem(this.player, this.weapon);
     this.bossSystem = new BossSystem(areaId);
     this.consumables = consumables.length > 0 ? new ConsumableSystem(this.player, consumables) : null;
+    this.damageNumbers = new DamageNumberSystem();
+    this.materialCount = 0;
 
     // ゲームループ
     this.gameLoop = new GameLoop(
@@ -70,6 +73,17 @@ export class RunManager {
           }
         }
       }),
+      eventBus.on('player:damaged', ({ damage }) => {
+        eventBus.emit('damageNumber:playerHit', { x: this.player.x, y: this.player.y, damage });
+      }),
+      eventBus.on('material:collected', () => {
+        this.materialCount++;
+      }),
+      eventBus.on('consumable:used', ({ type, value }) => {
+        if (type === 'heal') {
+          eventBus.emit('damageNumber:heal', { x: this.player.x, y: this.player.y, value: value });
+        }
+      }),
       eventBus.on('consumable:debuff', ({ x, y, radius, stat, amount, duration }) => {
         for (const enemy of this.spawner.enemies) {
           if (!enemy.active) continue;
@@ -80,6 +94,23 @@ export class RunManager {
             const origSpeed = enemy.speed;
             enemy.speed = Math.max(1, enemy.speed + (amount || 0));
             setTimeout(() => { if (enemy.active) enemy.speed = origSpeed; }, (duration || 5) * 1000);
+          }
+        }
+      }),
+      eventBus.on('shield:retaliate', ({ x, y, range, knockback, damage }) => {
+        const allEnemies = [...this.spawner.enemies, ...this.bossSystem.getActiveBosses()];
+        for (const enemy of allEnemies) {
+          if (!enemy.active) continue;
+          const dx = enemy.x - x;
+          const dy = enemy.y - y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < range + enemy.radius) {
+            if (enemy.takeDamage(damage)) {
+              eventBus.emit('enemy:killed', { enemy });
+            } else if (dist > 0.1) {
+              enemy.x += (dx / dist) * knockback;
+              enemy.y += (dy / dist) * knockback;
+            }
           }
         }
       }),
@@ -128,11 +159,14 @@ export class RunManager {
       }
     }
 
-    this.weapon.update(dt, this.spawner.enemies, this.collision);
+    // 全敵リスト（通常敵 + ボス）を構築
+    const allEnemies = [...this.spawner.enemies, ...this.bossSystem.getActiveBosses()];
+
+    this.weapon.update(dt, allEnemies, this.collision);
 
     // 衝突判定（敵→プレイヤー）
     this.collision.clear();
-    for (const enemy of this.spawner.enemies) {
+    for (const enemy of allEnemies) {
       if (enemy.active) this.collision.insert(enemy);
     }
     const nearby = this.collision.query(this.player.x, this.player.y, this.player.radius + 20);
@@ -146,6 +180,9 @@ export class RunManager {
 
     // 消耗品更新
     if (this.consumables) this.consumables.update(dt);
+
+    // ダメージ数字更新
+    this.damageNumbers.update(dt);
 
     this.camera.follow(this.player.x, this.player.y, dt);
 
@@ -164,6 +201,11 @@ export class RunManager {
       killCount: this.killCount,
       hp: this.player.hp,
       maxHp: this.player.effectiveMaxHp,
+      goldEarned: this.goldEarned,
+      materialCount: this.materialCount,
+      weaponSlots: this.weapon.getSlotInfo(),
+      player: this.player,
+      bossSpawnTimes: GameConfig.run.bossSpawnTimes,
     });
   }
 
@@ -176,6 +218,7 @@ export class RunManager {
       this.drops.drops,
       this.weapon,
       this.bossSystem,
+      this.damageNumbers,
     );
   }
 
@@ -240,6 +283,7 @@ export class RunManager {
     this.levelUp.destroy();
     this.bossSystem.destroy();
     if (this.consumables) this.consumables.destroy();
+    this.damageNumbers.destroy();
     this.canvas.destroy();
   }
 }

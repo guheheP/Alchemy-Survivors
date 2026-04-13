@@ -20,7 +20,7 @@ export class RunCanvas {
     this.canvas.height = window.innerHeight;
   }
 
-  render(alpha, camera, player, enemies, drops, weaponSystem, bossSystem) {
+  render(alpha, camera, player, enemies, drops, weaponSystem, bossSystem, damageNumbers) {
     const ctx = this.ctx;
     const w = this.width;
     const h = this.height;
@@ -139,6 +139,11 @@ export class RunCanvas {
     ctx.restore();
 
     ctx.globalAlpha = 1;
+
+    // ダメージ数字
+    if (damageNumbers) {
+      damageNumbers.render(ctx, camera);
+    }
   }
 
   _drawGrid(ctx, camera) {

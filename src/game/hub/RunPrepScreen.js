@@ -77,10 +77,15 @@ export class RunPrepScreen {
               <div class="prep-consumable-slots">
                 ${[0, 1, 2].map(i => {
                   const c = this.selectedConsumables[i];
+                  const cBp = c ? ItemBlueprints[c.blueprintId] : null;
+                  const cEffect = cBp?.battleEffect ? this._describeBattleEffect(cBp.battleEffect) : '';
                   return c
                     ? `<div class="prep-cons-slot filled" data-idx="${i}">
                         <span class="cons-key">${i + 1}</span>
-                        <span>${c.name}</span>
+                        <div class="cons-slot-info">
+                          <span>${c.name}</span>
+                          <span class="cons-slot-effect">${cEffect}</span>
+                        </div>
                         <button class="cons-remove" data-idx="${i}">✕</button>
                       </div>`
                     : `<div class="prep-cons-slot empty" data-idx="${i}">
@@ -156,9 +161,9 @@ export class RunPrepScreen {
         ${consumables.length > 0
           ? consumables.map((item, i) => {
               const bp = ItemBlueprints[item.blueprintId];
-              const effectDesc = bp?.battleEffect ? `${bp.battleEffect.type}` : '';
+              const effectDesc = bp?.battleEffect ? this._describeBattleEffect(bp.battleEffect) : '';
               return `<div class="cons-picker-item" data-item-idx="${i}">
-                <span>${item.name}</span>
+                <span class="cons-picker-name">${item.name} (Q${item.quality})</span>
                 <span class="cons-picker-effect">${effectDesc}</span>
               </div>`;
             }).join('')
@@ -191,8 +196,20 @@ export class RunPrepScreen {
     document.body.appendChild(overlay);
   }
 
+  _describeBattleEffect(fx) {
+    const statNames = { atk: '攻撃力', def: '防御力', spd: '速度' };
+    switch (fx.type) {
+      case 'heal': return `💚 HP${fx.value}回復`;
+      case 'healfull': return `💚 HP全回復`;
+      case 'buff': return `⬆️ ${statNames[fx.stat] || fx.stat}+${fx.amount} (${fx.duration}秒)`;
+      case 'debuff': return `⬇️ 敵${statNames[fx.stat] || fx.stat}${fx.amount} (${fx.duration}秒)`;
+      case 'damage': return `💥 周囲ダメージ${fx.value}`;
+      case 'stun': return `⚡ スタン${fx.duration}秒`;
+      default: return '';
+    }
+  }
+
   destroy() {
-    // ピッカーが残っていたら除去
     const picker = document.querySelector('.cons-picker-overlay');
     if (picker) picker.remove();
     this.el.remove();

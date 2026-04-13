@@ -42,6 +42,7 @@ export class PlayerController extends Entity {
       damageReduction: 0,
       dodge: 0,
       extraProjectile: 0,
+      expMultiplier: 0,
       critChance: 0,
     };
 
@@ -168,7 +169,7 @@ export class PlayerController extends Entity {
         const def = TraitDefs[traitName];
         if (!def || !def.effects) continue;
         const fx = def.effects;
-        if (fx.runDamageFlat) this.passives.damageReduction += 0; // damage flat goes to weapons
+        if (fx.runDamageFlat) this.baseDamage += fx.runDamageFlat;
         if (fx.runDamageReduction) this.passives.damageReduction += fx.runDamageReduction;
         if (fx.runMaxHpFlat) { this.maxHp += fx.runMaxHpFlat; this.hp = this.maxHp; }
         if (fx.runMoveSpeed) this.passives.moveSpeedMultiplier += fx.runMoveSpeed;
@@ -176,7 +177,7 @@ export class PlayerController extends Entity {
         if (fx.runDodge) this.passives.dodge += fx.runDodge;
         if (fx.runDropRate) this.passives.dropRateBonus += fx.runDropRate;
         if (fx.runAttackSpeed) this.passives.cooldownReduction += fx.runAttackSpeed;
-        if (fx.runExpBonus) this.passives.magnetMultiplier += fx.runExpBonus; // reuse magnet as general bonus
+        if (fx.runExpBonus) this.passives.expMultiplier += fx.runExpBonus;
       }
     }
   }

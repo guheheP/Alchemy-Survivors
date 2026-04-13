@@ -16,7 +16,7 @@ export class LevelUpSystem {
     this.pendingLevelUp = false;
 
     this._unsubExp = eventBus.on('exp:collected', ({ value }) => {
-      this.totalExp += value;
+      this.totalExp += value * (1 + (this.player.passives.expMultiplier || 0));
       this._checkLevelUp();
       eventBus.emit('player:expChanged', {
         exp: this.totalExp,

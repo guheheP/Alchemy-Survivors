@@ -3,6 +3,7 @@
  */
 
 import { Entity } from './Entity.js';
+import { eventBus } from '../core/EventBus.js';
 
 export class Enemy extends Entity {
   constructor() {
@@ -65,9 +66,10 @@ export class Enemy extends Entity {
     }
   }
 
-  takeDamage(amount) {
+  takeDamage(amount, isCrit = false) {
     this.hp -= amount;
     this.hitFlashTimer = 0.1;
+    eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: amount, isCrit });
     return this.hp <= 0;
   }
 }

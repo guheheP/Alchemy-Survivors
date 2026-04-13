@@ -1,0 +1,88 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]:
+      - generic [ref=e13]: 💰 190G
+      - generic [ref=e14]: 📦 7 / 60
+  - generic [ref=e15]:
+    - button "🔮 錬金工房" [ref=e16] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e17] [cursor=pointer]
+    - button "🚀 出撃準備" [active] [ref=e18] [cursor=pointer]
+    - button "📦 倉庫" [ref=e19] [cursor=pointer]
+    - button "🏪 ショップ" [ref=e20] [cursor=pointer]
+    - button "📖 図鑑" [ref=e21] [cursor=pointer]
+  - generic [ref=e66]:
+    - generic [ref=e67]:
+      - heading "ステージ選択" [level=3] [ref=e68]
+      - generic [ref=e69]:
+        - generic [ref=e70] [cursor=pointer]:
+          - generic [ref=e71]: 🌿
+          - generic [ref=e72]: 草原
+        - generic [ref=e73]:
+          - generic [ref=e74]: ⛏️
+          - generic [ref=e75]: 地底洞窟
+          - generic [ref=e76]: 🔒
+        - generic [ref=e77]:
+          - generic [ref=e78]: 🌲
+          - generic [ref=e79]: 妖精の森
+          - generic [ref=e80]: 🔒
+        - generic [ref=e81]:
+          - generic [ref=e82]: 🌋
+          - generic [ref=e83]: 灼熱の火山
+          - generic [ref=e84]: 🔒
+        - generic [ref=e85]:
+          - generic [ref=e86]: 🌊
+          - generic [ref=e87]: 深海の遺跡
+          - generic [ref=e88]: 🔒
+        - generic [ref=e89]:
+          - generic [ref=e90]: 🐉
+          - generic [ref=e91]: 竜の巣
+          - generic [ref=e92]: 🔒
+        - generic [ref=e93]:
+          - generic [ref=e94]: ☁️
+          - generic [ref=e95]: 天空の塔
+          - generic [ref=e96]: 🔒
+        - generic [ref=e97]:
+          - generic [ref=e98]: ⏳
+          - generic [ref=e99]: 時の回廊
+          - generic [ref=e100]: 🔒
+    - generic [ref=e101]:
+      - heading "出撃準備" [level=3] [ref=e102]
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - generic [ref=e105]: "ステージ:"
+          - generic [ref=e106]: 🌿 草原
+        - generic [ref=e107]:
+          - generic [ref=e108]: "武器 (0/4):"
+          - generic [ref=e110]: 未装備
+        - generic [ref=e111]:
+          - generic [ref=e112]: "防具:"
+          - generic [ref=e113]: 未装備
+        - generic [ref=e114]:
+          - generic [ref=e115]: "アクセサリ:"
+          - generic [ref=e116]: 未装備
+        - generic [ref=e117]:
+          - heading "消耗品 (0/3)" [level=4] [ref=e118]
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - generic [ref=e121]: "1"
+              - button "+追加" [ref=e122] [cursor=pointer]
+            - generic [ref=e123]:
+              - generic [ref=e124]: "2"
+              - button "+追加" [ref=e125] [cursor=pointer]
+            - generic [ref=e126]:
+              - generic [ref=e127]: "3"
+              - button "+追加" [ref=e128] [cursor=pointer]
+        - generic [ref=e129]:
+          - heading "ステージ情報" [level=4] [ref=e130]
+          - generic [ref=e131]:
+            - generic [ref=e132]: "難易度:"
+            - generic [ref=e133]: ★
+          - generic [ref=e134]:
+            - generic [ref=e135]: "ドロップ品質:"
+            - generic [ref=e136]: Q20〜Q45
+          - generic [ref=e137]:
+            - generic [ref=e138]: "ボス:"
+            - generic [ref=e139]: 💧 巨大化スライム (HP1100)
+      - paragraph [ref=e140]: 武器を1つ以上装備してください
+      - button "出撃！" [disabled] [ref=e141]

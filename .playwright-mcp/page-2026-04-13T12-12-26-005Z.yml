@@ -1,0 +1,70 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]:
+      - generic [ref=e13]: 💰 100G
+      - generic [ref=e14]: 📦 1 / 60
+  - generic [ref=e15]:
+    - button "🔮 錬金工房" [ref=e16] [cursor=pointer]
+    - button "⚔️ 装備" [active] [ref=e17] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e18] [cursor=pointer]
+    - button "📦 倉庫" [ref=e19] [cursor=pointer]
+    - button "🏪 ショップ" [ref=e20] [cursor=pointer]
+    - button "📖 図鑑" [ref=e21] [cursor=pointer]
+  - generic [ref=e68]:
+    - generic [ref=e69]:
+      - heading "装備セット" [level=3] [ref=e70]
+      - paragraph [ref=e71]: 武器4枠 + 防具 + アクセサリ。武器はレベルアップで順番に解放。
+      - heading "武器スロット" [level=4] [ref=e72]
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]: "1"
+          - generic [ref=e76]: 石斧
+          - generic [ref=e77]: ATK:6.8 Q20
+          - button "✕" [ref=e78] [cursor=pointer]
+        - generic [ref=e79]:
+          - generic [ref=e80]: "2"
+          - generic [ref=e81]: 空きスロット
+        - generic [ref=e82]:
+          - generic [ref=e83]: "3"
+          - generic [ref=e84]: 空きスロット
+        - generic [ref=e85]:
+          - generic [ref=e86]: "4"
+          - generic [ref=e87]: 空きスロット
+      - heading "防具・アクセサリ" [level=4] [ref=e88]
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - generic [ref=e91]: 🛡
+          - generic [ref=e92]: 防具スロット
+        - generic [ref=e93]:
+          - generic [ref=e94]: 💍
+          - generic [ref=e95]: アクセサリスロット
+      - generic [ref=e96]:
+        - heading "装備合計ステータス" [level=4] [ref=e97]
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - generic [ref=e100]: 総攻撃力
+            - generic [ref=e101]: "6.8"
+          - generic [ref=e102]:
+            - generic [ref=e103]: ダメージ軽減
+            - generic [ref=e104]: "0.0"
+          - generic [ref=e105]:
+            - generic [ref=e106]: HP増加
+            - generic [ref=e107]: "+0"
+          - generic [ref=e108]:
+            - generic [ref=e109]: 速度増加
+            - generic [ref=e110]: +0.0%
+          - generic [ref=e111]:
+            - generic [ref=e112]: 武器数
+            - generic [ref=e113]: 1/4
+    - generic [ref=e114]:
+      - heading "装備可能アイテム" [level=4] [ref=e115]
+      - generic [ref=e116]:
+        - button "武器" [ref=e117] [cursor=pointer]
+        - button "防具" [ref=e118] [cursor=pointer]
+        - button "アクセサリ" [ref=e119] [cursor=pointer]
+      - generic [ref=e121] [cursor=pointer]:
+        - generic [ref=e122]:
+          - generic [ref=e123]: 石斧
+          - generic [ref=e124]: Q20
+        - generic [ref=e125]: 装備中

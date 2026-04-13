@@ -59,12 +59,12 @@ export const GameConfig = {
 
   // --- 武器種別デフォルト ---
   weaponTypes: {
-    sword: { baseRange: 60, baseCooldown: 1.2, arc: Math.PI / 2, pattern: 'fan' },
-    spear: { baseRange: 90, baseCooldown: 1.4, arc: Math.PI / 6, pattern: 'thrust' },
-    bow:   { baseRange: 200, baseCooldown: 0.8, arc: 0, pattern: 'projectile' },
-    staff: { baseRange: 120, baseCooldown: 1.0, arc: Math.PI * 2, pattern: 'orbit' },
-    dagger:{ baseRange: 35, baseCooldown: 0.4, arc: Math.PI / 3, pattern: 'fan' },
-    shield:{ baseRange: 50, baseCooldown: 2.0, arc: Math.PI * 2, pattern: 'pulse' },
+    sword:  { baseRange: 100, baseCooldown: 1.0, arc: Math.PI * 0.7, pattern: 'cleave' },
+    spear:  { baseRange: 150, baseCooldown: 1.2, arc: Math.PI / 8, pattern: 'thrust' },
+    bow:    { baseRange: 250, baseCooldown: 0.7, arc: 0, pattern: 'projectile' },
+    staff:  { baseRange: 130, baseCooldown: 0.9, arc: Math.PI * 2, pattern: 'orbit' },
+    dagger: { baseRange: 60, baseCooldown: 0.25, arc: Math.PI / 3, pattern: 'flurry' },
+    shield: { baseRange: 90, baseCooldown: 1.8, arc: Math.PI * 2, pattern: 'pulse' },
   },
 
   // --- 初期インベントリ（初期装備の石斧のみ） ---

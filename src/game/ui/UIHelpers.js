@@ -147,20 +147,16 @@ function buildTraitEffectsHTML(traitName) {
   if (!def?.effects) return '';
 
   const labels = {
-    exploreSuccess:     v => `探索成功率 ${v > 0 ? '+' : ''}${v}%`,
-    speedBonus:         v => `探索速度 +${v}%`,
-    dropBonus:          v => `ドロップ +${v}`,
-    qualityBonus:       v => `素材品質 +${v}`,
     craftQualityBonus:  v => `調合品質 +${v}`,
-    sellBonus:          v => `売値 ${v > 0 ? '+' : ''}${v}%`,
-    battleAtk:          v => `攻撃力 +${v} ※バトル`,
-    battleDef:          v => `防御力 +${v} ※バトル`,
-    battleSpd:          v => `素早さ +${v} ※バトル`,
-    battleHp:           v => `最大HP +${v} ※バトル`,
-    startAtb:           v => `ATB先行 +${v} ※バトル`,
-    battleRegen:        v => `HP毎秒回復 +${v} ※バトル`,
-    battleDmgReduction: v => `ダメージ軽減 -${v} ※バトル`,
-    traitChanceBonus:   v => `特性付与率 +${v}%`,
+    runDamageFlat:      v => `攻撃力 +${v}`,
+    runDamageReduction: v => `ダメージ軽減 +${v}`,
+    runMaxHpFlat:       v => `最大HP +${v}`,
+    runMoveSpeed:       v => `移動速度 +${(v * 100).toFixed(1)}%`,
+    runRegenPerSec:     v => `HP回復 +${v}/秒`,
+    runDodge:           v => `回避率 ${v > 0 ? '+' : ''}${(v * 100).toFixed(1)}%`,
+    runDropRate:        v => `ドロップ率 +${(v * 100).toFixed(1)}%`,
+    runAttackSpeed:     v => `攻撃速度 +${(v * 100).toFixed(0)}%`,
+    runExpBonus:        v => `経験値 +${(v * 100).toFixed(0)}%`,
   };
 
   return Object.entries(def.effects)

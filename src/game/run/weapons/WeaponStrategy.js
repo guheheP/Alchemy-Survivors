@@ -30,8 +30,10 @@ export class WeaponStrategy {
   get damage() {
     let dmg = this.baseDamage * (1 + this.player.passives.damageMultiplier) + this.player.baseDamage;
     // クリティカル判定
+    this._lastCrit = false;
     if (this.player.passives.critChance > 0 && Math.random() < this.player.passives.critChance) {
       dmg *= 2;
+      this._lastCrit = true;
     }
     return dmg;
   }

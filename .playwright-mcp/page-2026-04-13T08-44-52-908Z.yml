@@ -1,0 +1,26 @@
+- generic [active] [ref=e1]:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic: 100 / 100
+        - generic: Lv.1
+      - generic:
+        - generic: 19:59
+        - generic:
+          - generic: ★☆☆☆☆
+          - generic: BOSS 4:59
+      - generic:
+        - generic: 0 kills
+        - generic:
+          - generic: 💰 0
+          - generic: 📦 0
+      - generic:
+        - generic:
+          - generic: ⚔️
+          - generic: 石斧
+      - generic:
+        - generic:
+          - generic: ⚔100%
+          - generic: 🛡0.0
+          - generic: ⚡100%

@@ -53,13 +53,13 @@ class Game {
     });
 
     // SE
-    eventBus.on('item:crafted', () => SoundManager.playSE('success'));
-    eventBus.on('enemy:killed', () => SoundManager.playSE('hit', 1.2, 0.05));
-    eventBus.on('player:damaged', () => SoundManager.playSE('hit', 0.8, 0.1));
-    eventBus.on('levelup:show', () => SoundManager.playSE('success', 1.5, 0.15));
-    eventBus.on('boss:spawned', () => SoundManager.playSE('beep', 0.6, 0.3));
+    eventBus.on('item:crafted', () => SoundManager.playCraftSuccess());
+    eventBus.on('enemy:killed', () => SoundManager.playBattleAdvAttack());
+    eventBus.on('player:damaged', () => SoundManager.playBattleDamage());
+    eventBus.on('levelup:show', () => SoundManager.playLevelUp());
+    eventBus.on('boss:spawned', () => SoundManager.playEventChime());
     eventBus.on('boss:defeated', ({ bossId }) => {
-      SoundManager.playSE('success', 1.0, 0.2);
+      SoundManager.playBattleVictory();
       // Boss BGM → normal BGM
       SoundManager.startGameBGM();
     });

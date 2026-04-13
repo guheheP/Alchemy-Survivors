@@ -32,7 +32,8 @@ export class StaffStrategy extends WeaponStrategy {
           const dx = orb.x - enemy.x;
           const dy = orb.y - enemy.y;
           if (dx * dx + dy * dy < (8 + enemy.radius) * (8 + enemy.radius)) {
-            if (enemy.takeDamage(this.damage * 0.4)) this._emitKill(enemy);
+            const dmg = this.damage * 0.4;
+            if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
           }
         }
       }

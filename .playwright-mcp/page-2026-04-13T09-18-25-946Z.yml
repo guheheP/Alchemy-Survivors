@@ -1,0 +1,38 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]:
+      - generic [ref=e13]: 💰 615G
+      - generic [ref=e14]: 📦 22 / 60
+  - generic [ref=e15]:
+    - button "🔮 錬金工房" [ref=e16] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e17] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e18] [cursor=pointer]
+    - button "📦 倉庫" [ref=e19] [cursor=pointer]
+    - button "🏪 ショップ" [ref=e20] [cursor=pointer]
+    - button "📖 図鑑" [ref=e21] [cursor=pointer]
+  - generic [ref=e24]:
+    - generic [ref=e25]:
+      - heading "レシピ一覧" [level=3] [ref=e26]
+      - generic [ref=e27]:
+        - button "全て" [ref=e28] [cursor=pointer]
+        - button "装備" [ref=e29] [cursor=pointer]
+        - button "消耗品" [ref=e30] [cursor=pointer]
+        - button "アクセサリ" [ref=e31] [cursor=pointer]
+        - button "素材" [ref=e32] [cursor=pointer]
+      - generic [ref=e33]:
+        - generic [ref=e35] [cursor=pointer]: 木の盾 2素材
+        - generic [ref=e37] [cursor=pointer]: 回復薬 2素材
+        - generic [ref=e39] [cursor=pointer]:
+          - text: 木の弓
+          - generic [ref=e40]: 2素材 不足
+        - generic [ref=e42] [cursor=pointer]:
+          - text: ハーブティー
+          - generic [ref=e43]: 2素材 不足
+        - generic [ref=e45] [cursor=pointer]: 石斧 2素材
+        - generic [ref=e47] [cursor=pointer]: 粘土の壺 2素材
+        - generic [ref=e49] [cursor=pointer]: 毒消し薬 2素材
+        - generic [ref=e51] [cursor=pointer]: 泥団子 2素材
+        - generic [ref=e53] [cursor=pointer]: 合板 2素材
+        - generic [ref=e55] [cursor=pointer]: 薬草エキス 2素材
+    - paragraph [ref=e58]: ← レシピを選択してください

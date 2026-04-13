@@ -1,0 +1,199 @@
+[      64ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
+[   96849ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[   97369ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[   97883ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[   98397ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[   98919ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[   99432ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[   99953ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  100467ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  100981ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  101453ms] [ERROR] [EventBus] Error in listener for "enemy:killed": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:57:52
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at SwordStrategy._emitKill (http://localhost:3001/Alchemy-Survivors/src/game/run/weapons/WeaponStrategy.js?t=1776069479524:164:14)
+    at SwordStrategy.attack (http://localhost:3001/Alchemy-Survivors/src/game/run/weapons/SwordStrategy.js?t=1776069527861:20:49)
+    at SwordStrategy.update (http://localhost:3001/Alchemy-Survivors/src/game/run/weapons/WeaponStrategy.js?t=1776069479524:62:10)
+    at WeaponSystem.update (http://localhost:3001/Alchemy-Survivors/src/game/run/WeaponSystem.js?t=1776069544353:62:26)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:145:17)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  101502ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  102016ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  102536ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  103050ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  103564ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  104085ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  104599ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  104953ms] [ERROR] [EventBus] Error in listener for "enemy:killed": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:57:52
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at SwordStrategy._emitKill (http://localhost:3001/Alchemy-Survivors/src/game/run/weapons/WeaponStrategy.js?t=1776069479524:164:14)
+    at SwordStrategy.attack (http://localhost:3001/Alchemy-Survivors/src/game/run/weapons/SwordStrategy.js?t=1776069527861:20:49)
+    at SwordStrategy.update (http://localhost:3001/Alchemy-Survivors/src/game/run/weapons/WeaponStrategy.js?t=1776069479524:62:10)
+    at WeaponSystem.update (http://localhost:3001/Alchemy-Survivors/src/game/run/WeaponSystem.js?t=1776069544353:62:26)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:145:17)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  105120ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  105634ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  106148ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  106669ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  107182ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
+[  107703ms] [ERROR] [EventBus] Error in listener for "player:damaged": TypeError: SoundManager.playSE is not a function
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:58:54
+    at EventBus.emit (http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:90:9)
+    at PlayerController.takeDamage (http://localhost:3001/Alchemy-Survivors/src/game/run/PlayerController.js?t=1776069184277:144:14)
+    at RunManager._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:155:21)
+    at GameLoop._update (http://localhost:3001/Alchemy-Survivors/src/game/run/RunManager.js?t=1776069655567:55:20)
+    at GameLoop._loop (http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:59:12)
+    at http://localhost:3001/Alchemy-Survivors/src/game/core/GameLoop.js:49:53 @ http://localhost:3001/Alchemy-Survivors/src/game/core/EventBus.js:91
