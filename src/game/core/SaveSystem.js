@@ -136,19 +136,19 @@ export class SaveSystem {
     // 装備復元（UID → アイテム参照の再構築）
     const restoredEquipment = { weaponSlots: [null, null, null, null], armor: null, accessory: null };
     if (data.equippedWeaponUids) {
-      for (let i = 0; i < data.equippedWeaponUids.length; i++) {
+      for (let i = 0; i < Math.min(data.equippedWeaponUids.length, 4); i++) {
         const uid = data.equippedWeaponUids[i];
         if (uid) {
           const item = this.inventory.getItemByUid(uid);
-          if (item) restoredEquipment.weaponSlots[i] = item;
+          restoredEquipment.weaponSlots[i] = item || null;
         }
       }
     }
     if (data.equippedArmorUid) {
-      restoredEquipment.armor = this.inventory.getItemByUid(data.equippedArmorUid);
+      restoredEquipment.armor = this.inventory.getItemByUid(data.equippedArmorUid) || null;
     }
     if (data.equippedAccessoryUid) {
-      restoredEquipment.accessory = this.inventory.getItemByUid(data.equippedAccessoryUid);
+      restoredEquipment.accessory = this.inventory.getItemByUid(data.equippedAccessoryUid) || null;
     }
 
     // stats のフィールド補完（新規追加分のデフォルト値を確保）

@@ -227,7 +227,7 @@ class SoundManagerClass {
   /** BGM音量を設定（0.0〜1.0） */
   setBgmVolume(v) {
     this.bgmVolume = Math.max(0, Math.min(1, v));
-    if (this.bgmGain) {
+    if (this.bgmGain && !this.isFading) {
       this.bgmGain.gain.setTargetAtTime(this.bgmVolume, this.ctx.currentTime, 0.05);
     }
     this._saveSettings();
@@ -352,48 +352,6 @@ class SoundManagerClass {
       this.audioEl.currentTime = 0;
     }
     this._stopProcedural();
-  }
-
-  // ===== 音量制御 =====
-
-  /** マスター音量を設定 (0.0 ~ 1.0) */
-  setMasterVolume(v) {
-    this.masterVolume = Math.max(0, Math.min(1, v));
-    if (this.masterGain && !this.muted) {
-      this.masterGain.gain.setValueAtTime(this.masterVolume, this.ctx.currentTime);
-    }
-    this._saveSettings();
-  }
-
-  /** BGM音量を設定 (0.0 ~ 1.0) */
-  setBgmVolume(v) {
-    this.bgmVolume = Math.max(0, Math.min(1, v));
-    if (this.bgmGain && !this.isFading) {
-      this.bgmGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
-    }
-    this._saveSettings();
-  }
-
-  /** SE音量を設定 (0.0 ~ 1.0) */
-  setSeVolume(v) {
-    this.seVolume = Math.max(0, Math.min(1, v));
-    if (this.seGain) {
-      this.seGain.gain.setValueAtTime(this.seVolume, this.ctx.currentTime);
-    }
-    this._saveSettings();
-  }
-
-  /** ミュートトグル。新しいmuted状態を返す */
-  toggleMute() {
-    this.muted = !this.muted;
-    if (this.masterGain) {
-      this.masterGain.gain.setValueAtTime(
-        this.muted ? 0 : this.masterVolume,
-        this.ctx.currentTime
-      );
-    }
-    this._saveSettings();
-    return this.muted;
   }
 
   /** 設定をlocalStorageに保存 */
@@ -876,7 +834,7 @@ class SoundManagerClass {
     source.start(startTime);
     source.stop(startTime + duration + 0.05);
 
-    const nodeGroup = { source, filter, gain };
+    const nodeGroup = { source, filter, gain, createdAt: this.ctx.currentTime, duration: duration + 0.05 };
     this._activeSeNodes.push(nodeGroup);
     source.onended = () => {
       source.disconnect(); filter.disconnect(); gain.disconnect();
@@ -899,13 +857,13 @@ class SoundManagerClass {
 
   /** 古い/停止済みSEノードを強制クリーンアップ */
   _cleanupSeNodes() {
-    // onendedが発火しなかったノードを安全に除去
+    // 作成時刻 + 再生時間を超過したノードを安全に除去
     const now = this.ctx?.currentTime || 0;
     const stale = this._activeSeNodes.filter(n => {
-      try { return n.source.playbackState === 3; } catch { return false; } // ended
+      return n.createdAt != null && now > n.createdAt + (n.duration || 2) + 0.5;
     });
     for (const n of stale) {
-      try { n.source.disconnect(); n.filter.disconnect(); n.gain.disconnect(); } catch { /* */ }
+      try { n.source.disconnect(); if (n.filter) n.filter.disconnect(); n.gain.disconnect(); } catch { /* */ }
       const idx = this._activeSeNodes.indexOf(n);
       if (idx !== -1) this._activeSeNodes.splice(idx, 1);
     }
@@ -938,7 +896,7 @@ class SoundManagerClass {
     osc.start(startTime);
     osc.stop(startTime + duration + 0.1);
 
-    const nodeGroup = { source: osc, gain };
+    const nodeGroup = { source: osc, gain, createdAt: this.ctx.currentTime, duration: duration + 0.1 };
     this._activeSeNodes.push(nodeGroup);
     osc.onended = () => {
       osc.disconnect(); gain.disconnect();

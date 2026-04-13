@@ -17,6 +17,9 @@ export class Enemy extends Entity {
     this.color = '#f00';
     this.enemyId = '';
     this.hitFlashTimer = 0;
+    // デバフ管理
+    this._debuffTimer = 0;
+    this._baseSpeed = 0;
   }
 
   reset() {
@@ -29,6 +32,8 @@ export class Enemy extends Entity {
     this.color = '#f00';
     this.enemyId = '';
     this.hitFlashTimer = 0;
+    this._debuffTimer = 0;
+    this._baseSpeed = 0;
   }
 
   /** 敵データから初期化 */
@@ -48,12 +53,29 @@ export class Enemy extends Entity {
     this.enemyId = def.id;
   }
 
+  /** デバフを適用（速度変更 + 持続時間） */
+  applyDebuff(speedModifier, duration) {
+    if (this._debuffTimer <= 0) {
+      this._baseSpeed = this.speed;
+    }
+    this.speed = Math.max(1, this._baseSpeed + speedModifier);
+    this._debuffTimer = duration;
+  }
+
   /** プレイヤーに向かって移動 */
   update(dt, playerX, playerY) {
     this.savePrev();
 
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer -= dt;
+    }
+
+    // デバフ解除
+    if (this._debuffTimer > 0) {
+      this._debuffTimer -= dt;
+      if (this._debuffTimer <= 0) {
+        this.speed = this._baseSpeed;
+      }
     }
 
     const dx = playerX - this.x;
