@@ -65,7 +65,7 @@ export class AchievementScreen {
     this.el.querySelectorAll('.ach-cat-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         this.activeCategory = btn.dataset.cat;
-        this.container.innerHTML = '';
+        this.el.remove();
         this.render();
       });
     });

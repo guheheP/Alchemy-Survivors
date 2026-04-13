@@ -24,7 +24,13 @@ export class ConsumableSystem {
       };
     });
 
-    this._activeBuffs = []; // { stat, amount, remaining }
+    this._activeBuffs = []; // { stat, value, remaining }
+    // バフ適用前のベース値を保存（バフ終了時の再計算に使用）
+    this._basePassives = {
+      damageMultiplier: player.passives.damageMultiplier,
+      damageReduction: player.passives.damageReduction,
+      moveSpeedMultiplier: player.passives.moveSpeedMultiplier,
+    };
 
     this._onKeyDown = (e) => {
       if (e.code === 'Digit1') this._use(0);
@@ -50,13 +56,19 @@ export class ConsumableSystem {
     for (let i = this._activeBuffs.length - 1; i >= 0; i--) {
       this._activeBuffs[i].remaining -= dt;
       if (this._activeBuffs[i].remaining <= 0) {
-        // バフ終了 — ステータスを戻す
-        const buff = this._activeBuffs[i];
-        if (buff.stat === 'atk') this.player.passives.damageMultiplier -= buff.value;
-        else if (buff.stat === 'def') this.player.passives.damageReduction -= buff.value;
-        else if (buff.stat === 'spd') this.player.passives.moveSpeedMultiplier -= buff.value;
         this._activeBuffs.splice(i, 1);
         buffChanged = true;
+      }
+    }
+    // バフが変化した場合、ベース値 + アクティブバフから再計算（浮動小数点ドリフト防止）
+    if (buffChanged) {
+      this.player.passives.damageMultiplier = this._basePassives.damageMultiplier;
+      this.player.passives.damageReduction = this._basePassives.damageReduction;
+      this.player.passives.moveSpeedMultiplier = this._basePassives.moveSpeedMultiplier;
+      for (const buff of this._activeBuffs) {
+        if (buff.stat === 'atk') this.player.passives.damageMultiplier += buff.value;
+        else if (buff.stat === 'def') this.player.passives.damageReduction += buff.value;
+        else if (buff.stat === 'spd') this.player.passives.moveSpeedMultiplier += buff.value;
       }
     }
 

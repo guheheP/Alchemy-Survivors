@@ -55,8 +55,8 @@ export class EnemySpawner {
       this._spawn(playerX, playerY, cameraWidth, cameraHeight);
       spawnedThisFrame++;
     }
-    // 超過分はリセット（大量スポーン蓄積を防止）
-    if (this.spawnTimer > interval * 3) this.spawnTimer = 0;
+    // 超過分はキャップ（大量スポーン蓄積を防止、急激なリセットを回避）
+    if (this.spawnTimer > interval * 3) this.spawnTimer = interval * 3;
 
     // 全敵を更新 + 遠方敵をリサイクル
     const despawnDist = Math.max(cameraWidth, cameraHeight) * 1.5;

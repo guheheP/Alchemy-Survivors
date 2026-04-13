@@ -114,10 +114,7 @@ export class RunManager {
           const dx = enemy.x - x;
           const dy = enemy.y - y;
           if (dx * dx + dy * dy < radius * radius) {
-            // 一時的に速度を減少
-            const origSpeed = enemy.speed;
-            enemy.speed = Math.max(1, enemy.speed + (amount || 0));
-            setTimeout(() => { if (enemy.active) enemy.speed = origSpeed; }, (duration || 5) * 1000);
+            enemy.applyDebuff(amount || 0, duration || 5);
           }
         }
       }),
