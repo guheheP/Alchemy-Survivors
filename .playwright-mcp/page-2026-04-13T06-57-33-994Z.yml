@@ -1,0 +1,38 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 9 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e304]:
+    - generic [ref=e305]:
+      - heading "装備セット" [level=3] [ref=e306]
+      - paragraph [ref=e307]: 武器を4枠まで装備可能。ラン中にレベルアップで順番に解放されます。
+      - generic [ref=e308]:
+        - generic [ref=e309]:
+          - generic [ref=e310]: "1"
+          - generic [ref=e311]: 石斧
+          - generic [ref=e312]: ATK:6.2 Q17
+          - button "✕" [ref=e313] [cursor=pointer]
+        - generic [ref=e314]:
+          - generic [ref=e315]: "2"
+          - generic [ref=e316]: 空きスロット
+        - generic [ref=e317]:
+          - generic [ref=e318]: "3"
+          - generic [ref=e319]: 空きスロット
+        - generic [ref=e320]:
+          - generic [ref=e321]: "4"
+          - generic [ref=e322]: 空きスロット
+    - generic [ref=e323]:
+      - heading "装備可能な武器" [level=4] [ref=e324]
+      - generic [ref=e325]:
+        - generic [ref=e326] [cursor=pointer]:
+          - generic [ref=e327]:
+            - generic [ref=e328]: 石斧
+            - generic [ref=e329]: Q17
+          - generic [ref=e330]: 装備中
+        - generic [ref=e332] [cursor=pointer]:
+          - generic [ref=e333]: 木の弓
+          - generic [ref=e334]: Q17

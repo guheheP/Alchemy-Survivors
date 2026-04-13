@@ -1,0 +1,3 @@
+[  334618ms] ReferenceError: AdventurerDefs is not defined
+    at new Game (http://localhost:3001/Alchemy-Survivors/src/game/main.js:30:22)
+    at http://localhost:3001/Alchemy-Survivors/src/game/main.js:185:14

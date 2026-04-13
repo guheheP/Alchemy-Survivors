@@ -1,0 +1,4 @@
+[ 1815556ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/Alchemy-Survivors/src/game/run/WeaponSystem.js?t=1776062607905:0
+[ 1815648ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/Alchemy-Survivors/src/game/run/WeaponSystem.js?t=1776062608016:0
+[ 1817067ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/Alchemy-Survivors/src/game/run/WeaponSystem.js?t=1776062609418:0
+[ 1820874ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/Alchemy-Survivors/src/game/run/WeaponSystem.js?t=1776062613238:0

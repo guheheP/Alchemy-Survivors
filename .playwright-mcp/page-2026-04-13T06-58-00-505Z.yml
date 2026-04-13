@@ -1,0 +1,55 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 9 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [active] [ref=e16] [cursor=pointer]
+  - generic [ref=e370]:
+    - generic [ref=e371]:
+      - heading "ステージ選択" [level=3] [ref=e372]
+      - generic [ref=e373]:
+        - generic [ref=e374] [cursor=pointer]:
+          - generic [ref=e375]: 🌿
+          - generic [ref=e376]: 草原
+        - generic [ref=e377]:
+          - generic [ref=e378]: ⛏️
+          - generic [ref=e379]: 地底洞窟
+          - generic [ref=e380]: 🔒
+        - generic [ref=e381]:
+          - generic [ref=e382]: 🌲
+          - generic [ref=e383]: 妖精の森
+          - generic [ref=e384]: 🔒
+        - generic [ref=e385]:
+          - generic [ref=e386]: 🌋
+          - generic [ref=e387]: 灼熱の火山
+          - generic [ref=e388]: 🔒
+        - generic [ref=e389]:
+          - generic [ref=e390]: 🌊
+          - generic [ref=e391]: 深海の遺跡
+          - generic [ref=e392]: 🔒
+        - generic [ref=e393]:
+          - generic [ref=e394]: 🐉
+          - generic [ref=e395]: 竜の巣
+          - generic [ref=e396]: 🔒
+        - generic [ref=e397]:
+          - generic [ref=e398]: ☁️
+          - generic [ref=e399]: 天空の塔
+          - generic [ref=e400]: 🔒
+        - generic [ref=e401]:
+          - generic [ref=e402]: ⏳
+          - generic [ref=e403]: 時の回廊
+          - generic [ref=e404]: 🔒
+    - generic [ref=e405]:
+      - heading "出撃準備" [level=3] [ref=e406]
+      - generic [ref=e407]:
+        - generic [ref=e408]:
+          - generic [ref=e409]: "ステージ:"
+          - generic [ref=e410]: 🌿 草原
+        - generic [ref=e411]:
+          - generic [ref=e412]: "武器 (2/4):"
+          - generic [ref=e413]:
+            - generic [ref=e414]: 1. 石斧 (Q17)
+            - generic [ref=e415]: 2. 木の弓 (Q17)
+      - button "出撃！" [ref=e416] [cursor=pointer]

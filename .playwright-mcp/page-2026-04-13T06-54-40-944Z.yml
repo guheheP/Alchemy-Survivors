@@ -1,0 +1,46 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 11 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e74]:
+    - generic [ref=e75]:
+      - generic [ref=e76]:
+        - heading "レシピ一覧" [level=3] [ref=e77]
+        - generic [ref=e78]:
+          - button "全て" [ref=e79] [cursor=pointer]
+          - button "装備" [ref=e80] [cursor=pointer]
+          - button "消耗品" [ref=e81] [cursor=pointer]
+          - button "アクセサリ" [ref=e82] [cursor=pointer]
+          - button "素材" [ref=e83] [cursor=pointer]
+        - generic [ref=e84]:
+          - generic [ref=e86] [cursor=pointer]: 木の盾 2素材
+          - generic [ref=e88] [cursor=pointer]: 回復薬 2素材
+          - generic [ref=e90] [cursor=pointer]: 木の弓 2素材
+          - generic [ref=e92] [cursor=pointer]: ハーブティー 2素材
+          - generic [ref=e94] [cursor=pointer]: 石斧 2素材
+          - generic [ref=e96] [cursor=pointer]: 粘土の壺 2素材
+          - generic [ref=e98] [cursor=pointer]: 毒消し薬 2素材
+          - generic [ref=e100] [cursor=pointer]: 泥団子 2素材
+          - generic [ref=e102] [cursor=pointer]: 合板 2素材
+          - generic [ref=e104] [cursor=pointer]: 薬草エキス 2素材
+      - generic [ref=e106]:
+        - heading "石斧" [level=3] [ref=e108]
+        - generic [ref=e109]:
+          - heading "素材スロット" [level=4] [ref=e110]
+          - generic [ref=e111]:
+            - generic [ref=e112]: 石材系
+            - button "素材を選択" [active] [ref=e113] [cursor=pointer]
+          - generic [ref=e114]:
+            - generic [ref=e115]: 木材
+            - button "素材を選択" [ref=e116] [cursor=pointer]
+        - button "調合する" [disabled] [ref=e117]
+    - generic [ref=e119]:
+      - heading "素材を選択" [level=4] [ref=e120]
+      - generic [ref=e122] [cursor=pointer]:
+        - generic [ref=e123]: 石材
+        - generic [ref=e124]: Q15
+      - button "キャンセル" [ref=e125] [cursor=pointer]

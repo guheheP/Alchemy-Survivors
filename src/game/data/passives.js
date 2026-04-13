@@ -1,0 +1,70 @@
+/**
+ * ラン内レベルアップ時のパッシブ選択肢
+ */
+
+export const PassiveDefs = [
+  {
+    id: 'damage_up',
+    name: 'ダメージ+10%',
+    description: '全武器のダメージを10%増加',
+    icon: '⚔️',
+    maxStacks: 10,
+    effect: { stat: 'damageMultiplier', value: 0.10 },
+  },
+  {
+    id: 'range_up',
+    name: '攻撃範囲+15%',
+    description: '全武器の攻撃範囲を15%拡大',
+    icon: '🔵',
+    maxStacks: 8,
+    effect: { stat: 'rangeMultiplier', value: 0.15 },
+  },
+  {
+    id: 'hp_up',
+    name: '最大HP+20',
+    description: '最大HPを20増加',
+    icon: '❤️',
+    maxStacks: 10,
+    effect: { stat: 'maxHpFlat', value: 20 },
+  },
+  {
+    id: 'speed_up',
+    name: '移動速度+8%',
+    description: '移動速度を8%増加',
+    icon: '💨',
+    maxStacks: 8,
+    effect: { stat: 'moveSpeedMultiplier', value: 0.08 },
+  },
+  {
+    id: 'magnet_up',
+    name: 'マグネット+30%',
+    description: '経験値ジェムの吸引範囲を30%拡大',
+    icon: '🧲',
+    maxStacks: 5,
+    effect: { stat: 'magnetMultiplier', value: 0.30 },
+  },
+  {
+    id: 'cooldown_down',
+    name: 'クールダウン-8%',
+    description: '武器の攻撃間隔を8%短縮',
+    icon: '⏱️',
+    maxStacks: 8,
+    effect: { stat: 'cooldownReduction', value: 0.08 },
+  },
+  {
+    id: 'regen',
+    name: 'リジェネ+1/秒',
+    description: '毎秒HPを1回復',
+    icon: '💚',
+    maxStacks: 5,
+    effect: { stat: 'regenPerSec', value: 1 },
+  },
+  {
+    id: 'extra_drop',
+    name: 'ドロップ率+10%',
+    description: '素材ドロップ確率を10%増加',
+    icon: '🎁',
+    maxStacks: 5,
+    effect: { stat: 'dropRateBonus', value: 0.10 },
+  },
+];

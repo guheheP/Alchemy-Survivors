@@ -1,0 +1,43 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 10 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e75]:
+    - generic [ref=e76]:
+      - heading "レシピ一覧" [level=3] [ref=e77]
+      - generic [ref=e78]:
+        - button "全て" [ref=e79] [cursor=pointer]
+        - button "装備" [ref=e80] [cursor=pointer]
+        - button "消耗品" [ref=e81] [cursor=pointer]
+        - button "アクセサリ" [ref=e82] [cursor=pointer]
+        - button "素材" [ref=e83] [cursor=pointer]
+      - generic [ref=e84]:
+        - generic [ref=e164] [cursor=pointer]: 木の盾 2素材
+        - generic [ref=e166] [cursor=pointer]: 回復薬 2素材
+        - generic [ref=e168] [cursor=pointer]: 木の弓 2素材
+        - generic [ref=e170] [cursor=pointer]: ハーブティー 2素材
+        - generic [ref=e172] [cursor=pointer]: 石斧 2素材
+        - generic [ref=e174] [cursor=pointer]: 粘土の壺 2素材
+        - generic [ref=e176] [cursor=pointer]: 毒消し薬 2素材
+        - generic [ref=e178] [cursor=pointer]: 泥団子 2素材
+        - generic [ref=e180] [cursor=pointer]: 合板 2素材
+        - generic [ref=e182] [cursor=pointer]: 薬草エキス 2素材
+    - generic [ref=e106]:
+      - heading "木の弓" [level=3] [ref=e231]
+      - generic [ref=e232]:
+        - heading "素材スロット" [level=4] [ref=e233]
+        - generic [ref=e234]:
+          - generic [ref=e235]: 木材
+          - generic [ref=e236]:
+            - generic [ref=e237]: 木材 (Q18)
+            - button "✕" [ref=e238] [cursor=pointer]
+        - generic [ref=e239]:
+          - generic [ref=e240]: 小さな羽根
+          - generic [ref=e241]:
+            - generic [ref=e242]: 小さな羽根 (Q16)
+            - button "✕" [ref=e243] [cursor=pointer]
+      - button "調合する" [ref=e244] [cursor=pointer]

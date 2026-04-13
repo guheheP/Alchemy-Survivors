@@ -1,0 +1,46 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 10 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - heading "レシピ一覧" [level=3] [ref=e21]
+        - generic [ref=e22]:
+          - button "全て" [ref=e23] [cursor=pointer]
+          - button "装備" [ref=e24] [cursor=pointer]
+          - button "消耗品" [ref=e25] [cursor=pointer]
+          - button "アクセサリ" [ref=e26] [cursor=pointer]
+          - button "素材" [ref=e27] [cursor=pointer]
+        - generic [ref=e28]:
+          - generic [ref=e108] [cursor=pointer]: 木の盾 2素材
+          - generic [ref=e110] [cursor=pointer]: 回復薬 2素材
+          - generic [ref=e112] [cursor=pointer]: 木の弓 2素材
+          - generic [ref=e114] [cursor=pointer]: ハーブティー 2素材
+          - generic [ref=e116] [cursor=pointer]: 石斧 2素材
+          - generic [ref=e118] [cursor=pointer]: 粘土の壺 2素材
+          - generic [ref=e120] [cursor=pointer]: 毒消し薬 2素材
+          - generic [ref=e122] [cursor=pointer]: 泥団子 2素材
+          - generic [ref=e124] [cursor=pointer]: 合板 2素材
+          - generic [ref=e126] [cursor=pointer]: 薬草エキス 2素材
+      - generic [ref=e50]:
+        - heading "木の弓" [level=3] [ref=e137]
+        - generic [ref=e138]:
+          - heading "素材スロット" [level=4] [ref=e139]
+          - generic [ref=e140]:
+            - generic [ref=e141]: 木材
+            - button "素材を選択" [active] [ref=e142] [cursor=pointer]
+          - generic [ref=e143]:
+            - generic [ref=e144]: 小さな羽根
+            - button "素材を選択" [ref=e145] [cursor=pointer]
+        - button "調合する" [disabled] [ref=e146]
+    - generic [ref=e148]:
+      - heading "素材を選択" [level=4] [ref=e149]
+      - generic [ref=e151] [cursor=pointer]:
+        - generic [ref=e152]: 木材
+        - generic [ref=e153]: Q18
+      - button "キャンセル" [ref=e154] [cursor=pointer]

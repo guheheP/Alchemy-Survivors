@@ -1,0 +1,30 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 9 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [active] [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e220]:
+    - generic [ref=e221]:
+      - heading "新人騎士アーサー" [level=3] [ref=e222]
+      - paragraph [ref=e223]: 武器を4枠まで装備可能。ラン中にレベルアップで順番に解放されます。
+      - generic [ref=e224]:
+        - generic [ref=e225]:
+          - generic [ref=e226]: "1"
+          - generic [ref=e227]: 初期武器（必須）
+        - generic [ref=e228]:
+          - generic [ref=e229]: "2"
+          - generic [ref=e230]: 空きスロット
+        - generic [ref=e231]:
+          - generic [ref=e232]: "3"
+          - generic [ref=e233]: 空きスロット
+        - generic [ref=e234]:
+          - generic [ref=e235]: "4"
+          - generic [ref=e236]: 空きスロット
+    - generic [ref=e237]:
+      - heading "装備可能な武器" [level=4] [ref=e238]
+      - generic [ref=e241] [cursor=pointer]:
+        - generic [ref=e242]: 石斧
+        - generic [ref=e243]: Q17

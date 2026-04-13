@@ -1,0 +1,27 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 11 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e151]:
+    - generic [ref=e152]:
+      - heading "新人騎士アーサー" [level=3] [ref=e153]
+      - generic [ref=e154]:
+        - heading "武器スロット" [level=4] [ref=e155]
+        - generic [ref=e156]:
+          - generic [ref=e157]: 石斧 (Q17)
+          - button "外す" [ref=e158] [cursor=pointer]
+        - generic [ref=e159]:
+          - generic [ref=e160]: "攻撃力: 6.2"
+          - generic [ref=e161]: "攻撃速度: 1.03x"
+          - generic [ref=e162]: "品質: Q17"
+    - generic [ref=e163]:
+      - heading "装備可能な武器" [level=4] [ref=e164]
+      - generic [ref=e166] [cursor=pointer]:
+        - generic [ref=e167]:
+          - generic [ref=e168]: 石斧
+          - generic [ref=e169]: Q17
+        - generic [ref=e170]: 装備中

@@ -1,0 +1,28 @@
+- generic [ref=e9]:
+  - generic [ref=e10]:
+    - heading "拠点" [level=2] [ref=e11]
+    - generic [ref=e12]: "素材: 11 / 60"
+  - generic [ref=e13]:
+    - button "🔮 錬金工房" [ref=e14] [cursor=pointer]
+    - button "⚔️ 装備" [active] [ref=e15] [cursor=pointer]
+    - button "🚀 出撃準備" [ref=e16] [cursor=pointer]
+  - generic [ref=e53]:
+    - generic [ref=e54]:
+      - heading "装備セット" [level=3] [ref=e55]
+      - paragraph [ref=e56]: 武器を4枠まで装備可能。ラン中にレベルアップで順番に解放されます。
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - generic [ref=e59]: "1"
+          - generic [ref=e60]: 初期武器（必須）
+        - generic [ref=e61]:
+          - generic [ref=e62]: "2"
+          - generic [ref=e63]: 空きスロット
+        - generic [ref=e64]:
+          - generic [ref=e65]: "3"
+          - generic [ref=e66]: 空きスロット
+        - generic [ref=e67]:
+          - generic [ref=e68]: "4"
+          - generic [ref=e69]: 空きスロット
+    - generic [ref=e70]:
+      - heading "装備可能な武器" [level=4] [ref=e71]
+      - paragraph [ref=e73]: 装備可能な武器がありません。錬金工房で作りましょう！
