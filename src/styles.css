@@ -742,6 +742,19 @@ body {
 }
 .stat-val { color: #4af; font-weight: 700; }
 
+.equip-skill-list { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.3rem; }
+.equip-skill-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.3rem 0.5rem; background: rgba(240,192,96,0.05);
+  border: 1px solid rgba(240,192,96,0.15); border-radius: 4px; font-size: 0.8rem;
+}
+.equip-skill-weapon { color: #ccc; flex: 1; }
+.equip-skill-name { color: #f0c060; font-weight: 700; }
+.equip-skill-cd { color: #888; font-size: 0.7rem; }
+
+.preview-skill .preview-val { color: #f0c060; }
+.preview-skill-desc { color: #aaa; font-size: 0.75rem; }
+
 /* ===== Stage Info ===== */
 .prep-stage-info {
   margin-top: 0.8rem;
@@ -967,6 +980,17 @@ body {
   font-size: 0.7rem; color: #ccc; text-align: center;
   max-width: 56px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.hud-wpn-skill-bar {
+  width: 100%; height: 4px; background: rgba(255,255,255,0.1);
+  border-radius: 2px; overflow: hidden; margin-top: 2px;
+}
+.hud-wpn-skill-fill {
+  height: 100%; background: #f0c060; width: 0%;
+  transition: width 0.2s;
+  border-radius: 2px;
+}
+.hud-wpn-skill-fill.ready { background: #4f4; }
+.hud-weapon-slot.skill-ready { border-color: #4f4; box-shadow: 0 0 6px rgba(68,255,68,0.4); }
 
 /* ===== HUD Stats (Right Bottom) ===== */
 .hud-stats {

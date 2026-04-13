@@ -4,6 +4,7 @@
 
 import { ItemBlueprints, Recipes, TraitDefs, MaterialCategories } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
+import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { craftItem, isCategorySlot, getCategoryId, materialMatchesSlot } from '../ItemSystem.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
@@ -308,6 +309,11 @@ export class CraftingScreen {
         html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd}x</span></div>`;
         html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range}px</span></div>`;
         html += `<div class="preview-row"><span>パターン:</span><span class="preview-val">${this._getPatternName(bp.equipType)}</span></div>`;
+        const skillInfo = this._getSkillInfo(bp.equipType, bp.baseValue, recipe.targetId);
+        if (skillInfo) {
+          html += `<div class="preview-row preview-skill"><span>スキル:</span><span class="preview-val">${skillInfo.name}</span></div>`;
+          html += `<div class="preview-row"><span></span><span class="preview-skill-desc">${skillInfo.desc}（CD ${skillInfo.cd}秒）</span></div>`;
+        }
       }
     } else if (bp.type === 'accessory') {
       const spdBonus = (bp.baseValue / 500 + avgQ / 1000);
@@ -346,6 +352,12 @@ export class CraftingScreen {
   _getPatternName(equipType) {
     const names = { sword: '回転斬り（前方弧+360°交互）', spear: '長距離貫通突き', bow: '追尾矢', staff: '周回オーブ', dagger: '3方向乱舞斬り', shield: '守護波動+自動反撃' };
     return names[equipType] || equipType;
+  }
+
+  _getSkillInfo(equipType, baseValue, blueprintId) {
+    const skillDef = WeaponSkillDefs[blueprintId];
+    if (!skillDef) return null;
+    return { name: skillDef.name, desc: skillDef.description, cd: skillDef.cooldown };
   }
 
   _getTraitRunEffects(def) {

@@ -16,7 +16,7 @@ export const GameConfig = {
 
   // --- ラン設定 ---
   run: {
-    duration: 1200,             // 20分（秒）
+    duration: 600,              // 10分（秒）
     playerBaseHp: 100,
     playerBaseSpeed: 150,       // px/sec
     playerBaseDamage: 10,
@@ -30,19 +30,19 @@ export const GameConfig = {
     expBase: 10,                // Lv1→2に必要な経験値
     maxEnemies: 300,
     spawnRateStart: 1.0,        // 敵/秒（開始時）
-    spawnRateEnd: 6.0,          // 敵/秒（20分時点）
+    spawnRateEnd: 6.0,          // 敵/秒（10分時点）
     dropChance: 0.05,           // 素材ドロップ確率
     traitChance: 0.25,          // ドロップ素材に特性が付く確率
-    bossSpawnTimes: [300, 600, 900],  // 5/10/15分にボス出現（Phase 2-D用）
-    reaperSpawnTime: 1200,             // 20分に死神出現
+    bossSpawnTimes: [180, 360],       // 3分/6分にボス出現
+    reaperSpawnTime: 600,              // 10分に死神出現
   },
 
   // --- ゴールド ---
   gold: {
     perKill: 1,           // 通常敵1体あたり
     bossBonus: 200,       // ボス撃破ボーナス
-    survivalBonus: 50,    // 5分生存ごとのボーナス
-    survivalInterval: 300, // 5分
+    survivalBonus: 50,    // 2.5分生存ごとのボーナス
+    survivalInterval: 150, // 2.5分
   },
 
   // --- 武器ステータス計算（企画書 Section 4.1） ---
@@ -65,6 +65,16 @@ export const GameConfig = {
     staff:  { baseRange: 130, baseCooldown: 0.9, arc: Math.PI * 2, pattern: 'orbit' },
     dagger: { baseRange: 60, baseCooldown: 0.25, arc: Math.PI / 3, pattern: 'flurry' },
     shield: { baseRange: 90, baseCooldown: 1.8, arc: Math.PI * 2, pattern: 'pulse' },
+  },
+
+  // --- 武器スキル説明（UI表示用） ---
+  weaponSkills: {
+    sword:  { name: ['衝撃波', '衝撃波', '烈風斬', '烈風斬'], desc: '周囲に衝撃波を放つ' },
+    spear:  { name: ['連貫突き', '連貫突き', '天槍乱舞', '天槍乱舞'], desc: '複数方向に貫通突き' },
+    bow:    { name: ['矢の雨', '矢の雨', '星雨', '星雨'], desc: '全方位に矢を放射' },
+    staff:  { name: ['マジックバースト', 'マジックバースト', 'メテオ', 'メテオ'], desc: '敵密集地点に大魔法' },
+    dagger: { name: ['旋風斬', '旋風斬', '影縫い', '影縫い'], desc: '範囲内に超高速連斬' },
+    shield: { name: ['バリア展開', 'バリア展開', '鉄壁結界', '鉄壁結界'], desc: '無敵+全方位ノックバック' },
   },
 
   // --- 初期インベントリ（初期装備の石斧のみ） ---

@@ -74,11 +74,12 @@ export class WeaponSystem {
     return this.strategies.map((s, i) => ({
       name: s.weaponName,
       equipType: s.equipType,
-      blueprintId: s.weaponItem.blueprintId,
       unlocked: i < this.unlockedCount,
-      cooldownPct: i < this.unlockedCount
-        ? Math.max(0, s.cooldownTimer / s.cooldown)
-        : 0,
+      skillCooldownPct: i < this.unlockedCount
+        ? Math.max(0, s.skillCooldown / s.skillCooldownMax)
+        : 1,
+      skillReady: i < this.unlockedCount && s.skillCooldown <= 0,
+      skillTier: s.skillTier,
     }));
   }
 

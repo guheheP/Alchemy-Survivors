@@ -50,6 +50,13 @@ export class StaffStrategy extends WeaponStrategy {
       this._spawnOrbs();
     }
 
+    // スキル
+    this.skillCooldown -= dt;
+    if (this.skillCooldown <= 0) {
+      this.skillCooldown = this.skillCooldownMax;
+      this.executeSkill(enemies);
+    }
+
     // Update base effects
     for (let i = this.effects.length - 1; i >= 0; i--) {
       this.effects[i].timer -= dt;

@@ -54,4 +54,5 @@ export class SwordStrategy extends WeaponStrategy {
       });
     }
   }
+
 }

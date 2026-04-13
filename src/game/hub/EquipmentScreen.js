@@ -5,6 +5,7 @@
 import { ItemBlueprints } from '../data/items.js';
 import { getEquipSlot } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
+import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 
@@ -130,6 +131,15 @@ export class EquipmentScreen {
       if (bp) spdBonus = bp.baseValue / 500 + this.accessorySlot.quality / 1000;
     }
 
+    // 武器スキル一覧
+    let skillsHtml = '';
+    for (let i = 0; i < weapons.length; i++) {
+      const w = weapons[i];
+      const skillDef = WeaponSkillDefs[w.blueprintId];
+      if (!skillDef) continue;
+      skillsHtml += `<div class="equip-skill-row"><span class="equip-skill-weapon">${w.name}</span><span class="equip-skill-name">${skillDef.name}</span><span class="equip-skill-cd">CD${skillDef.cooldown}s</span></div>`;
+    }
+
     summary.innerHTML = `
       <h4>装備合計ステータス</h4>
       <div class="equip-stat-grid">
@@ -139,6 +149,7 @@ export class EquipmentScreen {
         <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${(spdBonus * 100).toFixed(1)}%</span></div>
         <div class="equip-stat-item"><span>武器数</span><span class="stat-val">${weapons.length}/4</span></div>
       </div>
+      ${skillsHtml ? `<h4>武器スキル</h4><div class="equip-skill-list">${skillsHtml}</div>` : ''}
     `;
   }
 

@@ -48,4 +48,5 @@ export class SpearStrategy extends WeaponStrategy {
       timer: 0.15, maxTimer: 0.15, color: '#8af',
     });
   }
+
 }

@@ -164,16 +164,19 @@ export class RunHUD {
         </div>`;
       }
       const imgUrl = getItemImage(s.blueprintId);
-      const cdPct = Math.max(0, s.cooldownPct * 100);
+      const skillPct = Math.max(0, (1 - (s.skillCooldownPct || 0)) * 100);
+      const skillReady = s.skillReady;
       const imgHtml = imgUrl
         ? `<img class="hud-wpn-img" src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : '';
       const fallbackIcon = WEAPON_ICONS[s.equipType] || '\u2694\uFE0F';
-      return `<div class="hud-weapon-slot">
+      return `<div class="hud-weapon-slot ${skillReady ? 'skill-ready' : ''}">
         <div class="hud-wpn-img-wrap">
           ${imgHtml}
           <span class="hud-wpn-fallback" ${imgUrl ? 'style="display:none"' : ''}>${fallbackIcon}</span>
-          ${cdPct > 0 ? `<div class="hud-wpn-cd-overlay" style="height:${cdPct}%"></div>` : ''}
+        </div>
+        <div class="hud-wpn-skill-bar">
+          <div class="hud-wpn-skill-fill ${skillReady ? 'ready' : ''}" style="width:${skillPct}%"></div>
         </div>
         <span class="hud-wpn-name">${s.name}</span>
       </div>`;
@@ -209,7 +212,7 @@ export class RunHUD {
     for (const t of bossSpawnTimes) {
       if (elapsed < t) { nextBoss = t; break; }
     }
-    const diffLevel = Math.min(5, Math.floor(elapsed / 240) + 1);
+    const diffLevel = Math.min(5, Math.floor(elapsed / 120) + 1);
     const stars = '\u2605'.repeat(diffLevel) + '\u2606'.repeat(5 - diffLevel);
     let html = `<span class="hud-diff">${stars}</span>`;
     if (nextBoss) {
