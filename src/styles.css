@@ -151,15 +151,17 @@ body {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
+  height: 54px; flex-shrink: 0;
 }
 .recipe-card:hover { background: rgba(255,255,255,0.06); }
 .recipe-card.selected { border-color: #f0c060; background: rgba(240,192,96,0.1); }
 .recipe-card.unavailable { opacity: 0.4; }
 .recipe-card.unavailable:hover { opacity: 0.6; }
 .recipe-lacking { color: #f66; font-size: 0.65rem; }
-.recipe-icon { width: 32px; height: 32px; image-rendering: pixelated; }
-.recipe-name { font-size: 0.9rem; }
-.recipe-mats { font-size: 0.7rem; color: #888; }
+.recipe-icon { width: 32px; height: 32px; image-rendering: pixelated; flex-shrink: 0; }
+.recipe-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 0.15rem; }
+.recipe-name { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recipe-mats { font-size: 0.7rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .craft-workspace {
   background: #1a1a2e;
@@ -205,6 +207,8 @@ body {
   padding: 0.3rem 0.7rem;
   font-family: inherit;
   font-size: 0.8rem;
+  max-width: 160px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   border-radius: 12px;
   cursor: pointer;
   border: 1px solid #555;
@@ -315,7 +319,7 @@ body {
   background: rgba(255,255,255,0.03);
   border: 1px dashed #444;
   border-radius: 8px;
-  min-height: 50px;
+  height: 64px; flex-shrink: 0;
   position: relative;
 }
 .weapon-slot.filled { border-style: solid; border-color: #555; }
@@ -329,9 +333,12 @@ body {
   flex-shrink: 0;
 }
 .weapon-slot .slot-icon { width: 32px; height: 32px; image-rendering: pixelated; flex-shrink: 0; }
-.weapon-slot .slot-name { font-size: 0.9rem; flex: 1; }
-.weapon-slot .slot-stats { font-size: 0.75rem; color: #aaa; }
-.weapon-slot .slot-empty-label { color: #555; font-size: 0.85rem; }
+.weapon-slot .slot-name {
+  font-size: 0.9rem; flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.weapon-slot .slot-stats { font-size: 0.75rem; color: #aaa; white-space: nowrap; flex-shrink: 0; }
+.weapon-slot .slot-empty-label { color: #555; font-size: 0.85rem; flex: 1; }
 .weapon-slot .slot-remove {
   padding: 0.15rem 0.4rem; font-size: 0.7rem;
   background: rgba(255,50,50,0.15); border: 1px solid #a44; color: #f88;
@@ -355,15 +362,19 @@ body {
   border: 1px solid #333;
   border-radius: 6px;
   cursor: pointer;
+  height: 58px; flex-shrink: 0;
 }
 .equip-weapon-card:hover { border-color: #f0c060; }
 .equip-weapon-card.equipped { border-color: #4af; background: rgba(68,170,255,0.1); }
-.equip-card-icon { width: 28px; height: 28px; image-rendering: pixelated; }
-.equip-card-info { display: flex; flex-direction: column; }
-.equip-card-name { font-size: 0.9rem; }
+.equip-card-icon { width: 28px; height: 28px; image-rendering: pixelated; flex-shrink: 0; }
+.equip-card-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 0.15rem; }
+.equip-card-name { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .equip-card-quality { font-size: 0.75rem; color: #4af; }
-.equip-card-traits { font-size: 0.7rem; color: #aaa; }
-.equip-badge { color: #4af; font-size: 0.75rem; margin-left: auto; }
+.equip-card-traits {
+  font-size: 0.7rem; color: #aaa;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.equip-badge { color: #4af; font-size: 0.75rem; margin-left: auto; flex-shrink: 0; }
 .equip-no-weapons { color: #666; font-size: 0.9rem; }
 
 .equip-tabs { display: flex; gap: 0.3rem; margin-bottom: 0.8rem; }
@@ -395,13 +406,14 @@ body {
   border: 1px solid #333;
   border-radius: 6px;
   cursor: pointer;
+  width: 100%; height: 48px; flex-shrink: 0;
 }
 .area-card:hover:not(.locked) { border-color: #f0c060; }
 .area-card.selected { border-color: #f0c060; background: rgba(240,192,96,0.1); }
 .area-card.locked { opacity: 0.4; cursor: not-allowed; }
-.area-icon { font-size: 1.3rem; }
-.area-name { flex: 1; }
-.area-lock { font-size: 0.8rem; }
+.area-icon { font-size: 1.3rem; flex-shrink: 0; }
+.area-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.area-lock { font-size: 0.8rem; flex-shrink: 0; }
 
 .prep-info { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
 .prep-row { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid #222; }
@@ -607,6 +619,7 @@ body {
   cursor: pointer;
   flex: 1 1 180px;
   min-width: 140px; max-width: 220px;
+  height: 280px;
   font-family: inherit;
   color: #e0e0e0;
   animation: cardSlideIn 0.4s ease-out both;
@@ -631,12 +644,13 @@ body {
 
 .levelup-card-inner {
   display: flex; flex-direction: column; align-items: center;
-  padding: 1.8rem 1.4rem;
+  padding: 1.4rem 1rem;
   background: linear-gradient(180deg, #1a1a30 0%, #12122a 100%);
   border: 2px solid #444;
   border-radius: 16px;
-  width: 100%;
+  width: 100%; height: 100%;
   gap: 0.5rem;
+  overflow: hidden;
 }
 .levelup-card:hover .levelup-card-inner { border-color: #f0c060; }
 
@@ -659,14 +673,23 @@ body {
   background: rgba(255,100,50,0.12);
   border-color: rgba(255,100,50,0.3);
 }
-.levelup-icon { font-size: 2.5rem; }
+.levelup-icon { font-size: 2.5rem; flex-shrink: 0; }
 .levelup-name {
   font-size: 1.1rem; font-weight: 800;
   text-shadow: 0 0 6px rgba(240,192,96,0.3);
+  max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 .levelup-desc {
   font-size: 0.85rem; color: #999; text-align: center;
   line-height: 1.4;
+  width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  word-break: break-word; overflow-wrap: break-word;
 }
 .levelup-card.weapon-unlock .levelup-card-inner {
   border-color: #f80;
@@ -806,6 +829,7 @@ body {
   display: flex; align-items: center; gap: 0.5rem;
   padding: 0.5rem;
   background: rgba(255,255,255,0.03);
+  height: 64px; flex-shrink: 0;
   border: 1px solid #333;
   border-radius: 6px;
   cursor: pointer;
@@ -817,11 +841,18 @@ body {
 .wh-item.tier-epic { border-color: #a4f; }
 .wh-item.tier-rare { border-color: #48f; }
 .wh-item-icon { width: 28px; height: 28px; image-rendering: pixelated; flex-shrink: 0; }
-.wh-item-info { flex: 1; display: flex; flex-direction: column; }
-.wh-item-name { font-size: 0.85rem; }
+.wh-item-info { flex: 1; display: flex; flex-direction: column; min-width: 0; gap: 0.1rem; }
+.wh-item-name { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wh-item-quality { font-size: 0.7rem; color: #4af; }
-.wh-item-traits { display: flex; flex-wrap: wrap; gap: 0.2rem; margin-top: 0.2rem; }
-.wh-trait { font-size: 0.65rem; padding: 0.1rem 0.3rem; border-radius: 3px; border: 1px solid #555; }
+.wh-item-traits {
+  display: flex; flex-wrap: nowrap; gap: 0.2rem; margin-top: 0.15rem;
+  overflow: hidden; max-width: 100%;
+}
+.wh-trait {
+  font-size: 0.65rem; padding: 0.1rem 0.3rem; border-radius: 3px; border: 1px solid #555;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px;
+  flex-shrink: 0;
+}
 .wh-empty { color: #666; text-align: center; padding: 2rem; grid-column: 1 / -1; }
 
 .warehouse-detail {
@@ -858,15 +889,28 @@ body {
   border: 1px solid #444;
   border-radius: 8px;
   transition: border-color 0.15s;
+  display: flex; flex-direction: column;
+  height: 160px;
 }
 .shop-card.owned { border-color: #4a4; background: rgba(68,170,68,0.05); }
 .shop-card.locked { opacity: 0.5; }
 .shop-card.expensive { border-color: #644; }
-.shop-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
-.shop-card-name { font-size: 0.95rem; font-weight: 700; color: #e0e0e0; }
-.shop-card-badge { font-size: 0.7rem; color: #4a4; }
+.shop-card-header { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; flex-shrink: 0; }
+.shop-card-name {
+  font-size: 0.95rem; font-weight: 700; color: #e0e0e0;
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.shop-card-badge { font-size: 0.7rem; color: #4a4; flex-shrink: 0; }
 .shop-card-badge.locked { color: #888; }
-.shop-card-desc { font-size: 0.8rem; color: #aaa; margin-bottom: 0.6rem; }
+.shop-card-desc {
+  font-size: 0.8rem; color: #aaa; margin-bottom: 0.6rem;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
 .shop-buy-btn {
   width: 100%; padding: 0.5rem;
   font-family: inherit; font-size: 0.85rem;
@@ -875,6 +919,7 @@ body {
   color: #f0c060;
   border-radius: 6px;
   cursor: pointer;
+  margin-top: auto; flex-shrink: 0;
 }
 .shop-buy-btn:hover:not(:disabled) { background: rgba(240,192,96,0.3); }
 .shop-buy-btn:disabled { opacity: 0.3; cursor: not-allowed; border-color: #555; color: #888; }
@@ -1122,6 +1167,7 @@ body {
   display: flex; align-items: center; gap: 0.3rem;
   padding: 0.3rem 0.4rem; background: rgba(255,255,255,0.03);
   border: 1px solid #333; border-radius: 4px; font-size: 0.75rem;
+  height: 44px; flex-shrink: 0;
 }
 .coll-item.undiscovered { opacity: 0.3; }
 .coll-item-icon { width: 20px; height: 20px; image-rendering: pixelated; }
@@ -1132,7 +1178,9 @@ body {
 .coll-boss-card {
   display: flex; gap: 0.8rem; padding: 0.8rem;
   background: rgba(255,255,255,0.03); border: 1px solid #444; border-radius: 8px;
+  height: 140px;
 }
+.coll-boss-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 0.2rem; overflow: hidden; }
 .coll-boss-card.defeated { border-color: #f80; }
 .coll-boss-card.locked { opacity: 0.5; }
 .coll-boss-icon { font-size: 2rem; flex-shrink: 0; }
@@ -1150,13 +1198,22 @@ body {
 .coll-area-card {
   display: flex; gap: 0.8rem; padding: 0.8rem;
   background: rgba(255,255,255,0.03); border: 1px solid #444; border-radius: 8px;
+  height: 130px;
 }
+.coll-area-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 0.2rem; overflow: hidden; }
 .coll-area-card.unlocked { border-color: #4a4; }
 .coll-area-card.locked { opacity: 0.4; }
 .coll-area-icon { font-size: 2rem; flex-shrink: 0; }
-.coll-area-name { font-size: 0.95rem; font-weight: 700; color: #e0e0e0; }
-.coll-area-desc { font-size: 0.75rem; color: #888; }
-.coll-area-diff, .coll-area-quality { font-size: 0.75rem; color: #aaa; }
+.coll-area-name {
+  font-size: 0.95rem; font-weight: 700; color: #e0e0e0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.coll-area-desc {
+  font-size: 0.75rem; color: #888;
+  display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; overflow: hidden;
+}
+.coll-area-diff, .coll-area-quality { font-size: 0.75rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .coll-area-hint { font-size: 0.75rem; color: #666; }
 
 .coll-trait-group { margin-bottom: 1rem; }
@@ -1221,14 +1278,18 @@ body {
 .ach-cat-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #ccc; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
 .ach-cat-btn.active { background: rgba(240,192,96,0.15); border-color: #f0c060; color: #f0c060; }
 .ach-list { display: flex; flex-direction: column; gap: 0.4rem; }
-.ach-card { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+.ach-card { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); height: 72px; flex-shrink: 0; }
 .ach-card.unlocked { border-color: rgba(240,192,96,0.3); background: rgba(240,192,96,0.05); }
 .ach-card.locked { opacity: 0.6; }
-.ach-icon { font-size: 1.5rem; min-width: 2rem; text-align: center; }
-.ach-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }
-.ach-name { font-weight: 700; font-size: 0.85rem; }
-.ach-desc { font-size: 0.75rem; color: #aaa; }
-.ach-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.2rem; }
+.ach-icon { font-size: 1.5rem; min-width: 2rem; text-align: center; flex-shrink: 0; }
+.ach-info { display: flex; flex-direction: column; gap: 0.15rem; flex: 1; min-width: 0; overflow: hidden; }
+.ach-name { font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ach-desc {
+  font-size: 0.75rem; color: #aaa;
+  display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2; overflow: hidden;
+}
+.ach-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.2rem; flex-shrink: 0; }
 .ach-bar-fill { height: 100%; background: #f0c060; border-radius: 2px; transition: width 0.3s; }
 
 /* ===== Tutorial Overlay ===== */
@@ -1472,6 +1533,12 @@ body {
   .toast { font-size: 0.8rem; }
 
   .trait-tooltip { width: min(220px, 80vw); }
+
+  /* カードの高さをモバイル向けに調整（スクロール容量確保） */
+  .shop-card { height: 150px; }
+  .coll-boss-card { height: 130px; }
+  .coll-area-card { height: 120px; }
+  .levelup-card { height: 260px; }
 }
 
 /* ===== ブレークポイント: 〜480px (小型スマホ) ===== */
@@ -1488,8 +1555,12 @@ body {
   .warehouse-grid { grid-template-columns: 1fr; }
   .coll-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
 
-  .levelup-card { flex: 1 1 100%; max-width: 100%; }
+  .levelup-card { flex: 1 1 100%; max-width: 100%; height: 240px; }
   .levelup-title { font-size: 1.2rem; }
+  .shop-card { height: 140px; }
+  .wh-item { height: 60px; }
+  .recipe-card { height: 50px; }
+  .ach-card { height: 64px; }
 
   .hud-hp-bar { width: min(180px, 50vw); height: 20px; }
   .hud-timer { font-size: 1.3rem; }
