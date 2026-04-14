@@ -66,6 +66,7 @@ class Game {
     eventBus.on('run:complete', (data) => this._onRunComplete(data));
     eventBus.on('result:continue', (data) => this._returnToHub(data));
     eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => { this.weaponSlots = [...weaponSlots]; this.equippedArmor = armor; this.equippedAccessory = accessory; });
+    eventBus.on('save:request', () => { try { this._autoSave(); } catch (e) { /* ignore */ } });
 
     // インベントリからUIDが消えたら装備欄もクリア（クラフト・売却・消費で発生）
     eventBus.on('inventory:uidsRemoved', ({ uids }) => {

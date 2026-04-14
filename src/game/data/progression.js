@@ -5,6 +5,8 @@
 const _defeatedBosses = new Set();
 const _purchasedUpgrades = new Set();
 let _warehouseLevel = 0;
+const _statLevels = { hp: 0, atk: 0, def: 0 };
+const STAT_MAX_LEVEL = 100;
 
 /** ボス撃破数 → 品質上限のマッピング */
 const QUALITY_CAP_TABLE = {
@@ -91,9 +93,33 @@ export const Progression = {
     return migrated;
   },
 
+  // ── 永続ステータスアップグレード（HP/ATK/DEF, 0..100 Lv = +Lv%） ──
+  STAT_MAX_LEVEL,
+  getStatLevel(stat) { return _statLevels[stat] || 0; },
+  setStatLevel(stat, lv) {
+    if (!(stat in _statLevels)) return;
+    _statLevels[stat] = Math.max(0, Math.min(STAT_MAX_LEVEL, lv | 0));
+  },
+  incrementStatLevel(stat) {
+    if (!(stat in _statLevels)) return 0;
+    if (_statLevels[stat] >= STAT_MAX_LEVEL) return _statLevels[stat];
+    _statLevels[stat]++;
+    return _statLevels[stat];
+  },
+  getStatBonusPercent(stat) { return (_statLevels[stat] || 0) / 100; },
+  getStatLevels() { return { ..._statLevels }; },
+  loadStatLevels(obj) {
+    for (const k of Object.keys(_statLevels)) _statLevels[k] = 0;
+    if (!obj) return;
+    for (const [k, v] of Object.entries(obj)) {
+      if (k in _statLevels) _statLevels[k] = Math.max(0, Math.min(STAT_MAX_LEVEL, v | 0));
+    }
+  },
+
   clear() {
     _defeatedBosses.clear();
     _purchasedUpgrades.clear();
     _warehouseLevel = 0;
+    for (const k of Object.keys(_statLevels)) _statLevels[k] = 0;
   },
 };

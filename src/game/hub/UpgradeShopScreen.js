@@ -12,12 +12,55 @@ function warehouseCost(currentLevel) {
   return Math.floor(150 * Math.pow(1.35, currentLevel));
 }
 
+/** 永続ステータスアップグレード Lv → 次レベル購入コスト
+ * Lv0→1=80, Lv50≈920, Lv99≈10300（合計約20万Gで完凸） */
+function statCost(currentLevel) {
+  return Math.floor(80 * Math.pow(1.05, currentLevel));
+}
+
+const STAT_DEFS = [
+  { key: 'hp',  icon: '❤️', name: '最大HP強化',   desc: '最大HPを Lv% 上昇' },
+  { key: 'atk', icon: '⚔️', name: '攻撃力強化',   desc: '攻撃力を Lv% 上昇' },
+  { key: 'def', icon: '🛡️', name: '防御力強化',   desc: '被ダメージを Lv% 軽減' },
+];
+
 export class UpgradeShopScreen {
   constructor(container, inventorySystem) {
     this.container = container;
     this.inventory = inventorySystem;
     this.el = document.createElement('div');
     this.el.className = 'shop-screen';
+  }
+
+  _renderStatCard(def) {
+    const lv = Progression.getStatLevel(def.key);
+    const max = Progression.STAT_MAX_LEVEL;
+    const maxedOut = lv >= max;
+    const cost = maxedOut ? 0 : statCost(lv);
+    const canAfford = this.inventory.gold >= cost;
+    const currentPct = lv;
+    const nextPct = lv + 1;
+    return `
+      <div class="shop-card upgrade-card stat-upgrade ${maxedOut ? 'owned' : ''} ${!canAfford && !maxedOut ? 'expensive' : ''}">
+        <div class="shop-card-header">
+          <span class="shop-card-name">${def.icon} ${def.name} Lv.${lv} / ${max}</span>
+          ${maxedOut ? '<span class="shop-card-badge">最大</span>' : ''}
+        </div>
+        <div class="shop-card-body">
+          <p class="shop-card-desc">
+            ${def.desc}<br>
+            現在: <b>+${currentPct}%</b>
+            ${maxedOut ? '' : ` → <b style="color:#8f8">+${nextPct}%</b>`}
+          </p>
+          <div class="shop-level-bar">
+            <div class="shop-level-fill" style="width: ${(lv / max * 100).toFixed(1)}%"></div>
+          </div>
+        </div>
+        ${maxedOut ? '' : `<button class="shop-buy-btn" data-stat="${def.key}" ${canAfford ? '' : 'disabled'}>
+          ${cost}G で Lv.${lv + 1} に強化
+        </button>`}
+      </div>
+    `;
   }
 
   render() {
@@ -56,6 +99,7 @@ export class UpgradeShopScreen {
               ${whCost}G で Lv.${whLv + 1} に強化
             </button>`}
           </div>
+          ${STAT_DEFS.map(def => this._renderStatCard(def)).join('')}
         </div>
       </div>
     `;
@@ -64,6 +108,12 @@ export class UpgradeShopScreen {
     const whBtn = this.el.querySelector('[data-upg="warehouse"]');
     if (whBtn && !whBtn.disabled) {
       whBtn.addEventListener('click', () => this._purchaseWarehouse());
+    }
+
+    for (const btn of this.el.querySelectorAll('[data-stat]')) {
+      if (btn.disabled) continue;
+      const stat = btn.dataset.stat;
+      btn.addEventListener('click', () => this._purchaseStat(stat));
     }
 
     return this.el;
@@ -76,6 +126,19 @@ export class UpgradeShopScreen {
     if (!this.inventory.spendGold(cost)) return;
     this.inventory.expandCapacity(GameConfig.warehouseExpansionPerLevel);
     eventBus.emit('gold:changed', { gold: this.inventory.gold });
+    eventBus.emit('save:request');
+    this.render();
+  }
+
+  _purchaseStat(stat) {
+    const lv = Progression.getStatLevel(stat);
+    if (lv >= Progression.STAT_MAX_LEVEL) return;
+    const cost = statCost(lv);
+    if (!this.inventory.spendGold(cost)) return;
+    Progression.incrementStatLevel(stat);
+    eventBus.emit('gold:changed', { gold: this.inventory.gold });
+    eventBus.emit('save:request');
+    eventBus.emit('toast', { message: `🎉 ${stat.toUpperCase()} 強化 Lv.${Progression.getStatLevel(stat)}！`, type: 'success' });
     this.render();
   }
 

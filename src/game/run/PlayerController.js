@@ -6,6 +6,7 @@ import { Entity } from './Entity.js';
 import { GameConfig } from '../data/config.js';
 import { eventBus } from '../core/EventBus.js';
 import { ItemBlueprints, TraitDefs } from '../data/items.js';
+import { Progression } from '../data/progression.js';
 import { MobileControls } from '../ui/MobileControls.js';
 
 export class PlayerController extends Entity {
@@ -14,11 +15,15 @@ export class PlayerController extends Entity {
     this.type = 'player';
     this.radius = GameConfig.run.playerRadius;
 
-    // ベースステータス（固定主人公）
-    this.maxHp = GameConfig.run.playerBaseHp;
+    // ベースステータス（固定主人公） + 永続アップグレード（HP/ATK Lv = +Lv%）
+    const hpBonus = 1 + Progression.getStatBonusPercent('hp');
+    const atkBonus = 1 + Progression.getStatBonusPercent('atk');
+    this.maxHp = GameConfig.run.playerBaseHp * hpBonus;
     this.hp = this.maxHp;
     this.baseSpeed = GameConfig.run.playerBaseSpeed;
-    this.baseDamage = GameConfig.run.playerBaseDamage;
+    this.baseDamage = GameConfig.run.playerBaseDamage * atkBonus;
+    // 永続DEF Lv = 被ダメ %軽減（乗算）
+    this.permanentDefPercent = Progression.getStatBonusPercent('def');
 
     // 方向
     this.facingAngle = 0;
@@ -147,8 +152,9 @@ export class PlayerController extends Entity {
     // 回避判定
     if (this.passives.dodge > 0 && Math.random() < this.passives.dodge) return false;
 
-    // ダメージ軽減
-    const effectiveDamage = Math.max(1, amount - this.passives.damageReduction);
+    // ダメージ軽減（防具/特性などのフラット軽減 → 永続DEF Lv の%軽減）
+    const flatReduced = Math.max(1, amount - this.passives.damageReduction);
+    const effectiveDamage = Math.max(1, flatReduced * (1 - (this.permanentDefPercent || 0)));
 
     this.hp -= effectiveDamage;
     this.invincibleTimer = GameConfig.run.invincibilityDuration;

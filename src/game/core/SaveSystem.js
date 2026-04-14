@@ -41,6 +41,7 @@ export class SaveSystem {
       gold: this.inventory.gold,
       maxCapacity: this.inventory.maxCapacity,
       items: this.inventory.items.map(item => ({
+        uid: item.uid,
         blueprintId: item.blueprintId,
         quality: item.quality,
         traits: [...item.traits],
@@ -58,6 +59,7 @@ export class SaveSystem {
       defeatedBosses: Progression.getDefeatedBosses(),
       purchasedUpgrades: Progression.getPurchasedUpgrades ? [...Progression.getPurchasedUpgrades()] : [],
       warehouseLevel: Progression.getWarehouseLevel ? Progression.getWarehouseLevel() : 0,
+      statLevels: Progression.getStatLevels ? Progression.getStatLevels() : { hp: 0, atk: 0, def: 0 },
       stats: extraData.stats || { ...DEFAULT_STATS },
       achievements: extraData.achievements || [],
       hardModeUnlocked: extraData.hardModeUnlocked || [],
@@ -111,6 +113,7 @@ export class SaveSystem {
 
     for (const itemData of data.items) {
       const item = createItemInstance(itemData.blueprintId, itemData.quality, itemData.traits);
+      if (itemData.uid) item.uid = itemData.uid;
       if (itemData.locked) item.locked = true;
       this.inventory.items.push(item);
     }
@@ -132,6 +135,11 @@ export class SaveSystem {
     // アップグレード復元
     if (Progression.loadPurchasedUpgrades) {
       Progression.loadPurchasedUpgrades(data.purchasedUpgrades || []);
+    }
+
+    // 永続ステータスアップグレード復元
+    if (Progression.loadStatLevels) {
+      Progression.loadStatLevels(data.statLevels || { hp: 0, atk: 0, def: 0 });
     }
 
     // 倉庫拡張レベル復元 + 旧capacity_1/2/3からのマイグレーション

@@ -862,7 +862,7 @@ a:focus-visible,
 .levelup-choices {
   display: flex; gap: 1.2rem;
   flex-wrap: wrap; justify-content: center;
-  max-width: 100%;
+  width: 100%; max-width: 900px;
 }
 .levelup-card {
   position: relative;
