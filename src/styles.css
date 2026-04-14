@@ -2866,3 +2866,248 @@ a:focus-visible,
   .levelup-card-inner { padding: 1rem 0.7rem; }
   .levelup-card { height: 220px; }
 }
+
+/* ===============================================================
+   拠点画面 モバイル最適化 — タップ領域 / 折返し / 縦スクロール量
+   =============================================================== */
+@media (max-width: 768px) {
+  /* --- Hub ヘッダ: 長いゴールド表示等を2段で折返し許容 --- */
+  .hub-header { flex-wrap: wrap; gap: 0.4rem; padding: 0.6rem 0.9rem; }
+  .hub-info { gap: 0.8rem; flex-wrap: wrap; }
+
+  /* --- Stats / Achievement / Settings のスクロール領域をビューポートに追従 --- */
+  .stats-screen,
+  .achievement-screen,
+  .settings-screen {
+    max-height: calc(100dvh - 180px);
+    padding: 0.4rem;
+  }
+
+  /* --- 共通フィルタボタン: 折返し＋44px高さの最低限タップ領域確保 --- */
+  .equip-filter-btn,
+  .wh-filter,
+  .filter-btn,
+  .ach-cat-btn,
+  .coll-tab {
+    min-height: 40px;
+    padding: 0.45rem 0.7rem;
+  }
+  .equip-tabs,
+  .warehouse-filters,
+  .coll-tabs,
+  .craft-filter,
+  .ach-categories {
+    flex-wrap: wrap;
+    row-gap: 0.3rem;
+  }
+
+  /* --- Crafting: スロット操作ボタンのタップ領域 --- */
+  .slot-select,
+  .slot-clear {
+    min-height: 40px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .craft-slot { gap: 0.5rem; flex-wrap: wrap; }
+  .craft-slot .slot-label { flex: 0 0 auto; font-size: 0.85rem; }
+  .craft-workspace { padding: 0.8rem; }
+  .craft-recipes { padding: 0.7rem; }
+  .craft-btn { padding: 0.85rem 1.6rem; font-size: 0.95rem; }
+
+  /* --- 素材ピッカー: モバイルでも内容見切れない高さ --- */
+  .material-picker {
+    width: min(92vw, 420px);
+    max-height: calc(100dvh - 80px);
+    padding: 1rem 0.8rem;
+  }
+  .picker-item { min-height: 44px; padding: 0.55rem 0.6rem; }
+  .picker-cancel { min-height: 44px; padding: 0.55rem 1rem; }
+
+  /* --- Equipment: 装備スロット削除ボタンのタップ領域 --- */
+  .equip-unequip,
+  .weapon-slot .slot-remove {
+    min-height: 32px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+
+  /* --- RunPrep: hard mode チェックボックスを広げ、ラベル全体を押しやすく --- */
+  .prep-hard-mode { padding: 0.7rem; }
+  .hard-mode-toggle {
+    min-height: 44px;
+    padding: 0.3rem 0;
+    gap: 0.7rem;
+  }
+  .hard-mode-toggle input {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+  }
+  .prep-consumable-slots { flex-wrap: wrap; }
+  .prep-cons-slot { flex: 1 1 calc(50% - 0.4rem); min-height: 52px; }
+  .prep-start-btn { padding: 0.9rem; font-size: 1.1rem; }
+
+  /* --- Warehouse: 操作バーの折返し / 選択バーの縦積み --- */
+  .warehouse-controls {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: stretch;
+  }
+  .warehouse-filters { gap: 0.3rem; }
+  .warehouse-sort {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .warehouse-sort select { min-height: 36px; padding: 0.3rem 0.5rem; font-size: 0.8rem; }
+  .wh-multiselect-toggle {
+    min-height: 40px;
+    padding: 0.45rem 0.8rem;
+    margin-left: 0;
+  }
+  .warehouse-selection-bar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 8px 10px;
+    min-height: auto;
+  }
+  .wh-selbar-sell,
+  .wh-selbar-clear {
+    min-height: 40px;
+    padding: 0.4rem 0.9rem;
+  }
+  .wh-selbar-sell { margin-left: auto; }
+  .wh-lock-btn { min-height: 40px; padding: 0.45rem 0.9rem; }
+
+  /* --- Shop: カードは高さ固定を外し内容に追従、購入ボタン44px --- */
+  .shop-card { height: auto; min-height: 150px; padding: 0.6rem 0.7rem; }
+  .shop-buy-btn {
+    min-height: 44px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.88rem;
+  }
+  .shop-card-desc { font-size: 0.78rem; }
+
+  /* --- Collection: サブタブの折返し --- */
+  .coll-tabs { gap: 0.3rem; }
+  .coll-boss-card, .coll-area-card { padding: 0.5rem 0.6rem; }
+
+  /* --- Settings: ボリューム行をラベル上・スライダー下の縦積み、range高さ拡大 --- */
+  .settings-screen { padding: 0.6rem; }
+  .settings-section { padding: 0.7rem; }
+  .settings-volume-row {
+    flex-wrap: wrap;
+    gap: 0.4rem 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .settings-volume-row label {
+    min-width: 0; flex: 1 1 auto;
+    font-size: 0.88rem;
+  }
+  .settings-volume-row input[type="range"] {
+    flex: 1 1 100%;
+    height: 28px;
+    padding: 0;
+  }
+  .settings-volume-row input[type="range"]::-webkit-slider-thumb {
+    width: 22px; height: 22px;
+  }
+  .settings-vol-value { min-width: 40px; text-align: right; font-size: 0.85rem; flex-shrink: 0; }
+  .settings-mute-toggle { min-height: 40px; font-size: 0.95rem; }
+  .settings-mute-toggle input { width: 22px; height: 22px; }
+
+  /* --- Stats: アイテム行のパディング圧縮 --- */
+  .stats-section { padding: 0.5rem; margin-bottom: 0.7rem; }
+  .stats-item { padding: 0.35rem 0.5rem; }
+
+  /* --- Achievement: カード内テキストのゆとり --- */
+  .ach-categories { gap: 0.25rem; }
+  .ach-card { padding: 0.45rem 0.55rem; }
+
+  /* --- 共通モーダル: 閉じるボタンを指で押しやすく --- */
+  .item-detail-close {
+    width: 40px; height: 40px;
+    font-size: 1.3rem;
+    top: 0.3rem; right: 0.3rem;
+  }
+  .item-detail-modal,
+  .return-detail-modal {
+    padding: 1.2rem 1rem 1rem;
+    max-height: calc(100dvh - 40px);
+  }
+
+  /* --- 消耗品ピッカー: 選択肢が指で押しやすいサイズに --- */
+  .cons-picker-item { min-height: 56px; padding: 0.5rem 0.6rem; }
+  .cons-picker-cancel { min-height: 44px; }
+}
+
+/* --- 小型スマホ (〜480px) の追加調整 --- */
+@media (max-width: 480px) {
+  /* Hub ヘッダ内の情報項目をさらに縮める */
+  .hub-info { gap: 0.5rem; font-size: 0.78rem; }
+  .hub-header h2 { font-size: 1.1rem; }
+
+  /* Warehouse: 1列表示時にアイテム高さを確保 */
+  .wh-item { height: auto; min-height: 64px; padding: 0.5rem; }
+  .wh-item-meta { gap: 4px; }
+  .warehouse-sort { justify-content: flex-start; }
+  .warehouse-sort label { font-size: 0.78rem; }
+
+  /* Shop: ボタンが主役の縦長カード */
+  .shop-card { min-height: 140px; }
+  .shop-card-header { flex-wrap: wrap; gap: 0.3rem; }
+
+  /* Collection: タブのフォント縮小、サブフィルタ横スクロール許容 */
+  .coll-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .coll-tabs::-webkit-scrollbar { display: none; }
+  .coll-tab { flex: 0 0 auto; white-space: nowrap; min-height: 40px; padding: 0.45rem 0.7rem; }
+
+  /* RunPrep: 消耗品スロットを1列に */
+  .prep-cons-slot { flex: 1 1 100%; }
+  .prep-info { font-size: 0.85rem; }
+
+  /* Crafting: レシピカードをさらに詰める */
+  .craft-workspace { padding: 0.6rem; }
+  .craft-recipes { padding: 0.5rem; }
+  .recipe-card { padding: 0.4rem; height: auto; min-height: 50px; }
+
+  /* Stats / Achievement / Settings: max-height を 100dvh 追従 */
+  .stats-screen,
+  .achievement-screen,
+  .settings-screen {
+    max-height: calc(100dvh - 150px);
+    padding: 0.4rem;
+  }
+  .stats-section { padding: 0.4rem; }
+  .stats-item { font-size: 0.8rem; }
+
+  /* モーダル閉じボタン: さらに端に余白 */
+  .item-detail-close { width: 40px; height: 40px; top: 0.25rem; right: 0.25rem; }
+
+  /* Achievement: 複数フィルタをスクロールへ */
+  .ach-categories {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .ach-categories::-webkit-scrollbar { display: none; }
+  .ach-cat-btn { flex: 0 0 auto; white-space: nowrap; }
+}
+
+/* --- 横向き低高さ端末 (landscape mobile): max-height を更に追従 --- */
+@media (max-height: 480px) and (max-width: 900px) {
+  .stats-screen,
+  .achievement-screen,
+  .settings-screen {
+    max-height: calc(100dvh - 120px);
+  }
+  .hub-header { padding: 0.4rem 0.8rem; }
+  .hub-tabs { padding: 0; }
+  .hub-content { padding: 0.4rem; }
+}
