@@ -35,14 +35,17 @@ export class MobileControls {
 
     if (this.isMobile) {
       this.active = true;
+      // タッチイベントは canvas 要素にのみ紐づけ、DOMボタン/モーダル上のタップは
+      // 素通しさせる (levelup カードなどの click が壊れないように)
+      this._targetEl = document.getElementById('game-canvas') || window;
       this._onTouchStart = this._handleTouchStart.bind(this);
       this._onTouchMove = this._handleTouchMove.bind(this);
       this._onTouchEnd = this._handleTouchEnd.bind(this);
       this._onResize = () => this._updateLayout();
-      window.addEventListener('touchstart', this._onTouchStart, { passive: false });
-      window.addEventListener('touchmove', this._onTouchMove, { passive: false });
-      window.addEventListener('touchend', this._onTouchEnd);
-      window.addEventListener('touchcancel', this._onTouchEnd);
+      this._targetEl.addEventListener('touchstart', this._onTouchStart, { passive: false });
+      this._targetEl.addEventListener('touchmove', this._onTouchMove, { passive: false });
+      this._targetEl.addEventListener('touchend', this._onTouchEnd);
+      this._targetEl.addEventListener('touchcancel', this._onTouchEnd);
       window.addEventListener('resize', this._onResize);
       window.addEventListener('orientationchange', this._onResize);
     }
@@ -238,10 +241,11 @@ export class MobileControls {
 
   destroy() {
     if (this.isMobile) {
-      window.removeEventListener('touchstart', this._onTouchStart);
-      window.removeEventListener('touchmove', this._onTouchMove);
-      window.removeEventListener('touchend', this._onTouchEnd);
-      window.removeEventListener('touchcancel', this._onTouchEnd);
+      const el = this._targetEl || window;
+      el.removeEventListener('touchstart', this._onTouchStart);
+      el.removeEventListener('touchmove', this._onTouchMove);
+      el.removeEventListener('touchend', this._onTouchEnd);
+      el.removeEventListener('touchcancel', this._onTouchEnd);
       window.removeEventListener('resize', this._onResize);
       window.removeEventListener('orientationchange', this._onResize);
     }
