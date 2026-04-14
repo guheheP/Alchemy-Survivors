@@ -34,10 +34,21 @@ export class RunHUD {
     this.el.id = 'run-hud';
     this.el.innerHTML = `
       <!-- Mobile pause button (left top; hidden on desktop via CSS) -->
-      <button class="hud-pause-btn" id="hud-pause" type="button" aria-label="一時停止">⏸</button>
+      <button class="hud-pause-btn" id="hud-pause" type="button" aria-label="一時停止">
+        <svg class="hud-btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="6" y="5" width="4" height="14" rx="1"/>
+          <rect x="14" y="5" width="4" height="14" rx="1"/>
+        </svg>
+      </button>
 
       <!-- Mobile detail toggle (Tab 相当; hidden on desktop via CSS) -->
-      <button class="hud-detail-btn" id="hud-detail" type="button" aria-label="詳細表示">ℹ</button>
+      <button class="hud-detail-btn" id="hud-detail" type="button" aria-label="ステータス詳細">
+        <svg class="hud-btn-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 11.5v5"/>
+          <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
 
       <!-- Top Center: Timer + Wave -->
       <div class="hud-top-center">

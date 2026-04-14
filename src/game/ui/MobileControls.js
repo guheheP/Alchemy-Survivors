@@ -5,8 +5,9 @@
 const DEAD_ZONE = 10;
 const STICK_MAX = 60;
 const DASH_BTN_RADIUS = 44;
-const DASH_BTN_MARGIN_X = 56;
-const DASH_BTN_MARGIN_Y = 96;
+const DASH_BTN_MARGIN_X = 60;
+// コンソールHUD (画面下 ~90〜110px) に被らないよう十分上に配置
+const DASH_BTN_MARGIN_Y = 180;
 
 export class MobileControls {
   constructor() {
