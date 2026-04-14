@@ -80,6 +80,7 @@ class SoundManagerClass {
     // --- プロシージャルBGM (フォールバック) ---
     this.proceduralActive = false;
     this._bgmTimeout = null;
+    this._fadeTimeoutId = null;
 
     // --- Audio ノード管理（メモリリーク防止） ---
     this._noiseBufferCache = null;   // ノイズバッファのキャッシュ
@@ -425,22 +426,42 @@ class SoundManagerClass {
     });
   }
 
+  /** 進行中のフェードタイマーをキャンセル（競合で新トラックが停止されるのを防ぐ） */
+  _cancelFade() {
+    if (this._fadeTimeoutId !== null) {
+      clearTimeout(this._fadeTimeoutId);
+      this._fadeTimeoutId = null;
+    }
+    if (this.bgmGain && this.ctx) {
+      this.bgmGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.bgmGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
+    }
+    this.isFading = false;
+  }
+
   /** フェードアウトしてからコールバック実行 */
   _fadeOutThen(callback, durationMs = 2000) {
-    if (!this.bgmGain || this.isFading) {
+    if (!this.bgmGain) {
       callback();
       return;
     }
+    // 既にフェード中なら打ち切って新しい要求を優先
+    if (this.isFading) {
+      this._cancelFade();
+    }
     this.isFading = true;
     const now = this.ctx.currentTime;
+    this.bgmGain.gain.cancelScheduledValues(now);
     this.bgmGain.gain.setValueAtTime(this.bgmGain.gain.value, now);
     this.bgmGain.gain.linearRampToValueAtTime(0, now + durationMs / 1000);
 
-    setTimeout(() => {
+    this._fadeTimeoutId = setTimeout(() => {
+      this._fadeTimeoutId = null;
       if (this.audioEl) {
         this.audioEl.pause();
       }
       // 音量復元
+      this.bgmGain.gain.cancelScheduledValues(this.ctx.currentTime);
       this.bgmGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
       this.isFading = false;
       callback();
@@ -451,8 +472,16 @@ class SoundManagerClass {
   _playTrack(src) {
     if (!this.audioEl) return;
 
+    // 進行中のフェードが残っていると直後にpause()されるのでキャンセル
+    this._cancelFade();
+
     // プロシージャルBGMが動いてたら止める
     this._stopProcedural();
+
+    // AudioContextが停止している場合は復帰
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
 
     // 既に再生中なら一旦停止してからソースを変える
     this.audioEl.pause();
