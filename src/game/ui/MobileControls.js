@@ -1,59 +1,93 @@
 /**
- * MobileControls — モバイル仮想スティック
+ * MobileControls — モバイル仮想スティック + ダッシュボタン
  */
 
 const DEAD_ZONE = 10;
 const STICK_MAX = 60;
+const DASH_BTN_RADIUS = 44;
+const DASH_BTN_MARGIN_X = 56;
+const DASH_BTN_MARGIN_Y = 96;
 
 export class MobileControls {
   constructor() {
     this.active = false;
     this.dx = 0;
     this.dy = 0;
+    this.dashRequested = false;
 
     // スティック描画用
-    this.touchId = null;
+    this.stickTouchId = null;
     this.originX = 0;
     this.originY = 0;
     this.stickX = 0;
     this.stickY = 0;
-    this.visible = false;
+    this.stickVisible = false;
+
+    // ダッシュボタン
+    this.dashTouchId = null;
+    this.dashPressed = false;
 
     // タッチデバイス検出
     this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    // ボタン位置（resize時に更新）
+    this._updateLayout();
 
     if (this.isMobile) {
       this.active = true;
       this._onTouchStart = this._handleTouchStart.bind(this);
       this._onTouchMove = this._handleTouchMove.bind(this);
       this._onTouchEnd = this._handleTouchEnd.bind(this);
+      this._onResize = () => this._updateLayout();
       window.addEventListener('touchstart', this._onTouchStart, { passive: false });
       window.addEventListener('touchmove', this._onTouchMove, { passive: false });
       window.addEventListener('touchend', this._onTouchEnd);
       window.addEventListener('touchcancel', this._onTouchEnd);
+      window.addEventListener('resize', this._onResize);
+      window.addEventListener('orientationchange', this._onResize);
     }
+  }
+
+  _updateLayout() {
+    // 右下にダッシュボタン（safe-area考慮: 余裕を持って配置）
+    this.dashBtnX = window.innerWidth - DASH_BTN_MARGIN_X;
+    this.dashBtnY = window.innerHeight - DASH_BTN_MARGIN_Y;
+  }
+
+  _isInsideDashButton(x, y) {
+    const dx = x - this.dashBtnX;
+    const dy = y - this.dashBtnY;
+    return (dx * dx + dy * dy) <= (DASH_BTN_RADIUS * DASH_BTN_RADIUS);
   }
 
   _handleTouchStart(e) {
     e.preventDefault();
-    if (this.touchId !== null) return;
 
-    const touch = e.changedTouches[0];
-    // 左半分のタッチのみスティック（右半分は将来のアクションボタン用）
-    if (touch.clientX < window.innerWidth * 0.6) {
-      this.touchId = touch.identifier;
-      this.originX = touch.clientX;
-      this.originY = touch.clientY;
-      this.stickX = touch.clientX;
-      this.stickY = touch.clientY;
-      this.visible = true;
+    for (const touch of e.changedTouches) {
+      // ダッシュボタン判定が最優先
+      if (this.dashTouchId === null && this._isInsideDashButton(touch.clientX, touch.clientY)) {
+        this.dashTouchId = touch.identifier;
+        this.dashRequested = true;
+        this.dashPressed = true;
+        continue;
+      }
+
+      // スティックは左60%領域＆未使用時のみ
+      if (this.stickTouchId === null && touch.clientX < window.innerWidth * 0.6) {
+        this.stickTouchId = touch.identifier;
+        this.originX = touch.clientX;
+        this.originY = touch.clientY;
+        this.stickX = touch.clientX;
+        this.stickY = touch.clientY;
+        this.stickVisible = true;
+      }
     }
   }
 
   _handleTouchMove(e) {
     e.preventDefault();
     for (const touch of e.changedTouches) {
-      if (touch.identifier !== this.touchId) continue;
+      if (touch.identifier !== this.stickTouchId) continue;
 
       let tdx = touch.clientX - this.originX;
       let tdy = touch.clientY - this.originY;
@@ -79,19 +113,31 @@ export class MobileControls {
 
   _handleTouchEnd(e) {
     for (const touch of e.changedTouches) {
-      if (touch.identifier === this.touchId) {
-        this.touchId = null;
+      if (touch.identifier === this.stickTouchId) {
+        this.stickTouchId = null;
         this.dx = 0;
         this.dy = 0;
-        this.visible = false;
+        this.stickVisible = false;
+      }
+      if (touch.identifier === this.dashTouchId) {
+        this.dashTouchId = null;
+        this.dashPressed = false;
       }
     }
   }
 
-  /** Canvas上にスティックを描画 */
+  /** Canvas上にスティック＋ダッシュボタンを描画 */
   render(ctx) {
-    if (!this.active || !this.visible) return;
+    if (!this.active) return;
 
+    // 仮想スティック（タッチ時のみ）
+    if (this.stickVisible) this._renderStick(ctx);
+
+    // ダッシュボタン（常時表示）
+    this._renderDashButton(ctx);
+  }
+
+  _renderStick(ctx) {
     const tdx = this.stickX - this.originX;
     const tdy = this.stickY - this.originY;
     const dist = Math.sqrt(tdx * tdx + tdy * tdy);
@@ -153,12 +199,62 @@ export class MobileControls {
     ctx.restore();
   }
 
+  _renderDashButton(ctx) {
+    const x = this.dashBtnX;
+    const y = this.dashBtnY;
+    const r = DASH_BTN_RADIUS;
+    const pressed = this.dashPressed;
+
+    ctx.save();
+
+    // 外円: 背景
+    ctx.globalAlpha = pressed ? 0.75 : 0.45;
+    ctx.fillStyle = pressed ? '#ffd080' : '#000';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 輪郭
+    ctx.globalAlpha = pressed ? 1.0 : 0.75;
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#f0c060';
+    ctx.stroke();
+
+    // 稲妻アイコン
+    ctx.globalAlpha = pressed ? 1.0 : 0.85;
+    ctx.fillStyle = pressed ? '#1a1a2e' : '#ffd080';
+    ctx.beginPath();
+    ctx.moveTo(x - 4, y - 14);
+    ctx.lineTo(x + 6, y - 2);
+    ctx.lineTo(x - 1, y - 2);
+    ctx.lineTo(x + 4, y + 14);
+    ctx.lineTo(x - 6, y + 2);
+    ctx.lineTo(x + 1, y + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
   destroy() {
     if (this.isMobile) {
       window.removeEventListener('touchstart', this._onTouchStart);
       window.removeEventListener('touchmove', this._onTouchMove);
       window.removeEventListener('touchend', this._onTouchEnd);
       window.removeEventListener('touchcancel', this._onTouchEnd);
+      window.removeEventListener('resize', this._onResize);
+      window.removeEventListener('orientationchange', this._onResize);
     }
   }
 }
+
+// ----- 後方互換: 旧プロパティ名との互換 -----
+// 既存コードが `touchId` を参照していた場合の保険（現行コードは未使用）
+Object.defineProperty(MobileControls.prototype, 'touchId', {
+  get() { return this.stickTouchId; },
+  set(v) { this.stickTouchId = v; },
+});
+Object.defineProperty(MobileControls.prototype, 'visible', {
+  get() { return this.stickVisible; },
+  set(v) { this.stickVisible = v; },
+});

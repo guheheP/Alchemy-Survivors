@@ -21,17 +21,35 @@ export class RunCanvas {
   constructor(canvasEl) {
     this.canvas = canvasEl;
     this.ctx = canvasEl.getContext('2d');
+    // 論理サイズ（CSSピクセル基準、描画コードはこの値で座標計算）
+    this._logicalWidth = 0;
+    this._logicalHeight = 0;
     this._resize();
     this._onResize = () => this._resize();
     window.addEventListener('resize', this._onResize);
+    window.addEventListener('orientationchange', this._onResize);
   }
 
-  get width() { return this.canvas.width; }
-  get height() { return this.canvas.height; }
+  /** 論理幅（CSSピクセル）— 描画ロジックはこれを参照する */
+  get width() { return this._logicalWidth; }
+  get height() { return this._logicalHeight; }
 
   _resize() {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = window.innerWidth;
+    const cssH = window.innerHeight;
+
+    this._logicalWidth = cssW;
+    this._logicalHeight = cssH;
+
+    // 物理ピクセル解像度（DPR倍）に設定し、CSSサイズは論理ピクセルで固定
+    this.canvas.width = Math.floor(cssW * dpr);
+    this.canvas.height = Math.floor(cssH * dpr);
+    this.canvas.style.width = cssW + 'px';
+    this.canvas.style.height = cssH + 'px';
+
+    // すべての描画をDPR倍スケールで処理 → 既存の座標ロジックは無変更で済む
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   /**

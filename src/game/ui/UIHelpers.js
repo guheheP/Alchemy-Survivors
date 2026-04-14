@@ -72,6 +72,36 @@ function getItemImageUrl(item) {
   return null; // 画像未設定
 }
 
+/**
+ * タッチ端末で .trait-item-wrap / .equip-trait-wrap をタップすると
+ * 特性ツールチップを開閉するグローバルハンドラ。デスクトップ(hover対応)では
+ * 既存の :hover で動くため、このハンドラは無効にする。
+ * main.js から起動時に1回だけ呼ぶ。
+ */
+let _traitTooltipTapInitialized = false;
+export function initTraitTooltipTap() {
+  if (_traitTooltipTapInitialized) return;
+  _traitTooltipTapInitialized = true;
+
+  const isTouch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if (!isTouch) return; // デスクトップは :hover で対応済み
+
+  const TRAIT_SELECTOR = '.trait-item-wrap, .equip-trait-wrap';
+
+  document.addEventListener('click', (e) => {
+    const wrap = e.target.closest(TRAIT_SELECTOR);
+    // 他のラップから既存の open 状態をクリア
+    document.querySelectorAll(TRAIT_SELECTOR + '.show-tooltip').forEach(el => {
+      if (el !== wrap) el.classList.remove('show-tooltip');
+    });
+    if (wrap) {
+      // タップされたラップをトグル
+      wrap.classList.toggle('show-tooltip');
+      // trait バッジ本体の他のクリック挙動を阻害しない
+    }
+  });
+}
+
 // 戦闘効果のテキスト生成
 function renderBattleEffectHTML(item) {
   const bp = ItemBlueprints[item.blueprintId];

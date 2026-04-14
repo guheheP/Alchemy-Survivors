@@ -20,6 +20,7 @@ import { PauseMenu } from './ui/PauseMenu.js';
 import { RunResultScreen } from './ui/RunResultScreen.js';
 import { AchievementSystem } from './AchievementSystem.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
+import { initTraitTooltipTap } from './ui/UIHelpers.js';
 
 class Game {
   constructor() {
@@ -129,6 +130,8 @@ class Game {
   }
 
   start() {
+    // タッチ端末用: 特性ツールチップのタップ開閉
+    initTraitTooltipTap();
     // タイトル画面表示
     this._showTitle();
   }
