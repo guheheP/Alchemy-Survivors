@@ -405,6 +405,10 @@ export class CraftingScreen {
     try {
       const item = craftItem(this.selectedRecipeId, this.assignedMaterials, this.selectedTraits, 0);
 
+      // 装備中の素材UIDを先に解除通知（亡霊UID防止）
+      const consumedUids = this.assignedMaterials.map(m => m.uid);
+      eventBus.emit('inventory:uidsRemoved', { uids: consumedUids });
+
       // 素材をインベントリから消費
       for (const mat of this.assignedMaterials) {
         this.inventory.removeItem(mat.uid, true);

@@ -137,13 +137,24 @@ export class BossEntity extends Enemy {
   }
 
   _prepareSkill(playerX, playerY) {
+    // skills 未定義・空配列の防御（死神のように skills=[] のボスはスキル使用しない）
+    if (!this.skills || this.skills.length === 0) {
+      this.skillCooldown = 99999; // 実質無効化
+      return;
+    }
     // 重み付きランダムでスキル選択
-    const totalChance = this.skills.reduce((sum, s) => sum + s.chance, 0);
-    let roll = Math.random() * totalChance;
+    const totalChance = this.skills.reduce((sum, s) => sum + (s.chance || 0), 0);
     let skill = this.skills[0];
-    for (const s of this.skills) {
-      roll -= s.chance;
-      if (roll <= 0) { skill = s; break; }
+    if (totalChance > 0) {
+      let roll = Math.random() * totalChance;
+      for (const s of this.skills) {
+        roll -= (s.chance || 0);
+        if (roll <= 0) { skill = s; break; }
+      }
+    }
+    if (!skill || !skill.type) {
+      this.skillCooldown = this.skillCooldownMax;
+      return;
     }
 
     this.telegraphPos = { x: playerX, y: playerY };

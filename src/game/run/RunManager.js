@@ -25,6 +25,11 @@ import { SpriteCache } from './render/SpriteCache.js';
 import { BackgroundRenderer } from './render/BackgroundRenderer.js';
 import { EnemyDefs, AreaEnemyConfig } from '../data/enemies.js';
 
+// プレイヤー用キャラクタースプライトシート（4列×3行 = 向き×歩行フレーム, 16×17px/セル）
+const PLAYER_SPRITE_PATH = '/art/Character/F_12.png';
+const PLAYER_SPRITE_FRAME_W = 16;
+const PLAYER_SPRITE_FRAME_H = 17;
+
 export class RunManager {
   /**
    * @param {HTMLCanvasElement} canvasEl
@@ -102,7 +107,7 @@ export class RunManager {
           const dx = enemy.x - x;
           const dy = enemy.y - y;
           if (dx * dx + dy * dy < radius * radius) {
-            if (enemy.takeDamage(damage)) eventBus.emit('enemy:killed', { enemy });
+            if (enemy.takeDamage(damage)) eventBus.emit('enemy:killed', { enemy, x: enemy.x, y: enemy.y, isBoss: enemy.isBoss, color: enemy.color });
           }
         }
       }),
@@ -121,16 +126,36 @@ export class RunManager {
           });
         }
       }),
-      eventBus.on('enemy:killed', ({ enemy }) => {
-        // 撃破時の爆散粒子
-        this.particles.emitBurst(enemy.x, enemy.y, enemy.isBoss ? 24 : 10, {
-          speed: enemy.isBoss ? 180 : 120,
-          life: enemy.isBoss ? 0.7 : 0.4,
-          size: enemy.isBoss ? 4 : 3,
-          color: enemy.color || '#f88',
+      // armored: ダメージ無効時の装甲パリィ演出
+      eventBus.on('enemy:blocked', ({ x, y }) => {
+        if (x != null && y != null) {
+          this.particles.emitBurst(x, y, 8, {
+            speed: 100, life: 0.3, size: 2, color: '#8cf', shape: 'spark',
+          });
+        }
+      }),
+      eventBus.on('enemy:killed', ({ enemy, x, y, isBoss, color }) => {
+        // イベントに含まれる座標を優先（enemyは直後にプール返却でリセットされる）
+        const ex = x != null ? x : enemy.x;
+        const ey = y != null ? y : enemy.y;
+        const boss = isBoss != null ? isBoss : enemy.isBoss;
+        const col = color || enemy.color || '#f88';
+        this.particles.emitBurst(ex, ey, boss ? 24 : 10, {
+          speed: boss ? 180 : 120,
+          life: boss ? 0.7 : 0.4,
+          size: boss ? 4 : 3,
+          color: col,
           shape: 'square',
           gravity: 40,
         });
+      }),
+      // スキルからのパーティクル発生
+      eventBus.on('particles:burst', ({ x, y, count, config }) => {
+        this.particles.emitBurst(x, y, count, config || {});
+      }),
+      // スキルからのカメラシェイク
+      eventBus.on('camera:shake', ({ power, duration }) => {
+        this.camera.shake(power || 5, duration || 0.2);
       }),
       eventBus.on('material:collected', ({ x, y }) => {
         if (x != null && y != null) this.particles.emitSpark(x, y, '#ff8');
@@ -167,7 +192,7 @@ export class RunManager {
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < range + enemy.radius) {
             if (enemy.takeDamage(damage)) {
-              eventBus.emit('enemy:killed', { enemy });
+              eventBus.emit('enemy:killed', { enemy, x: enemy.x, y: enemy.y, isBoss: enemy.isBoss, color: enemy.color });
             } else if (dist > 0.1) {
               enemy.x += (dx / dist) * knockback;
               enemy.y += (dy / dist) * knockback;
@@ -197,8 +222,9 @@ export class RunManager {
     }
     this.spriteCache.preloadPresets([...presetPaths], { voxelSize: 3 });
 
-    // ドロップテーブルのアイテム画像
+    // ドロップテーブルのアイテム画像 + プレイヤースプライト
     const imagePaths = new Set();
+    imagePaths.add(PLAYER_SPRITE_PATH);
     for (const d of (this.area.dropTable || [])) {
       const bp = ItemBlueprints[d.blueprintId];
       if (bp?.image) imagePaths.add(bp.image);
@@ -223,6 +249,8 @@ export class RunManager {
     }
 
     this.player.update(dt);
+    // ラン経過時間をドロップシステムに伝達（品質時間ボーナス用）
+    this.drops.setElapsedTime(this.elapsed);
     this.spawner.update(dt, this.player.x, this.player.y, this.camera.width, this.camera.height);
 
     // ボスシステム更新
@@ -278,13 +306,6 @@ export class RunManager {
     this.particles.update(dt, this.camera);
     this.background.update(dt, this.camera);
 
-    // プレイヤー残像（低頻度）
-    this._playerTrailTimer += dt;
-    if (this._playerTrailTimer > 0.08) {
-      this._playerTrailTimer = 0;
-      this.particles.emitTrail(this.player.x, this.player.y, '#4af');
-    }
-
     this.camera.follow(this.player.x, this.player.y, dt);
 
     // 生存ボーナス
@@ -326,6 +347,9 @@ export class RunManager {
         spriteCache: this.spriteCache,
         itemBlueprints: ItemBlueprints,
         elapsed: this.elapsed,
+        playerSpritePath: PLAYER_SPRITE_PATH,
+        playerSpriteFrameW: PLAYER_SPRITE_FRAME_W,
+        playerSpriteFrameH: PLAYER_SPRITE_FRAME_H,
       },
     );
   }
@@ -346,7 +370,13 @@ export class RunManager {
       enemy.expValue,
       this.player.passives.dropRateBonus,
     );
-    this.spawner.releaseEnemy(enemy);
+    // ボスは EnemySpawner のプールに属さないのでリリースしてはいけない
+    // （プール再利用で BossEntity が通常敵として蘇り _prepareSkill でクラッシュする）
+    if (enemy.isBoss) {
+      enemy.active = false;
+    } else {
+      this.spawner.releaseEnemy(enemy);
+    }
   }
 
   _onLevelUpShow() {
@@ -368,6 +398,7 @@ export class RunManager {
   }
 
   _endRun(reason) {
+    if (this.state === 'ended') return; // 再入防止（ボス撃破+プレイヤー死亡の同フレーム対策）
     this.state = 'ended';
     this.gameLoop.stop();
 

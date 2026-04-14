@@ -1,5 +1,13 @@
 /**
- * EnemyAI — 敵の追尾ロジック
+ * EnemyAI — 敵の追尾ロジック + 挙動パターン
+ *
+ * behavior 種別:
+ *  - 'chase'        (default) 通常追尾
+ *  - 'glass_cannon' 高速・低HP（init時に補正）
+ *  - 'tank'         低速・高HP・大型（init時に補正）
+ *  - 'erratic'      速度が時間でサイン波変動
+ *  - 'armored'      最初のN発ダメージ無効（armorHits）
+ *  - 'dasher'       停止→予備動作→突進 の繰り返し
  */
 
 import { Entity } from './Entity.js';
@@ -21,6 +29,13 @@ export class Enemy extends Entity {
     // デバフ管理
     this._debuffTimer = 0;
     this._baseSpeed = 0;
+    // 挙動パターン
+    this.behavior = 'chase';
+    this.armorHits = 0;
+    this._behaviorTimer = 0;
+    this._dashState = 'idle'; // 'idle' | 'telegraph' | 'dashing'
+    this._dashDir = { x: 0, y: 0 };
+    this._dashStateTimer = 0;
   }
 
   reset() {
@@ -36,10 +51,20 @@ export class Enemy extends Entity {
     this.hitFlashTimer = 0;
     this._debuffTimer = 0;
     this._baseSpeed = 0;
+    this.behavior = 'chase';
+    this.armorHits = 0;
+    this._behaviorTimer = 0;
+    this._dashState = 'idle';
+    this._dashDir = { x: 0, y: 0 };
+    this._dashStateTimer = 0;
   }
 
   /** 敵データから初期化 */
   init(def, x, y) {
+    // 型ガード: BossEntity が誤って通常敵プールに入り再利用されるのを早期検出
+    if (this.isBoss) {
+      throw new Error('Enemy.init called on BossEntity instance — boss should never be in EnemySpawner pool');
+    }
     this.active = true;
     this.x = x;
     this.y = y;
@@ -54,6 +79,42 @@ export class Enemy extends Entity {
     this.color = def.color;
     this.enemyId = def.id;
     this.enemyDef = def;
+    this.behavior = def.behavior || 'chase';
+    this.armorHits = def.armorHits || 0;
+    this._behaviorTimer = Math.random() * Math.PI * 2; // erratic位相をバラす
+    this._dashState = 'idle';
+    this._dashStateTimer = 0.5 + Math.random() * 1.0;
+
+    // behavior 別の初期ステータス補正
+    this._applyBehaviorStats();
+    this._baseSpeed = this.speed;
+  }
+
+  _applyBehaviorStats() {
+    switch (this.behavior) {
+      case 'glass_cannon':
+        this.speed *= 1.5;
+        this.maxHp = Math.max(1, Math.floor(this.maxHp * 0.6));
+        this.hp = this.maxHp;
+        break;
+      case 'tank':
+        this.speed *= 0.55;
+        this.maxHp = Math.floor(this.maxHp * 2.0);
+        this.hp = this.maxHp;
+        this.radius = Math.floor(this.radius * 1.3);
+        this.damage = Math.floor(this.damage * 1.3);
+        break;
+      case 'armored':
+        // armorHits は def から渡される。HPは据え置き、見た目用に若干大きく
+        this.radius = Math.floor(this.radius * 1.1);
+        break;
+      case 'dasher':
+        this.speed *= 0.3; // 通常時は遅い
+        break;
+      // 'erratic' は update で動的に速度変動
+      default:
+        break;
+    }
   }
 
   /** デバフを適用（速度変更 + 持続時間） */
@@ -65,7 +126,7 @@ export class Enemy extends Entity {
     this._debuffTimer = duration;
   }
 
-  /** プレイヤーに向かって移動 */
+  /** プレイヤーに向かって移動（挙動別） */
   update(dt, playerX, playerY) {
     this.savePrev();
 
@@ -81,17 +142,82 @@ export class Enemy extends Entity {
       }
     }
 
+    this._behaviorTimer += dt;
+
     const dx = playerX - this.x;
     const dy = playerY - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist > 1) {
-      this.x += (dx / dist) * this.speed * dt;
-      this.y += (dy / dist) * this.speed * dt;
+    switch (this.behavior) {
+      case 'erratic': {
+        // 速度を 0.3〜1.8 倍で振動させる
+        const factor = 1.05 + Math.sin(this._behaviorTimer * 3.5) * 0.75;
+        const s = Math.max(5, this._baseSpeed * factor);
+        if (dist > 1) {
+          this.x += (dx / dist) * s * dt;
+          this.y += (dy / dist) * s * dt;
+        }
+        break;
+      }
+      case 'dasher': {
+        this._updateDasher(dt, dx, dy, dist);
+        break;
+      }
+      default: {
+        if (dist > 1) {
+          this.x += (dx / dist) * this.speed * dt;
+          this.y += (dy / dist) * this.speed * dt;
+        }
+        break;
+      }
     }
   }
 
+  _updateDasher(dt, dx, dy, dist) {
+    this._dashStateTimer -= dt;
+    if (this._dashState === 'idle') {
+      // ゆっくり近づきつつタイマー経過で予備動作へ
+      if (dist > 1) {
+        this.x += (dx / dist) * this.speed * dt;
+        this.y += (dy / dist) * this.speed * dt;
+      }
+      if (this._dashStateTimer <= 0) {
+        this._dashState = 'telegraph';
+        this._dashStateTimer = 0.5; // 0.5秒の予備動作
+        if (dist > 0.1) {
+          this._dashDir = { x: dx / dist, y: dy / dist };
+        }
+      }
+    } else if (this._dashState === 'telegraph') {
+      // 停止＆フラッシュ
+      this.hitFlashTimer = 0.1;
+      if (this._dashStateTimer <= 0) {
+        this._dashState = 'dashing';
+        this._dashStateTimer = 0.35; // 0.35秒突進
+      }
+    } else if (this._dashState === 'dashing') {
+      const dashSpeed = this._baseSpeed * 4.5; // 通常の4.5倍で突進
+      this.x += this._dashDir.x * dashSpeed * dt;
+      this.y += this._dashDir.y * dashSpeed * dt;
+      if (this._dashStateTimer <= 0) {
+        this._dashState = 'idle';
+        this._dashStateTimer = 1.5 + Math.random() * 0.8;
+      }
+    }
+  }
+
+  /** dasherが予備動作中かを外部から確認（描画でマーカー用） */
+  get isTelegraphing() { return this.behavior === 'dasher' && this._dashState === 'telegraph'; }
+  get isDashing() { return this.behavior === 'dasher' && this._dashState === 'dashing'; }
+
   takeDamage(amount, isCrit = false) {
+    // armored: 最初のN発を無効化
+    if (this.armorHits > 0) {
+      this.armorHits--;
+      this.hitFlashTimer = 0.1;
+      eventBus.emit('enemy:blocked', { x: this.x, y: this.y, remaining: this.armorHits });
+      return false;
+    }
     this.hp -= amount;
     this.hitFlashTimer = 0.1;
     eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: amount, isCrit });

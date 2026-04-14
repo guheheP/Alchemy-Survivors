@@ -4,21 +4,13 @@
 
 import { eventBus } from '../core/EventBus.js';
 import { Progression } from '../data/progression.js';
+import { GameConfig } from '../data/config.js';
 
-const UPGRADES = [
-  {
-    id: 'capacity_1', name: '倉庫拡張 I', description: '倉庫容量 +20', cost: 200,
-    requires: null, effect: { type: 'capacity', value: 20 },
-  },
-  {
-    id: 'capacity_2', name: '倉庫拡張 II', description: '倉庫容量 +30', cost: 500,
-    requires: 'capacity_1', effect: { type: 'capacity', value: 30 },
-  },
-  {
-    id: 'capacity_3', name: '倉庫拡張 III', description: '倉庫容量 +50', cost: 1200,
-    requires: 'capacity_2', effect: { type: 'capacity', value: 50 },
-  },
-];
+/** 倉庫拡張 Lv → 次レベル購入コスト */
+function warehouseCost(currentLevel) {
+  // 累進式: Lv1=150, Lv5≈500, Lv10≈2800, Lv20≈55000
+  return Math.floor(150 * Math.pow(1.35, currentLevel));
+}
 
 export class UpgradeShopScreen {
   constructor(container, inventorySystem) {
@@ -29,7 +21,14 @@ export class UpgradeShopScreen {
   }
 
   render() {
-    const purchased = Progression.getPurchasedUpgrades();
+    const whLv = Progression.getWarehouseLevel();
+    const whMax = GameConfig.warehouseMaxLevel;
+    const whPer = GameConfig.warehouseExpansionPerLevel;
+    const whMaxedOut = whLv >= whMax;
+    const whCost = whMaxedOut ? 0 : warehouseCost(whLv);
+    const whCanAfford = this.inventory.gold >= whCost;
+    const currentCapacity = this.inventory.maxCapacity;
+    const nextCapacity = currentCapacity + whPer;
 
     this.el.innerHTML = `
       <div class="shop-layout">
@@ -38,46 +37,44 @@ export class UpgradeShopScreen {
           <span class="shop-gold">💰 ${this.inventory.gold}G</span>
         </div>
         <div class="shop-grid">
-          ${UPGRADES.map(upg => {
-            const owned = purchased.has(upg.id);
-            const locked = upg.requires && !purchased.has(upg.requires);
-            const canAfford = this.inventory.gold >= upg.cost;
-            const available = !owned && !locked && canAfford;
-
-            return `<div class="shop-card ${owned ? 'owned' : ''} ${locked ? 'locked' : ''} ${!canAfford && !owned ? 'expensive' : ''}" data-id="${upg.id}">
-              <div class="shop-card-header">
-                <span class="shop-card-name">${upg.name}</span>
-                ${owned ? '<span class="shop-card-badge">購入済</span>' : locked ? '<span class="shop-card-badge locked">🔒</span>' : ''}
+          <div class="shop-card upgrade-card wh-expansion ${whMaxedOut ? 'owned' : ''} ${!whCanAfford && !whMaxedOut ? 'expensive' : ''}">
+            <div class="shop-card-header">
+              <span class="shop-card-name">📦 倉庫拡張 Lv.${whLv} / ${whMax}</span>
+              ${whMaxedOut ? '<span class="shop-card-badge">最大</span>' : ''}
+            </div>
+            <div class="shop-card-body">
+              <p class="shop-card-desc">
+                1レベルにつき容量 +${whPer}<br>
+                現在: <b>${currentCapacity}</b> 枠
+                ${whMaxedOut ? '' : ` → <b style="color:#8f8">${nextCapacity}</b> 枠`}
+              </p>
+              <div class="shop-level-bar">
+                <div class="shop-level-fill" style="width: ${(whLv / whMax * 100).toFixed(1)}%"></div>
               </div>
-              <p class="shop-card-desc">${upg.description}</p>
-              ${!owned ? `<button class="shop-buy-btn" data-id="${upg.id}" ${available ? '' : 'disabled'}>
-                ${locked ? '前提未達成' : `${upg.cost}G で購入`}
-              </button>` : ''}
-            </div>`;
-          }).join('')}
+            </div>
+            ${whMaxedOut ? '' : `<button class="shop-buy-btn" data-upg="warehouse" ${whCanAfford ? '' : 'disabled'}>
+              ${whCost}G で Lv.${whLv + 1} に強化
+            </button>`}
+          </div>
         </div>
       </div>
     `;
     this.container.appendChild(this.el);
 
-    this.el.querySelectorAll('.shop-buy-btn:not([disabled])').forEach(btn => {
-      btn.addEventListener('click', () => this._purchase(btn.dataset.id));
-    });
+    const whBtn = this.el.querySelector('[data-upg="warehouse"]');
+    if (whBtn && !whBtn.disabled) {
+      whBtn.addEventListener('click', () => this._purchaseWarehouse());
+    }
 
     return this.el;
   }
 
-  _purchase(upgradeId) {
-    const upg = UPGRADES.find(u => u.id === upgradeId);
-    if (!upg || !this.inventory.spendGold(upg.cost)) return;
-
-    Progression.addPurchasedUpgrade(upgradeId);
-
-    if (upg.effect.type === 'capacity') {
-      this.inventory.expandCapacity(upg.effect.value);
-    }
-
-    eventBus.emit('toast', { message: `${upg.name} を購入しました！`, type: 'success' });
+  _purchaseWarehouse() {
+    const lv = Progression.getWarehouseLevel();
+    if (lv >= GameConfig.warehouseMaxLevel) return;
+    const cost = warehouseCost(lv);
+    if (!this.inventory.spendGold(cost)) return;
+    this.inventory.expandCapacity(GameConfig.warehouseExpansionPerLevel);
     eventBus.emit('gold:changed', { gold: this.inventory.gold });
     this.render();
   }

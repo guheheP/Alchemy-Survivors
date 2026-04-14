@@ -5,6 +5,7 @@
 import { Entity } from './Entity.js';
 import { ObjectPool } from './ObjectPool.js';
 import { GameConfig } from '../data/config.js';
+import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 
 class Drop extends Entity {
@@ -49,6 +50,11 @@ export class DropSystem {
     this.collectedMaterials = []; // ラン中に集めた素材リスト
   }
 
+  /** 時間経過による品質ボーナス（ラン経過分を外部から設定） */
+  setElapsedTime(elapsed) {
+    this._elapsed = elapsed || 0;
+  }
+
   /** 敵撃破時にドロップ生成 */
   spawnDrops(x, y, expValue, dropRateBonus = 0) {
     // 経験値ジェム
@@ -73,7 +79,12 @@ export class DropSystem {
       matDrop.prevY = matDrop.y;
       matDrop.dropType = 'material';
       matDrop.blueprintId = mat.blueprintId;
-      matDrop.quality = Math.floor(Math.random() * (this.qualityMax - this.qualityMin + 1)) + this.qualityMin;
+      // 基本品質 + 時間経過ボーナス（1分毎 +4、20分で+80）
+      const elapsed = this._elapsed || 0;
+      const timeBonus = Math.floor((elapsed / 60) * 4);
+      const baseQ = Math.floor(Math.random() * (this.qualityMax - this.qualityMin + 1)) + this.qualityMin;
+      const cap = Progression.getQualityCap ? Progression.getQualityCap() : 999;
+      matDrop.quality = Math.min(cap, baseQ + timeBonus);
       matDrop.traits = this._rollTraits();
       matDrop.color = matDrop.traits.length > 0 ? '#0ff' : '#0cf';
       matDrop.radius = 5;
@@ -100,9 +111,13 @@ export class DropSystem {
     return traits;
   }
 
-  /** プレイヤーとの接触判定・マグネット吸引 */
+  /** プレイヤーとの接触判定・マグネット吸引
+   * 逆順ループ: release が swap-pop で activeList を改変するため。
+   */
   update(dt, playerX, playerY, magnetRange) {
-    for (const drop of this.pool.activeList) {
+    const list = this.pool.activeList;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const drop = list[i];
       drop.savePrev();
 
       const dx = playerX - drop.x;

@@ -5,11 +5,25 @@
 import { Enemy } from './EnemyAI.js';
 import { ObjectPool } from './ObjectPool.js';
 import { EnemyDefs, AreaEnemyConfig } from '../data/enemies.js';
+import { AreaDefs } from '../data/areas.js';
 import { GameConfig } from '../data/config.js';
+
+/** エリア difficulty → HP/damage 倍率（ステージ2以降で難化） */
+const AREA_DIFF_TABLE = {
+  0: { hp: 1.0,  dmg: 1.00 },
+  1: { hp: 1.25, dmg: 1.10 },
+  2: { hp: 1.55, dmg: 1.25 },
+  3: { hp: 1.90, dmg: 1.40 },
+  4: { hp: 2.30, dmg: 1.55 },
+};
 
 export class EnemySpawner {
   constructor(areaId, modifiers = null) {
+    this.areaId = areaId;
     this.areaConfig = AreaEnemyConfig[areaId];
+    const area = AreaDefs[areaId];
+    this.areaDifficulty = area ? (area.difficulty || 0) : 0;
+    this.areaMult = AREA_DIFF_TABLE[this.areaDifficulty] || AREA_DIFF_TABLE[0];
     this.pool = new ObjectPool(() => new Enemy(), 100);
     this.spawnTimer = 0;
     this.elapsed = 0;
@@ -58,10 +72,12 @@ export class EnemySpawner {
     // 超過分はキャップ（大量スポーン蓄積を防止、急激なリセットを回避）
     if (this.spawnTimer > interval * 3) this.spawnTimer = interval * 3;
 
-    // 全敵を更新 + 遠方敵をリサイクル
+    // 全敵を更新 + 遠方敵をリサイクル（逆順: release の swap-pop 対策）
     const despawnDist = Math.max(cameraWidth, cameraHeight) * 1.5;
     const despawnDistSq = despawnDist * despawnDist;
-    for (const enemy of this.pool.activeList) {
+    const list = this.pool.activeList;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const enemy = list[i];
       enemy.update(dt, playerX, playerY);
       const edx = enemy.x - playerX;
       const edy = enemy.y - playerY;
@@ -102,7 +118,17 @@ export class EnemySpawner {
 
     enemy.init(def, sx, sy);
 
-    // ハードモード修飾子の適用
+    // エリア難易度倍率（ステージ2以降で漸増）
+    const areaHp = this.areaMult.hp;
+    const areaDmg = this.areaMult.dmg;
+    // 時間進行による体力上昇（1分毎 +30%、20分で+600% = 7倍）
+    const timeHp = 1 + (this.elapsed / 60) * 0.30;
+
+    enemy.maxHp = Math.max(1, Math.floor(enemy.maxHp * areaHp * timeHp));
+    enemy.hp = enemy.maxHp;
+    enemy.damage = Math.max(1, Math.floor(enemy.damage * areaDmg));
+
+    // ハードモード修飾子の適用（上記に乗算）
     if (this.modifiers) {
       enemy.maxHp = Math.floor(enemy.maxHp * this.modifiers.enemyHpMultiplier);
       enemy.hp = enemy.maxHp;

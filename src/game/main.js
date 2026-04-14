@@ -67,6 +67,23 @@ class Game {
     eventBus.on('result:continue', (data) => this._returnToHub(data));
     eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => { this.weaponSlots = [...weaponSlots]; this.equippedArmor = armor; this.equippedAccessory = accessory; });
 
+    // インベントリからUIDが消えたら装備欄もクリア（クラフト・売却・消費で発生）
+    eventBus.on('inventory:uidsRemoved', ({ uids }) => {
+      const uidSet = new Set(uids);
+      let changed = false;
+      for (let i = 0; i < this.weaponSlots.length; i++) {
+        if (this.weaponSlots[i] && uidSet.has(this.weaponSlots[i].uid)) {
+          this.weaponSlots[i] = null; changed = true;
+        }
+      }
+      if (this.equippedArmor && uidSet.has(this.equippedArmor.uid)) { this.equippedArmor = null; changed = true; }
+      if (this.equippedAccessory && uidSet.has(this.equippedAccessory.uid)) { this.equippedAccessory = null; changed = true; }
+      if (changed) {
+        eventBus.emit('equipment:changed', { weaponSlots: this.weaponSlots, armor: this.equippedArmor, accessory: this.equippedAccessory });
+        eventBus.emit('toast', { message: '⚠️ 消費した素材が装備欄から外されました', type: 'warning' });
+      }
+    });
+
     // レベルアップ選択の橋渡し
     eventBus.on('levelup:choose', ({ passiveId }) => {
       if (this.runManager?.levelUp) {
@@ -84,6 +101,10 @@ class Game {
       SoundManager.playBattleVictory();
       // Boss BGM → normal BGM
       SoundManager.startGameBGM();
+      // ラン中のクラッシュで解放が失われないように即時チェックポイントセーブ
+      if (this.saveSystem) {
+        try { this._autoSave(); } catch (e) { /* save 失敗は致命的でないので握りつぶす */ }
+      }
     });
     eventBus.on('boss:intro', ({ name }) => {
       // Switch to battle BGM if it's a real boss (not reaper)

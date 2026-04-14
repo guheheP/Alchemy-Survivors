@@ -14,6 +14,7 @@ export class LevelUpModal {
     this.el.className = 'levelup-modal hidden';
     container.appendChild(this.el);
 
+    this._pendingTimeouts = new Set();
     this._unsub = eventBus.on('levelup:show', ({ level, choices }) => {
       this._show(level, choices);
     });
@@ -48,11 +49,13 @@ export class LevelUpModal {
         const passiveId = card.dataset.id;
         // Flash selected card
         card.classList.add('selected');
-        setTimeout(() => {
+        const tid = setTimeout(() => {
+          this._pendingTimeouts.delete(tid);
           this._hide();
           eventBus.emit('levelup:selected', { passiveId, isWeaponUnlock: passiveId === '__unlock_weapon__' });
           eventBus.emit('levelup:choose', { passiveId });
         }, 200);
+        this._pendingTimeouts.add(tid);
       });
     });
   }
@@ -100,6 +103,8 @@ export class LevelUpModal {
 
   destroy() {
     this._unsub();
+    for (const tid of this._pendingTimeouts) clearTimeout(tid);
+    this._pendingTimeouts.clear();
     this.el.remove();
   }
 }

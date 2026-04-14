@@ -57,6 +57,7 @@ export class SaveSystem {
         .map(([id]) => id),
       defeatedBosses: Progression.getDefeatedBosses(),
       purchasedUpgrades: Progression.getPurchasedUpgrades ? [...Progression.getPurchasedUpgrades()] : [],
+      warehouseLevel: Progression.getWarehouseLevel ? Progression.getWarehouseLevel() : 0,
       stats: extraData.stats || { ...DEFAULT_STATS },
       achievements: extraData.achievements || [],
       hardModeUnlocked: extraData.hardModeUnlocked || [],
@@ -106,7 +107,7 @@ export class SaveSystem {
     // インベントリ復元
     this.inventory.items.length = 0;
     this.inventory.gold = data.gold || 0;
-    this.inventory.maxCapacity = data.maxCapacity || 60;
+    // maxCapacity は Progression.warehouseLevel から派生（getter）。data.maxCapacity は無視。
 
     for (const itemData of data.items) {
       const item = createItemInstance(itemData.blueprintId, itemData.quality, itemData.traits);
@@ -131,6 +132,16 @@ export class SaveSystem {
     // アップグレード復元
     if (Progression.loadPurchasedUpgrades) {
       Progression.loadPurchasedUpgrades(data.purchasedUpgrades || []);
+    }
+
+    // 倉庫拡張レベル復元 + 旧capacity_1/2/3からのマイグレーション
+    Progression.setWarehouseLevel(data.warehouseLevel || 0);
+    if (Progression.migrateLegacyCapacityUpgrades) {
+      const migrated = Progression.migrateLegacyCapacityUpgrades();
+      if (migrated > 0 && !data.warehouseLevel) {
+        // 旧セーブからの初回マイグレーション: +maxCapacity を保持しておきたいので保存データ側にも反映
+        data.warehouseLevel = Progression.getWarehouseLevel();
+      }
     }
 
     // 装備復元（UID → アイテム参照の再構築）

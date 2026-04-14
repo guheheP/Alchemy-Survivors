@@ -54,6 +54,17 @@ export class RunCanvas {
     const spriteCache = ctxExtras.spriteCache;
     const itemBlueprints = ctxExtras.itemBlueprints;
     const elapsed = ctxExtras.elapsed || 0;
+    const playerSpritePath = ctxExtras.playerSpritePath;
+    const playerSpriteFrameW = ctxExtras.playerSpriteFrameW || 16;
+    const playerSpriteFrameH = ctxExtras.playerSpriteFrameH || 17;
+
+    // シェイク適用
+    const shakeX = camera.shakeX || 0;
+    const shakeY = camera.shakeY || 0;
+    if (shakeX !== 0 || shakeY !== 0) {
+      ctx.save();
+      ctx.translate(shakeX, shakeY);
+    }
 
     // === 1. 背景 ===
     if (background) {
@@ -162,6 +173,22 @@ export class RunCanvas {
 
       const flash = enemy.hitFlashTimer > 0 ? enemy.hitFlashTimer / 0.1 : 0;
 
+      // behavior別の背景オーラ
+      if (enemy.armorHits > 0) {
+        // armored: 青銀の装甲オーラ + 残り回数表示
+        const pulse = 0.4 + Math.sin(elapsed * 6) * 0.15;
+        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 1.6, '#8cf', pulse);
+      } else if (enemy.behavior === 'tank') {
+        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 1.5, '#fa6', 0.25);
+      } else if (enemy.isTelegraphing) {
+        // dasher 予備動作: 赤色の警告パルス
+        const tpulse = 0.5 + Math.sin(elapsed * 24) * 0.4;
+        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 2.0, '#f44', tpulse);
+      } else if (enemy.isDashing) {
+        // dashing: 残像ブラー
+        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 1.8, '#fc8', 0.55);
+      }
+
       // スプライトがあれば優先
       const def = enemy.enemyDef;
       let sprite = null;
@@ -169,12 +196,33 @@ export class RunCanvas {
         sprite = spriteCache.getPreset(def.preset);
       }
       if (sprite) {
-        // スプライトサイズ調整 — enemy.radius に基づいてスケール
         const baseSize = Math.max(sprite.width, sprite.height);
         const scale = (enemy.radius * 2.2) / baseSize;
         EntityRenderer.drawSprite(ctx, sprite, sx, sy, { scale, flash });
       } else {
         EntityRenderer.drawEntityFallback(ctx, sx, sy, enemy.radius, enemy.color, flash);
+      }
+
+      // armored: 回数チップ
+      if (enemy.armorHits > 0) {
+        ctx.save();
+        ctx.fillStyle = '#8cf';
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 2;
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const tx = sx + enemy.radius * 0.9;
+        const ty = sy - enemy.radius * 0.9;
+        ctx.beginPath();
+        ctx.arc(tx, ty, 7, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(40,60,120,0.9)';
+        ctx.fill();
+        ctx.strokeStyle = '#8cf';
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.fillText(String(enemy.armorHits), tx, ty);
+        ctx.restore();
       }
 
       // HPバー
@@ -244,34 +292,53 @@ export class RunCanvas {
     const py = player.lerpY(alpha) - camera.y;
     const pr = player.radius;
 
-    // 青いオーラ
-    EntityRenderer.drawGlow(ctx, px, py, pr * 1.8, '#4af', 0.35);
-
     // 無敵点滅
     const invincible = player.invincibleTimer > 0 && Math.floor(player.invincibleTimer * 10) % 2 === 0;
     if (invincible) ctx.globalAlpha = 0.4;
 
-    // 本体
-    ctx.save();
-    ctx.translate(px, py);
-    ctx.rotate(player.facingAngle);
-    // 円形の胴体
-    ctx.fillStyle = '#4af';
-    ctx.beginPath();
-    ctx.arc(0, 0, pr, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // 方向インジケータ（白い矢印）
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.moveTo(pr + 4, 0);
-    ctx.lineTo(pr - 3, -4);
-    ctx.lineTo(pr - 3, 4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
+    // 本体 — キャラクタースプライトシート（4向き×3歩行フレーム）
+    const playerFlash = player.hitFlashTimer > 0 ? player.hitFlashTimer / 0.1 : 0;
+    const playerSheet = spriteCache && playerSpritePath ? spriteCache.getImage(playerSpritePath) : null;
+    if (playerSheet) {
+      // facingAngle (atan2(dy,dx)) → 向きインデックス（列）
+      // 列: 0=下, 1=右, 2=上, 3=左
+      const deg = (player.facingAngle * 180 / Math.PI + 360) % 360;
+      let dirCol;
+      if (deg >= 45 && deg < 135) dirCol = 0;        // 下
+      else if (deg >= 135 && deg < 225) dirCol = 3;  // 左
+      else if (deg >= 225 && deg < 315) dirCol = 2;  // 上
+      else dirCol = 1;                                // 右
+
+      // 歩行フレーム（行）: 0=待機, 1=左足, 2=右足、パターン 0,1,0,2
+      const moving = Math.abs(player.x - player.prevX) + Math.abs(player.y - player.prevY) > 0.1;
+      let frameRow = 0;
+      if (moving) {
+        const t = Math.floor(elapsed * 8) % 4;
+        frameRow = t === 0 ? 0 : t === 1 ? 1 : t === 2 ? 0 : 2;
+      }
+
+      const sx0 = dirCol * playerSpriteFrameW;
+      const sy0 = frameRow * playerSpriteFrameH;
+      const scale = (pr * 2.6) / Math.max(playerSpriteFrameW, playerSpriteFrameH);
+      const dw = playerSpriteFrameW * scale;
+      const dh = playerSpriteFrameH * scale;
+      const dx = px - dw / 2;
+      const dy = py - dh / 2 - pr * 0.15;
+
+      ctx.save();
+      const prevSmoothing = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = false; // ドット絵をシャープに
+      ctx.drawImage(playerSheet, sx0, sy0, playerSpriteFrameW, playerSpriteFrameH, dx, dy, dw, dh);
+      // 被弾フラッシュ
+      if (playerFlash > 0) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.globalAlpha = Math.min(1, playerFlash);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(dx, dy, dw, dh);
+      }
+      ctx.imageSmoothingEnabled = prevSmoothing;
+      ctx.restore();
+    }
 
     ctx.globalAlpha = 1;
 
@@ -283,6 +350,11 @@ export class RunCanvas {
 
     // === 10. ダメージ数字 ===
     if (damageNumbers) damageNumbers.render(ctx, camera);
+
+    // シェイク復元（モバイルスティックはシェイクの影響を受けない）
+    if (shakeX !== 0 || shakeY !== 0) {
+      ctx.restore();
+    }
 
     // === 11. モバイルスティック ===
     if (player.mobileControls) player.mobileControls.render(ctx);

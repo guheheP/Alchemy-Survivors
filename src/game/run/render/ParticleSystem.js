@@ -143,7 +143,10 @@ export class ParticleSystem {
     const ch = camera.height;
     const cullMargin = 500;
 
-    for (const p of this.pool.activeList) {
+    const list = this.pool.activeList;
+    // 逆順: release の swap-pop で activeList が改変されるため
+    for (let i = list.length - 1; i >= 0; i--) {
+      const p = list[i];
       p.life -= dt;
       if (p.life <= 0) {
         this.pool.release(p);

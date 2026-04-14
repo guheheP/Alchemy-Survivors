@@ -4,6 +4,7 @@
 
 const _defeatedBosses = new Set();
 const _purchasedUpgrades = new Set();
+let _warehouseLevel = 0;
 
 /** ボス撃破数 → 品質上限のマッピング */
 const QUALITY_CAP_TABLE = {
@@ -71,8 +72,28 @@ export const Progression = {
     }
   },
 
+  // ── 倉庫拡張レベル ──
+  getWarehouseLevel() { return _warehouseLevel; },
+  setWarehouseLevel(lv) { _warehouseLevel = Math.max(0, lv | 0); },
+  incrementWarehouseLevel() { _warehouseLevel++; return _warehouseLevel; },
+
+  /** 旧capacity_1/2/3購入履歴からマイグレーション（初回ロード時に1度だけ呼ぶ） */
+  migrateLegacyCapacityUpgrades() {
+    let migrated = 0;
+    if (_purchasedUpgrades.has('capacity_1')) migrated = Math.max(migrated, 1);
+    if (_purchasedUpgrades.has('capacity_2')) migrated = Math.max(migrated, 2);
+    if (_purchasedUpgrades.has('capacity_3')) migrated = Math.max(migrated, 3);
+    if (migrated > _warehouseLevel) _warehouseLevel = migrated;
+    // 旧IDは不要なので除去（再購入防止のため残してもよいが、UIから消すため除去）
+    _purchasedUpgrades.delete('capacity_1');
+    _purchasedUpgrades.delete('capacity_2');
+    _purchasedUpgrades.delete('capacity_3');
+    return migrated;
+  },
+
   clear() {
     _defeatedBosses.clear();
     _purchasedUpgrades.clear();
+    _warehouseLevel = 0;
   },
 };

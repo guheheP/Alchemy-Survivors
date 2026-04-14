@@ -5,7 +5,9 @@
 
 export const GameConfig = {
   // --- インベントリ ---
-  initialInventoryCapacity: 60,
+  initialInventoryCapacity: 100,
+  warehouseExpansionPerLevel: 20,
+  warehouseMaxLevel: 20,
   initialGold: 100,
 
   // --- クラフト ---
@@ -31,7 +33,7 @@ export const GameConfig = {
     maxEnemies: ('ontouchstart' in globalThis || navigator.maxTouchPoints > 0) ? 150 : 300,
     spawnRateStart: 1.0,        // 敵/秒（開始時）
     spawnRateEnd: 6.0,          // 敵/秒（10分時点）
-    dropChance: 0.05,           // 素材ドロップ確率
+    dropChance: 0.02,           // 素材ドロップ確率
     traitChance: 0.25,          // ドロップ素材に特性が付く確率
     bossSpawnTimes: [180, 360],       // 3分/6分にボス出現
     reaperSpawnTime: 600,              // 10分に死神出現

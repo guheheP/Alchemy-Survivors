@@ -39,6 +39,9 @@ export class HubManager {
     this._unsubInventory = eventBus.on('inventory:changed', () => {
       this._updateHeader();
     });
+    // ゴールド・容量変動でもヘッダー更新
+    this._unsubGold = eventBus.on('gold:changed', () => this._updateHeader());
+    this._unsubCapacity = eventBus.on('capacity:changed', () => this._updateHeader());
   }
 
   render() {
@@ -110,6 +113,13 @@ export class HubManager {
       }
       case 'warehouse': {
         const screen = new WarehouseScreen(content, this.inventory);
+        screen.setEquippedUidsProvider(() => {
+          const uids = new Set();
+          for (const w of (this.weaponSlots || [])) { if (w?.uid) uids.add(w.uid); }
+          if (this.equippedArmor?.uid) uids.add(this.equippedArmor.uid);
+          if (this.equippedAccessory?.uid) uids.add(this.equippedAccessory.uid);
+          return uids;
+        });
         screen.render();
         this.screens.warehouse = screen;
         break;
@@ -166,6 +176,8 @@ export class HubManager {
   destroy() {
     this._unsubEquip();
     this._unsubInventory();
+    if (this._unsubGold) this._unsubGold();
+    if (this._unsubCapacity) this._unsubCapacity();
     for (const screen of Object.values(this.screens)) {
       if (screen?.destroy) screen.destroy();
     }

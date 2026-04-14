@@ -9,13 +9,14 @@
 import { createItemInstance } from './ItemSystem.js';
 import { ItemBlueprints } from './data/items.js';
 import { GameConfig } from './data/config.js';
+import { Progression } from './data/progression.js';
 import { eventBus } from './core/EventBus.js';
 
 export class InventorySystem {
   constructor() {
     this.items = [];
     this.gold = GameConfig.initialGold;
-    this.maxCapacity = GameConfig.initialInventoryCapacity;
+    // 容量は Progression.warehouseLevel から派生（初期容量 + Lv * perLevel）
     this._batchMode = false;
     this._batchDirty = false;
 
@@ -34,6 +35,11 @@ export class InventorySystem {
       this.items.push(inst);
       this._addToIndexes(inst);
     }
+  }
+
+  /** 現在の最大容量（倉庫拡張レベルから派生） */
+  get maxCapacity() {
+    return GameConfig.initialInventoryCapacity + Progression.getWarehouseLevel() * GameConfig.warehouseExpansionPerLevel;
   }
 
   get isFull() {
@@ -188,10 +194,39 @@ export class InventorySystem {
     }
   }
 
-  /** 容量拡張 (アップグレード購入時) */
-  expandCapacity(amount) {
-    this.maxCapacity += amount;
-    eventBus.emit('toast', { message: `📦 倉庫容量が ${amount} 増えました！（${this.maxCapacity}枠）`, type: 'success' });
+  /** 容量拡張 (アップグレード購入時) — 倉庫Lvを+1し、容量は getter で派生 */
+  expandCapacity(_amount) {
+    Progression.incrementWarehouseLevel();
+    const per = GameConfig.warehouseExpansionPerLevel;
+    eventBus.emit('toast', { message: `📦 倉庫容量が ${per} 増えました！（${this.maxCapacity}枠）`, type: 'success' });
+    eventBus.emit('capacity:changed', { maxCapacity: this.maxCapacity });
+  }
+
+  /** 一括売却 — 売却可能なUIDリストを受け取り、合計goldを返す */
+  sellItems(uids, priceFor) {
+    let total = 0;
+    let sold = 0;
+    this.beginBatch();
+    try {
+      for (const uid of uids) {
+        const item = this._byUid.get(uid);
+        if (!item || item.locked) continue;
+        const price = priceFor ? priceFor(item) : 0;
+        const removed = this.removeItem(uid, false);
+        if (removed) {
+          total += price;
+          sold++;
+        }
+      }
+    } finally {
+      this.endBatch();
+    }
+    if (sold > 0) {
+      this.addGold(total);
+      eventBus.emit('inventory:uidsRemoved', { uids });
+      eventBus.emit('inventory:changed');
+    }
+    return { total, sold };
   }
 
   // ── インデックス管理 (private) ──

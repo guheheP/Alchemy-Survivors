@@ -39,11 +39,15 @@ export class RunHUD {
         <div class="hud-passives" id="hud-passives"></div>
       </div>
 
-      <!-- Top Center: Timer + Wave -->
+      <!-- Top Center: Timer + Wave + Skill Banner -->
       <div class="hud-top-center">
         <div class="hud-timer" id="hud-timer">20:00</div>
         <div class="hud-wave" id="hud-wave"></div>
+        <div class="hud-skill-banner" id="hud-skill-banner"></div>
       </div>
+
+      <!-- Full-screen flash overlay for skill activation -->
+      <div class="hud-skill-flash" id="hud-skill-flash"></div>
 
       <!-- Top Right: Kills + Resources -->
       <div class="hud-top-right">
@@ -102,6 +106,11 @@ export class RunHUD {
     this._statsMini = this.el.querySelector('#hud-stats-mini');
     this._statsDetail = this.el.querySelector('#hud-stats-detail');
 
+    this._skillBanner = this.el.querySelector('#hud-skill-banner');
+    this._skillFlash = this.el.querySelector('#hud-skill-flash');
+    this._skillBannerTimeout = null;
+    this._skillFlashTimeout = null;
+
     this._passiveList = [];
     this._statsExpanded = false;
 
@@ -126,7 +135,36 @@ export class RunHUD {
       eventBus.on('weapon:unlocked', (data) => this._showAlert(`\uD83D\uDDE1\uFE0F ${data.name} \u304C\u4F7F\u7528\u53EF\u80FD\u306B\uFF01`)),
       eventBus.on('consumable:slotsChanged', ({ slots, buffs }) => this._updateConsumables(slots, buffs)),
       eventBus.on('levelup:selected', (data) => this._onPassiveSelected(data)),
+      eventBus.on('skill:activated', (data) => this._showSkillBanner(data)),
+      eventBus.on('ui:flash', (data) => this._showSkillFlash(data)),
     ];
+  }
+
+  _showSkillBanner({ name, color }) {
+    if (!this._skillBanner) return;
+    this._skillBanner.textContent = name;
+    this._skillBanner.style.color = color || '#ffd766';
+    this._skillBanner.style.borderColor = color || '#ffd766';
+    this._skillBanner.classList.remove('show');
+    // reflow で再アニメーションを起こす
+    void this._skillBanner.offsetWidth;
+    this._skillBanner.classList.add('show');
+    if (this._skillBannerTimeout) clearTimeout(this._skillBannerTimeout);
+    this._skillBannerTimeout = setTimeout(() => {
+      this._skillBanner.classList.remove('show');
+    }, 1400);
+  }
+
+  _showSkillFlash({ color, duration }) {
+    if (!this._skillFlash) return;
+    const dur = (duration || 0.2) * 1000;
+    this._skillFlash.style.backgroundColor = color || '#fff';
+    this._skillFlash.style.transitionDuration = `${dur}ms`;
+    this._skillFlash.classList.add('show');
+    if (this._skillFlashTimeout) clearTimeout(this._skillFlashTimeout);
+    this._skillFlashTimeout = setTimeout(() => {
+      this._skillFlash.classList.remove('show');
+    }, 40);
   }
 
   _onTick({ remaining, killCount, hp, maxHp, goldEarned, materialCount, weaponSlots, player, bossSpawnTimes, elapsed }) {
@@ -317,6 +355,8 @@ export class RunHUD {
     for (const unsub of this._unsubs) unsub();
     window.removeEventListener('keydown', this._onKeyDown);
     if (this._alertTimeout) clearTimeout(this._alertTimeout);
+    if (this._skillBannerTimeout) clearTimeout(this._skillBannerTimeout);
+    if (this._skillFlashTimeout) clearTimeout(this._skillFlashTimeout);
     this.el.remove();
   }
 }
