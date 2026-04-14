@@ -12,9 +12,13 @@ export class LevelUpModal {
     this.el = document.createElement('div');
     this.el.id = 'levelup-modal';
     this.el.className = 'levelup-modal hidden';
+    this.el.setAttribute('role', 'dialog');
+    this.el.setAttribute('aria-modal', 'true');
+    this.el.setAttribute('aria-labelledby', 'levelup-title');
     container.appendChild(this.el);
 
     this._pendingTimeouts = new Set();
+    this._onKeyDown = null;
     this._unsub = eventBus.on('levelup:show', ({ level, choices }) => {
       this._show(level, choices);
     });
@@ -27,12 +31,15 @@ export class LevelUpModal {
       <div class="levelup-content">
         <div class="levelup-header">
           <div class="levelup-sparkle left">\u2726</div>
-          <h2 class="levelup-title">\u2B50 LEVEL UP! \u2B50</h2>
+          <h2 class="levelup-title" id="levelup-title">\u2B50 LEVEL UP! \u2B50</h2>
           <div class="levelup-sparkle right">\u2726</div>
         </div>
         <div class="levelup-subtitle">Lv.${level} \u2014 \u5F37\u5316\u3092\u9078\u629E\u3057\u3066\u304F\u3060\u3055\u3044</div>
-        <div class="levelup-choices">
+        <div class="levelup-choices" role="group">
           ${choices.map((c, idx) => this._renderCard(c, idx)).join('')}
+        </div>
+        <div class="levelup-hint">
+          <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> キーでも選択できます
         </div>
       </div>
     `;
@@ -44,31 +51,49 @@ export class LevelUpModal {
     });
 
     // Click handlers
+    const handleSelect = (card) => {
+      const passiveId = card.dataset.id;
+      card.classList.add('selected');
+      const tid = setTimeout(() => {
+        this._pendingTimeouts.delete(tid);
+        this._hide();
+        eventBus.emit('levelup:selected', { passiveId, isWeaponUnlock: passiveId === '__unlock_weapon__' });
+        eventBus.emit('levelup:choose', { passiveId });
+      }, 200);
+      this._pendingTimeouts.add(tid);
+    };
+
     cards.forEach(card => {
-      card.addEventListener('click', () => {
-        const passiveId = card.dataset.id;
-        // Flash selected card
-        card.classList.add('selected');
-        const tid = setTimeout(() => {
-          this._pendingTimeouts.delete(tid);
-          this._hide();
-          eventBus.emit('levelup:selected', { passiveId, isWeaponUnlock: passiveId === '__unlock_weapon__' });
-          eventBus.emit('levelup:choose', { passiveId });
-        }, 200);
-        this._pendingTimeouts.add(tid);
-      });
+      card.addEventListener('click', () => handleSelect(card));
     });
+
+    // Keyboard shortcut (1/2/3)
+    if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
+    this._onKeyDown = (e) => {
+      if (this.el.classList.contains('hidden')) return;
+      const n = parseInt(e.key, 10);
+      if (Number.isInteger(n) && n >= 1 && n <= cards.length) {
+        e.preventDefault();
+        handleSelect(cards[n - 1]);
+      }
+    };
+    window.addEventListener('keydown', this._onKeyDown);
+
+    // Focus the first card for keyboard accessibility
+    if (cards[0]) cards[0].focus();
   }
 
   _renderCard(choice, index) {
     const isWeapon = choice.isWeaponUnlock;
     let imageHtml = '';
 
+    const shortcut = index + 1;
+
     if (isWeapon) {
-      // Try to find weapon image from description
       const cardClass = 'levelup-card weapon-unlock';
       return `
-        <button class="${cardClass}" data-id="${choice.id}">
+        <button class="${cardClass}" data-id="${choice.id}" aria-label="${choice.name} (武器解放)">
+          <span class="levelup-card-shortcut" aria-hidden="true">${shortcut}</span>
           <div class="levelup-card-glow"></div>
           <div class="levelup-card-inner">
             <div class="levelup-card-ribbon">\u6B66\u5668\u89E3\u653E</div>
@@ -83,7 +108,8 @@ export class LevelUpModal {
     }
 
     return `
-      <button class="levelup-card" data-id="${choice.id}">
+      <button class="levelup-card" data-id="${choice.id}" aria-label="${choice.name}">
+        <span class="levelup-card-shortcut" aria-hidden="true">${shortcut}</span>
         <div class="levelup-card-glow"></div>
         <div class="levelup-card-inner">
           <div class="levelup-icon-wrap">
@@ -103,6 +129,10 @@ export class LevelUpModal {
 
   destroy() {
     this._unsub();
+    if (this._onKeyDown) {
+      window.removeEventListener('keydown', this._onKeyDown);
+      this._onKeyDown = null;
+    }
     for (const tid of this._pendingTimeouts) clearTimeout(tid);
     this._pendingTimeouts.clear();
     this.el.remove();

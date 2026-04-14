@@ -45,35 +45,57 @@ export class HubManager {
   }
 
   render() {
+    const tabs = [
+      { id: 'craft',        icon: '🔮', label: '錬金工房', short: '工房' },
+      { id: 'equip',        icon: '⚔️', label: '装備',     short: '装備' },
+      { id: 'prep',         icon: '🚀', label: '出撃準備', short: '出撃' },
+      { id: 'warehouse',    icon: '📦', label: '倉庫',     short: '倉庫' },
+      { id: 'shop',         icon: '🏪', label: 'ショップ', short: '店' },
+      { id: 'collection',   icon: '📖', label: '図鑑',     short: '図鑑' },
+      { id: 'stats',        icon: '📊', label: '統計',     short: '統計' },
+      { id: 'achievements', icon: '🏅', label: '実績',     short: '実績' },
+      { id: 'settings',     icon: '⚙',  label: '設定',     short: '設定' },
+    ];
+    const tabButtons = tabs.map(t => `
+      <button class="hub-tab ${this.activeTab === t.id ? 'active' : ''}"
+              data-tab="${t.id}"
+              role="tab"
+              aria-selected="${this.activeTab === t.id}"
+              aria-controls="hub-content"
+              data-tooltip="${t.label}">
+        <span class="hub-tab-icon" aria-hidden="true">${t.icon}</span>
+        <span class="hub-tab-label">${t.label}</span>
+        <span class="hub-tab-short" aria-hidden="true">${t.short}</span>
+      </button>
+    `).join('');
+
     this.el.innerHTML = `
       <div class="hub-header">
         <h2>拠点</h2>
         <div class="hub-info">
-          <span id="hub-gold">💰 ${this.inventory.gold}G</span>
-          <span id="hub-item-count">📦 ${this.inventory.items.length} / ${this.inventory.maxCapacity}</span>
+          <span id="hub-gold" class="hub-info-item" data-tooltip="所持ゴールド">💰 ${this.inventory.gold}G</span>
+          <span id="hub-item-count" class="hub-info-item" data-tooltip="倉庫の使用/最大">📦 ${this.inventory.items.length} / ${this.inventory.maxCapacity}</span>
         </div>
       </div>
-      <div class="hub-tabs">
-        <button class="hub-tab ${this.activeTab === 'craft' ? 'active' : ''}" data-tab="craft">🔮 錬金工房</button>
-        <button class="hub-tab ${this.activeTab === 'equip' ? 'active' : ''}" data-tab="equip">⚔️ 装備</button>
-        <button class="hub-tab ${this.activeTab === 'prep' ? 'active' : ''}" data-tab="prep">🚀 出撃準備</button>
-        <button class="hub-tab ${this.activeTab === 'warehouse' ? 'active' : ''}" data-tab="warehouse">📦 倉庫</button>
-        <button class="hub-tab ${this.activeTab === 'shop' ? 'active' : ''}" data-tab="shop">🏪 ショップ</button>
-        <button class="hub-tab ${this.activeTab === 'collection' ? 'active' : ''}" data-tab="collection">📖 図鑑</button>
-        <button class="hub-tab ${this.activeTab === 'stats' ? 'active' : ''}" data-tab="stats">📊 統計</button>
-        <button class="hub-tab ${this.activeTab === 'achievements' ? 'active' : ''}" data-tab="achievements">🏅 実績</button>
-        <button class="hub-tab ${this.activeTab === 'settings' ? 'active' : ''}" data-tab="settings">⚙ 設定</button>
+      <div class="hub-tabs" role="tablist" aria-label="拠点メニュー">
+        ${tabButtons}
       </div>
-      <div class="hub-content" id="hub-content"></div>
+      <div class="hub-content" id="hub-content" role="tabpanel"></div>
     `;
     this.container.appendChild(this.el);
 
     this.el.querySelectorAll('.hub-tab').forEach(tab => {
       tab.addEventListener('click', () => {
+        if (this.activeTab === tab.dataset.tab) return;
         this.activeTab = tab.dataset.tab;
-        this.el.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+        this.el.querySelectorAll('.hub-tab').forEach(t => {
+          const isActive = t.dataset.tab === this.activeTab;
+          t.classList.toggle('active', isActive);
+          t.setAttribute('aria-selected', String(isActive));
+        });
         this._renderContent();
+        // アクティブタブが画面外なら可視範囲へスクロール（モバイルの横スクロール対応）
+        tab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
       });
     });
 

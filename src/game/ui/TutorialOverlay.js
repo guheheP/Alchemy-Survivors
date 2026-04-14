@@ -5,7 +5,7 @@
 const STEPS = [
   {
     title: 'Alchemy Survivorsへようこそ！',
-    text: 'このゲームは、自分で武器を鍛えて戦場を制圧するサバイバルアクションです。',
+    text: 'このゲームは、自分で武器を鍛えて戦場を制圧するサバイバルアクションです。まずは基本を見ていきましょう。',
     icon: '⚔️',
   },
   {
@@ -28,13 +28,23 @@ const STEPS = [
   },
   {
     title: 'ラン中の操作',
-    text: 'WASD/矢印キーで移動、Spaceでダッシュ。武器は自動で攻撃します。レベルアップ時にパッシブを選択しましょう。',
+    text: 'WASD / 矢印キーで移動、Space でダッシュ。武器は自動で攻撃します。Tab キーで詳細ステータスを確認できます。',
     icon: '🎮',
   },
   {
-    title: '素材を集めてクラフト',
-    text: 'ランで集めた素材は倉庫に保管されます。素材→クラフト→装備→ランのループを回して、より強い装備を作りましょう！',
+    title: 'レベルアップで強化',
+    text: '敵を倒してレベルアップすると、3択の強化を選べます。数字キー 1・2・3 でも選択可能。装備特性もパッシブ効果として作用します。',
+    icon: '⬆️',
+  },
+  {
+    title: 'クラフトのループ',
+    text: 'ランで集めた素材は倉庫に永続保管。より良い素材を集めて、強力な特性を持つ装備を融合で鍛え上げましょう。',
     icon: '🔄',
+  },
+  {
+    title: '冒険の始まり',
+    text: '素材 → クラフト → 装備 → ラン のサイクルを回して、すべてのステージを攻略しましょう。幸運を！',
+    icon: '🌟',
   },
 ];
 
@@ -52,24 +62,31 @@ export class TutorialOverlay {
   _render() {
     const s = STEPS[this.step];
     const isLast = this.step === STEPS.length - 1;
+    const isFirst = this.step === 0;
 
     this.el.innerHTML = `
       <div class="tutorial-backdrop"></div>
-      <div class="tutorial-card">
-        <div class="tutorial-step-indicator">
-          ${STEPS.map((_, i) => `<span class="tutorial-dot ${i === this.step ? 'active' : i < this.step ? 'done' : ''}"></span>`).join('')}
+      <div class="tutorial-card" role="dialog" aria-labelledby="tutorial-title-${this.step}" aria-describedby="tutorial-text-${this.step}">
+        <div class="tutorial-step-indicator" aria-label="ステップ ${this.step + 1} / ${STEPS.length}">
+          ${STEPS.map((_, i) => `<span class="tutorial-dot ${i === this.step ? 'active' : i < this.step ? 'done' : ''}" aria-hidden="true"></span>`).join('')}
         </div>
-        <div class="tutorial-icon">${s.icon}</div>
-        <h3 class="tutorial-title">${s.title}</h3>
-        <p class="tutorial-text">${s.text}</p>
+        <div class="tutorial-step-count">${this.step + 1} / ${STEPS.length}</div>
+        <div class="tutorial-icon" aria-hidden="true">${s.icon}</div>
+        <h3 class="tutorial-title" id="tutorial-title-${this.step}">${s.title}</h3>
+        <p class="tutorial-text" id="tutorial-text-${this.step}">${s.text}</p>
         <div class="tutorial-actions">
-          <button class="tutorial-skip">スキップ</button>
-          <button class="tutorial-next">${isLast ? '始める！' : '次へ →'}</button>
+          <div class="tutorial-nav-left">
+            <button class="tutorial-skip" aria-label="チュートリアルをスキップ">スキップ</button>
+            ${!isFirst ? '<button class="tutorial-back" aria-label="前のステップ">← 戻る</button>' : ''}
+          </div>
+          <button class="tutorial-next" aria-label="${isLast ? 'ゲームを始める' : '次のステップ'}">${isLast ? '🚀 始める！' : '次へ →'}</button>
         </div>
       </div>
     `;
 
     this.el.querySelector('.tutorial-skip').addEventListener('click', () => this._complete());
+    const backBtn = this.el.querySelector('.tutorial-back');
+    if (backBtn) backBtn.addEventListener('click', () => { this.step--; this._render(); });
     this.el.querySelector('.tutorial-next').addEventListener('click', () => {
       if (isLast) {
         this._complete();
@@ -78,6 +95,9 @@ export class TutorialOverlay {
         this._render();
       }
     });
+    // フォーカスを次へボタンに
+    const nextBtn = this.el.querySelector('.tutorial-next');
+    if (nextBtn) nextBtn.focus();
   }
 
   _complete() {

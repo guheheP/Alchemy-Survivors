@@ -79,6 +79,7 @@ export class RunHUD {
       <div class="hud-stats" id="hud-stats">
         <div class="hud-stats-mini" id="hud-stats-mini"></div>
         <div class="hud-stats-detail hidden" id="hud-stats-detail"></div>
+        <div class="hud-stats-hint"><kbd>Tab</kbd> で詳細</div>
       </div>
 
       <!-- EXP Bar -->
@@ -113,12 +114,17 @@ export class RunHUD {
 
     this._passiveList = [];
     this._statsExpanded = false;
+    this._passivesExpanded = false;
+    this._PASSIVE_LIMIT = 3;
 
     this._onKeyDown = (e) => {
       if (e.code === 'Tab') {
         e.preventDefault();
         this._statsExpanded = !this._statsExpanded;
+        this._passivesExpanded = this._statsExpanded;
         this._statsDetail.classList.toggle('hidden', !this._statsExpanded);
+        this._passivesEl.classList.toggle('expanded', this._passivesExpanded);
+        this._renderPassives();
       }
     };
     window.addEventListener('keydown', this._onKeyDown);
@@ -230,18 +236,32 @@ export class RunHUD {
 
   _renderPassives() {
     const counts = {};
-    for (const id of this._passiveList) counts[id] = (counts[id] || 0) + 1;
+    const order = [];
+    // 取得順に出現、カウントアップ
+    for (const id of this._passiveList) {
+      if (!(id in counts)) order.push(id);
+      counts[id] = (counts[id] || 0) + 1;
+    }
     const icons = {
       damage_up: '\u2694\uFE0F', range_up: '\uD83D\uDD35', hp_up: '\u2764\uFE0F',
       speed_up: '\uD83D\uDCA8', magnet_up: '\uD83E\uDDF2', cooldown_down: '\u23F1\uFE0F',
       regen: '\uD83D\uDC9A', extra_drop: '\uD83C\uDF81', extra_projectile: '\uD83D\uDD31',
       crit_chance: '\uD83D\uDCA5',
     };
-    this._passivesEl.innerHTML = Object.keys(counts).map(id => {
+    // デフォルトは最新N個のみ表示（Tabで全表示に切替）
+    const ids = this._passivesExpanded
+      ? order
+      : order.slice(-this._PASSIVE_LIMIT);
+    const hidden = order.length - ids.length;
+    const badges = ids.map(id => {
       const icon = icons[id] || '\u2B50';
       const count = counts[id];
       return `<span class="hud-passive-badge" title="${id} x${count}">${icon}${count > 1 ? count : ''}</span>`;
-    }).join('');
+    });
+    if (hidden > 0) {
+      badges.unshift(`<span class="hud-passive-badge hud-passive-more" title="Tabキーで全表示">+${hidden}</span>`);
+    }
+    this._passivesEl.innerHTML = badges.join('');
   }
 
   // --- Wave / Difficulty ---

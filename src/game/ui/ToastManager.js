@@ -176,9 +176,22 @@ export class ToastManager {
    * @param {'default'|'gold'|'green'|'red'|'special'} type
    */
   show(message, type = 'default') {
+    // 直近に同一メッセージが出ていれば、カウンタ付きで上書き（連続通知の洪水防止）
+    const lastToast = this.container.lastElementChild;
+    if (lastToast && lastToast.dataset.plainMessage === message && !lastToast.classList.contains('toast-hide')) {
+      const count = Number(lastToast.dataset.repeatCount || '1') + 1;
+      lastToast.dataset.repeatCount = String(count);
+      lastToast.textContent = `${message} ×${count}`;
+      // 再度表示時間を延長
+      if (lastToast._hideTimer) clearTimeout(lastToast._hideTimer);
+      lastToast._hideTimer = setTimeout(() => this._dismiss(lastToast), 5000);
+      return;
+    }
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
+    toast.dataset.plainMessage = message;
 
     this._present(toast);
   }
@@ -200,22 +213,27 @@ export class ToastManager {
 
   /** 内部: トーストをDOMに追加してアニメーション */
   _present(toast) {
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     toast.addEventListener('click', () => this._dismiss(toast));
     this.container.appendChild(toast);
 
     requestAnimationFrame(() => toast.classList.add('toast-show'));
 
     // 5秒後に自動消滅（アイコン付きは少し長めに表示）
-    setTimeout(() => this._dismiss(toast), 5000);
+    toast._hideTimer = setTimeout(() => this._dismiss(toast), 5000);
 
-    // 最大5件まで
-    while (this.container.children.length > 5) {
+    // モバイルでは最大3件、デスクトップでは最大5件に制限
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    const maxToasts = isMobile ? 3 : 5;
+    while (this.container.children.length > maxToasts) {
       this._dismiss(this.container.firstChild);
     }
   }
 
   _dismiss(toast) {
     if (!toast || !toast.parentNode) return;
+    if (toast._hideTimer) { clearTimeout(toast._hideTimer); toast._hideTimer = null; }
     toast.classList.add('toast-hide');
     setTimeout(() => toast.remove(), 300);
   }

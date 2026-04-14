@@ -24,14 +24,18 @@ export class RunResultScreen {
     const mins = Math.floor(elapsed / 60);
     const secs = Math.floor(elapsed % 60);
     const timeStr = `${mins}:${String(secs).padStart(2, '0')}`;
-    const reasonText = reason === 'timeout' ? '生存成功！' : '力尽きた...';
+    const isVictory = reason === 'timeout';
+    const reasonText = isVictory ? '🏆 生存成功！' : '💀 力尽きた...';
+    const titleClass = isVictory ? 'result-title result-title-victory' : 'result-title result-title-defeat';
 
-    const materialHtml = materials.length > 0
+    const materialCount = materials.length;
+    const materialHtml = materialCount > 0
       ? materials.map(m => {
           const bp = ItemBlueprints[m.blueprintId];
-          return `<div class="result-material">
+          return `<div class="result-material" title="${bp?.name || m.blueprintId} (Q${m.quality})">
             <img src="${bp?.image ? assetPath(bp.image) : ''}" alt="${bp?.name || m.blueprintId}" class="result-mat-icon" onerror="this.style.display='none'">
-            <span>${bp?.name || m.blueprintId} (Q${m.quality})</span>
+            <span class="result-mat-name">${bp?.name || m.blueprintId}</span>
+            <span class="result-mat-quality">Q${m.quality}</span>
           </div>`;
         }).join('')
       : '<div class="result-no-materials">素材を獲得できなかった</div>';
@@ -39,30 +43,40 @@ export class RunResultScreen {
     this.el.classList.remove('hidden');
     this.el.innerHTML = `
       <div class="result-overlay"></div>
-      <div class="result-content">
-        <h2 class="result-title">${reasonText}</h2>
-        <p class="result-area">${areaName}${bossText ? ` — ${bossText}` : ''}</p>
+      <div class="result-content anim-fade-in" role="dialog" aria-labelledby="result-title">
+        <h2 class="${titleClass}" id="result-title">${reasonText}</h2>
+        <p class="result-area">${areaName}${bossText ? ` — <span class="result-boss-badge">${bossText}</span>` : ''}</p>
         <div class="result-stats">
           <div class="result-stat">
+            <span class="result-stat-icon" aria-hidden="true">⏱️</span>
             <span class="result-label">生存時間</span>
             <span class="result-value">${timeStr}</span>
           </div>
           <div class="result-stat">
+            <span class="result-stat-icon" aria-hidden="true">⚔️</span>
             <span class="result-label">討伐数</span>
             <span class="result-value">${killCount}</span>
           </div>
           <div class="result-stat">
-            <span class="result-label">獲得ゴールド</span>
+            <span class="result-stat-icon" aria-hidden="true">💰</span>
+            <span class="result-label">ゴールド</span>
             <span class="result-value">${resultData.goldEarned || 0}G</span>
           </div>
           <div class="result-stat">
-            <span class="result-label">到達レベル</span>
+            <span class="result-stat-icon" aria-hidden="true">⭐</span>
+            <span class="result-label">レベル</span>
             <span class="result-value">Lv.${level}</span>
           </div>
         </div>
-        <h3 class="result-materials-title">獲得素材</h3>
-        <div class="result-materials">${materialHtml}</div>
-        <button class="result-btn" id="result-continue-btn">拠点に戻る</button>
+        <h3 class="result-materials-title">
+          <span>📦 獲得素材</span>
+          <span class="result-materials-count">${materialCount}個</span>
+        </h3>
+        <div class="result-materials-wrap">
+          <div class="result-materials">${materialHtml}</div>
+          ${materialCount > 6 ? '<div class="result-materials-scrollhint">↓ スクロールで全表示</div>' : ''}
+        </div>
+        <button class="result-btn" id="result-continue-btn">🏠 拠点に戻る</button>
       </div>
     `;
 
