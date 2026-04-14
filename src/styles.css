@@ -217,10 +217,11 @@ body {
 .trait-tooltip {
   display: none;
   position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-  width: 220px; padding: 0.5rem;
+  width: min(220px, 85vw); padding: 0.5rem;
   background: #1a1a2e; border: 1px solid #555; border-radius: 6px;
   z-index: 20; pointer-events: none;
   margin-bottom: 4px;
+  word-break: break-word; overflow-wrap: break-word;
 }
 .trait-item-wrap:hover .trait-tooltip { display: block; }
 .trait-tt-name { font-size: 0.85rem; font-weight: 700; }
@@ -263,8 +264,8 @@ body {
   border: 1px solid #444;
   border-radius: 10px;
   padding: 1.2rem;
-  max-width: 400px;
-  max-height: 60vh;
+  width: min(400px, 92vw);
+  max-height: 70vh;
   overflow-y: auto;
 }
 .material-picker h4 { color: #f0c060; margin-bottom: 0.8rem; }
@@ -591,7 +592,11 @@ body {
   color: #aaa; font-size: 1rem; margin-bottom: 2rem;
   letter-spacing: 1px;
 }
-.levelup-choices { display: flex; gap: 1.2rem; }
+.levelup-choices {
+  display: flex; gap: 1.2rem;
+  flex-wrap: wrap; justify-content: center;
+  max-width: 100%;
+}
 .levelup-card {
   position: relative;
   display: flex; flex-direction: column; align-items: center;
@@ -600,7 +605,8 @@ body {
   border: none;
   border-radius: 16px;
   cursor: pointer;
-  min-width: 200px; max-width: 220px;
+  flex: 1 1 180px;
+  min-width: 140px; max-width: 220px;
   font-family: inherit;
   color: #e0e0e0;
   animation: cardSlideIn 0.4s ease-out both;
@@ -673,11 +679,12 @@ body {
 .result-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
 .result-content {
   position: relative;
-  max-width: 500px; margin: 0 auto;
-  padding: 2rem;
+  max-width: min(500px, 92vw); margin: 0 auto;
+  padding: 2rem 1rem;
   display: flex; flex-direction: column; align-items: center;
   justify-content: center;
   height: 100%;
+  overflow-y: auto;
 }
 .result-title { color: #f0c060; font-size: 2rem; margin-bottom: 1.5rem; }
 .result-stats { display: flex; gap: 2rem; margin-bottom: 1.5rem; }
@@ -1260,16 +1267,238 @@ body {
 .settings-key-row { display: flex; justify-content: space-between; padding: 0.3rem 0.5rem; font-size: 0.8rem; background: rgba(255,255,255,0.02); border-radius: 4px; }
 .settings-key { color: #f0c060; font-family: monospace; font-weight: 700; }
 
+/* ===== Game Tooltip (data-tooltip 属性用) ===== */
+.game-tooltip {
+  position: fixed;
+  top: 0; left: 0;
+  max-width: min(280px, 90vw);
+  padding: 0.5rem 0.7rem;
+  background: rgba(16,16,28,0.96);
+  border: 1px solid #555;
+  border-radius: 6px;
+  color: #e0e0e0;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  word-break: break-word; overflow-wrap: break-word;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.game-tooltip.game-tooltip-visible { opacity: 1; transform: translateY(0); }
+.game-tooltip-title {
+  font-weight: 700; color: #f0c060; font-size: 0.85rem;
+  margin-bottom: 0.3rem; padding-bottom: 0.3rem;
+  border-bottom: 1px solid #333;
+}
+.game-tooltip-title.tooltip-common { color: #bbb; }
+.game-tooltip-title.tooltip-uncommon { color: #7cf; }
+.game-tooltip-title.tooltip-rare { color: #9af; }
+.game-tooltip-title.tooltip-epic { color: #c8f; }
+.game-tooltip-title.tooltip-legendary { color: #fa4; }
+.game-tooltip-body { color: #ccc; font-size: 0.78rem; }
+
+/* ===== Toast Container (ToastManager用) ===== */
+.toast-container {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  display: flex; flex-direction: column-reverse; gap: 0.5rem;
+  z-index: 300;
+  pointer-events: none;
+  max-width: min(360px, 92vw);
+}
+.toast-container > .toast { pointer-events: auto; }
+.toast {
+  padding: 0.6rem 0.9rem;
+  background: rgba(26,26,46,0.96);
+  border: 1px solid #555;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  cursor: pointer;
+  word-break: break-word; overflow-wrap: break-word;
+}
+.toast.toast-show { opacity: 1; transform: translateX(0); }
+.toast.toast-hide { opacity: 0; transform: translateX(20px); }
+.toast.toast-gold { border-color: #f0c060; color: #f0c060; }
+.toast.toast-green { border-color: #4a4; color: #8f8; }
+.toast.toast-red { border-color: #a44; color: #f88; }
+.toast.toast-special { border-color: #c8f; color: #d9f; }
+.toast-text { margin-bottom: 0.3rem; }
+.toast-item-icons { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+.toast-item-icon {
+  width: 32px; height: 32px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #333; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem;
+  overflow: hidden;
+}
+.toast-item-icon img { width: 100%; height: 100%; object-fit: contain; }
+.toast-item-more { color: #aaa; font-size: 0.75rem; }
+.toast-detail-btn {
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(240,192,96,0.15);
+  border: 1px solid #f0c060;
+  border-radius: 4px;
+  color: #f0c060;
+  font-family: inherit; font-size: 0.75rem;
+  cursor: pointer;
+  min-height: 28px;
+}
+.toast-detail-btn:hover { background: rgba(240,192,96,0.3); }
+
+/* ===== 帰還詳細モーダル共通 ===== */
+.item-detail-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 150;
+  padding: 1rem;
+}
+.item-detail-modal, .return-detail-modal {
+  position: relative;
+  background: #1a1a2e;
+  border: 1px solid #555; border-radius: 10px;
+  padding: 1.4rem 1.2rem 1.2rem;
+  width: min(480px, 100%);
+  max-height: 80vh; overflow-y: auto;
+  word-break: break-word; overflow-wrap: break-word;
+}
+.item-detail-close {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  width: 32px; height: 32px;
+  background: transparent; border: none;
+  color: #aaa; font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.item-detail-close:hover { color: #fff; }
+.return-modal-title {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.8rem;
+  color: #f0c060; font-size: 1rem; font-weight: 700;
+  flex-wrap: wrap; gap: 0.5rem;
+}
+.return-modal-rate { font-size: 0.85rem; color: #aaa; font-weight: 400; }
+.return-modal-items { display: flex; flex-direction: column; gap: 0.4rem; }
+.return-item-row {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.return-item-name { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+.return-item-quality { font-size: 0.75rem; }
+.return-item-traits { display: flex; flex-wrap: wrap; gap: 0.2rem; width: 100%; }
+
+/* ===== 共通: 日本語テキスト折り返し対策 ===== */
+.recipe-name, .equip-card-name, .coll-item-name, .wh-item-name,
+.levelup-desc, .levelup-name, .hud-cons-name,
+.preview-skill-desc, .craft-preview h4,
+.coll-trait-name, .coll-trait-desc,
+.shop-card-name, .shop-card-desc,
+.ach-name, .ach-desc,
+.passive-name, .passive-desc,
+.return-item-name {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ===== モーダル / ピッカー共通のビューポート対応 ===== */
+.cons-picker-overlay .cons-picker-modal,
+.levelup-modal-content {
+  max-width: 95vw;
+}
+
+/* ===== ブレークポイント: 〜1024px (タブレット) ===== */
+@media (max-width: 1024px) {
+  .craft-layout { grid-template-columns: 260px 1fr; }
+  .equip-layout { grid-template-columns: 1fr; }
+  .warehouse-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+}
+
+/* ===== ブレークポイント: 〜768px (モバイル) ===== */
 @media (max-width: 768px) {
   .hub-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .hub-tabs::-webkit-scrollbar { display: none; }
   .hub-tab { flex: 0 0 auto; padding: 0.6rem 0.8rem; font-size: 0.8rem; white-space: nowrap; min-width: 44px; min-height: 44px; }
   .hub-content { padding: 0.5rem; }
+  .hub-info { gap: 0.8rem; font-size: 0.85rem; flex-wrap: wrap; }
+
+  .title-name { font-size: 2.2rem; }
+  .title-btn { min-width: 180px; padding: 0.8rem 1.5rem; }
+
+  .craft-layout { grid-template-columns: 1fr; height: auto; }
+  .equip-layout { grid-template-columns: 1fr; }
   .prep-layout { flex-direction: column; }
   .prep-area, .prep-summary { min-width: unset; }
   .area-list { grid-template-columns: repeat(2, 1fr); }
   .stats-grid { grid-template-columns: 1fr; }
   .ach-categories { gap: 0.2rem; }
-  .ach-cat-btn { padding: 0.25rem 0.4rem; font-size: 0.7rem; }
+  .ach-cat-btn { padding: 0.35rem 0.5rem; font-size: 0.7rem; min-height: 32px; }
   .tutorial-card { padding: 1.5rem; }
+
+  .warehouse-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.4rem; }
+  .coll-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+
+  .levelup-choices { gap: 0.6rem; }
+  .levelup-card { flex: 1 1 140px; min-width: 120px; max-width: 180px; }
+  .levelup-card-inner { padding: 1.2rem 0.8rem; }
+  .levelup-title { font-size: 1.5rem; }
+  .levelup-subtitle { font-size: 0.85rem; margin-bottom: 1rem; }
+
+  .result-stats { gap: 1rem; flex-wrap: wrap; justify-content: center; }
+  .result-title { font-size: 1.5rem; }
+
+  .hud-hp-bar { width: min(220px, 55vw); height: 22px; }
+  .hud-timer { font-size: 1.6rem; }
+  .hud-passives { max-width: 60vw; }
+  .hud-cons-slot { min-width: 100px; }
+
+  .equip-filter-btn, .wh-filter { padding: 0.5rem 0.7rem; min-height: 36px; }
+
+  .toast-container { bottom: 10px; right: 10px; left: 10px; max-width: unset; }
+  .toast { font-size: 0.8rem; }
+
+  .trait-tooltip { width: min(220px, 80vw); }
+}
+
+/* ===== ブレークポイント: 〜480px (小型スマホ) ===== */
+@media (max-width: 480px) {
+  .title-name { font-size: 1.8rem; }
+  .title-sub { font-size: 1rem; margin-bottom: 1.2rem; }
+  .title-btn { min-width: 160px; font-size: 1rem; padding: 0.7rem 1.2rem; }
+
+  .hub-header { padding: 0.6rem 0.8rem; }
+  .hub-header h2 { font-size: 1.2rem; }
+  .hub-tab { padding: 0.5rem 0.6rem; font-size: 0.7rem; }
+
+  .area-list { grid-template-columns: 1fr; }
+  .warehouse-grid { grid-template-columns: 1fr; }
+  .coll-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+
+  .levelup-card { flex: 1 1 100%; max-width: 100%; }
+  .levelup-title { font-size: 1.2rem; }
+
+  .hud-hp-bar { width: min(180px, 50vw); height: 20px; }
+  .hud-timer { font-size: 1.3rem; }
+  .hud-cons-slot { min-width: 80px; }
+  .hud-consumables { bottom: 10px; gap: 4px; }
+  .hud-passives { max-width: 55vw; gap: 2px; }
+
+  .material-picker { padding: 0.8rem; }
+  .result-stats { gap: 0.6rem; font-size: 0.9rem; }
+  .result-title { font-size: 1.2rem; margin-bottom: 1rem; }
+  .result-content { padding: 1rem 0.6rem; }
 }
