@@ -47,7 +47,7 @@ export const GameConfig = {
 
   // --- ゴールド ---
   gold: {
-    perKill: 2,           // 通常敵1体あたり
+    perKill: 1,           // 通常敵1体あたり
     bossBonus: 150,       // ボス撃破ボーナス
     survivalBonus: 60,    // 2.5分生存ごとのボーナス
     survivalInterval: 150, // 2.5分

@@ -50,6 +50,7 @@ export class SaveSystem {
       equippedWeaponUids: extraData.equippedWeaponUids || [null, null, null, null],
       equippedArmorUid: extraData.equippedArmorUid || null,
       equippedAccessoryUid: extraData.equippedAccessoryUid || null,
+      savedConsumableUids: extraData.savedConsumableUids || [],
       unlockedRecipes: Object.entries(Recipes)
         .filter(([, r]) => r.unlocked)
         .map(([id]) => id),

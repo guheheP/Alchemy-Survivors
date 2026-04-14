@@ -15,15 +15,16 @@ export class PlayerController extends Entity {
     this.type = 'player';
     this.radius = GameConfig.run.playerRadius;
 
-    // ベースステータス（固定主人公） + 永続アップグレード（HP/ATK Lv = +Lv%）
+    // ベースステータス（固定主人公） + 永続アップグレード
+    // HP/ATK は Lv=% の乗算、DEF は Lv を防御力の数値として直接加算
     const hpBonus = 1 + Progression.getStatBonusPercent('hp');
     const atkBonus = 1 + Progression.getStatBonusPercent('atk');
     this.maxHp = GameConfig.run.playerBaseHp * hpBonus;
     this.hp = this.maxHp;
     this.baseSpeed = GameConfig.run.playerBaseSpeed;
     this.baseDamage = GameConfig.run.playerBaseDamage * atkBonus;
-    // 永続DEF Lv = 被ダメ %軽減（乗算）
-    this.permanentDefPercent = Progression.getStatBonusPercent('def');
+    // 永続DEF Lv (0〜100) を後段で passives.damageReduction に加算
+    this._permanentDefValue = Progression.getStatLevel('def');
 
     // 方向
     this.facingAngle = 0;
@@ -89,6 +90,9 @@ export class PlayerController extends Entity {
 
     // 防具・アクセサリの特性からrun*パッシブを適用
     this._applyTraitPassives([equippedArmor, equippedAccessory]);
+
+    // 永続DEF Lv を防御力にフラット加算（armor/特性と同じ値単位）
+    this.passives.damageReduction += this._permanentDefValue;
   }
 
   /** 武器スロットの特性もパッシブに適用（RunManagerから呼ぶ） */
@@ -201,9 +205,11 @@ export class PlayerController extends Entity {
     // 回避判定
     if (this.passives.dodge > 0 && Math.random() < this.passives.dodge) return false;
 
-    // ダメージ軽減（防具/特性などのフラット軽減 → 永続DEF Lv の%軽減）
-    const flatReduced = Math.max(1, amount - this.passives.damageReduction);
-    const effectiveDamage = Math.max(1, flatReduced * (1 - (this.permanentDefPercent || 0)));
+    // ダメージ計算式: 防御力は 1/3 で減算、最低でも攻撃力の25%は通る（最大75%軽減）
+    const def = this.passives.damageReduction || 0;
+    const reduced = amount - def / 3;
+    const minDamage = Math.max(1, Math.ceil(amount * 0.25));
+    const effectiveDamage = Math.max(minDamage, Math.round(reduced));
 
     this.hp -= effectiveDamage;
     this.invincibleTimer = GameConfig.run.invincibilityDuration;

@@ -185,7 +185,7 @@ export class EquipmentScreen {
       <h4>装備合計ステータス</h4>
       <div class="equip-stat-grid">
         <div class="equip-stat-item"><span>総攻撃力</span><span class="stat-val">${totalDmg.toFixed(1)}</span></div>
-        <div class="equip-stat-item"><span>ダメージ軽減</span><span class="stat-val">${def.toFixed(1)}</span></div>
+        <div class="equip-stat-item"><span>防御力</span><span class="stat-val">${def.toFixed(1)}</span></div>
         <div class="equip-stat-item"><span>HP増加</span><span class="stat-val">+${hpBonus.toFixed(0)}</span></div>
         <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${(spdBonus * 100).toFixed(1)}%</span></div>
         <div class="equip-stat-item"><span>武器数</span><span class="stat-val">${weapons.length}/4</span></div>

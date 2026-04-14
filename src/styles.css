@@ -574,9 +574,18 @@ a:focus-visible,
   background: rgba(255,255,255,0.03);
   border: 1px dashed #444;
   border-radius: 8px;
-  height: 64px; flex-shrink: 0;
+  min-height: 64px; flex-shrink: 0;
   position: relative;
+  flex-wrap: wrap;
 }
+/* 特性バッジは2行目に流してスロット高さを広げる */
+.weapon-slot .equip-card-traits {
+  flex: 1 1 100%;
+  margin-left: 38px;
+  gap: 4px;
+  margin-top: 2px;
+}
+.weapon-slot .equip-card-traits:empty { display: none; }
 .weapon-slot.filled { border-style: solid; border-color: #555; }
 .weapon-slot .slot-number {
   width: 22px; height: 22px;
@@ -734,17 +743,31 @@ a:focus-visible,
   position: relative;
   border: 2px solid #555;
 }
-.hud-hp-fill {
-  height: 100%;
-  background: #4c4;
-  transition: width 0.1s;
+/* HPの遅延バー（被ダメージ時の赤い残像） */
+.hud-hp-lag {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: linear-gradient(90deg, #f44, #f88);
   border-radius: 13px;
+  transition: width 0.55s 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+  width: 100%;
+  box-shadow: 0 0 6px rgba(255,68,68,0.5);
+}
+.hud-hp-lag.no-delay { transition: width 0.1s; }
+.hud-hp-fill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: #4c4;
+  transition: width 0.12s ease-out;
+  border-radius: 13px;
+  z-index: 2;
+  width: 100%;
 }
 .hud-hp-text {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   font-size: 0.85rem; color: #fff; font-weight: 700;
-  text-shadow: 1px 1px 3px #000;
+  text-shadow: 1px 1px 3px #000, 0 0 3px #000;
+  z-index: 3;
 }
 .hud-level {
   color: #f0c060; font-size: 1.1rem; font-weight: 700; margin-top: 6px;
@@ -789,10 +812,205 @@ a:focus-visible,
   transition: width 0.15s;
 }
 
-/* Boss HP Bar */
+/* ═══════════════════════════════════════════════════════════════
+   HUD Console — 画面中央下部のステータス統合パネル
+   HP / Lv / Dash / Stats / 武器 / 消耗品 / パッシブ / リソース を集約
+   ═══════════════════════════════════════════════════════════════ */
+.hud-console {
+  position: absolute;
+  bottom: 16px; left: 50%; transform: translateX(-50%);
+  width: min(720px, 88vw);
+  padding: 8px 14px 6px;
+  display: flex; flex-direction: column; gap: 6px;
+  background: linear-gradient(180deg, rgba(18,14,28,0.88) 0%, rgba(10,8,18,0.92) 100%);
+  border: 1px solid rgba(240,192,96,0.45);
+  border-radius: 14px;
+  box-shadow:
+    0 0 24px rgba(0,0,0,0.65),
+    0 0 0 1px rgba(0,0,0,0.3) inset,
+    0 0 18px rgba(240,192,96,0.08) inset;
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+}
+/* 装飾: 金色の上下ライン */
+.hud-console::before,
+.hud-console::after {
+  content: '';
+  position: absolute; left: 14%; right: 14%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240,192,96,0.55), transparent);
+}
+.hud-console::before { top: 4px; }
+.hud-console::after { bottom: 4px; }
+
+/* --- 上段: HP / Lv / Dash / Stats --- */
+.hud-console-top {
+  display: flex; align-items: center; gap: 14px;
+  justify-content: space-between;
+}
+.hud-console-hp { flex: 1 1 280px; min-width: 0; }
+.hud-console-hp .hud-hp-bar {
+  width: 100%; height: 22px;
+  background: rgba(60,0,0,0.6);
+  border: 1px solid rgba(255,100,100,0.4);
+  border-radius: 11px; overflow: hidden; position: relative;
+  box-shadow: 0 0 8px rgba(0,0,0,0.4) inset;
+}
+.hud-console-lv { flex-shrink: 0; }
+.hud-console-lv .hud-level {
+  color: #f0c060; font-size: 1.2rem; font-weight: 900;
+  padding: 2px 12px;
+  background: rgba(240,192,96,0.12);
+  border: 1px solid rgba(240,192,96,0.5);
+  border-radius: 6px;
+  text-shadow: 0 0 10px rgba(240,192,96,0.6);
+  letter-spacing: 1px;
+  margin: 0;
+}
+.hud-console-dash {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 8px;
+  background: rgba(68,136,255,0.08);
+  border: 1px solid rgba(68,136,255,0.3);
+  border-radius: 6px;
+  font-size: 0.75rem; color: #ccc;
+  flex-shrink: 0;
+}
+.hud-console-dash .hud-dash-bar { width: 70px; }
+.hud-console-stats {
+  flex-shrink: 0;
+}
+.hud-console-stats .hud-stats-mini {
+  flex-direction: row; gap: 10px;
+  padding: 3px 12px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  font-size: 0.8rem; font-weight: 700;
+}
+.hud-console-stats .hud-stats-detail {
+  position: absolute; bottom: 100%; right: 0; margin-bottom: 8px;
+  background: rgba(10,10,20,0.95);
+}
+
+/* --- 中段: 武器 | 消耗品 (武器は固定幅、消耗品が残り幅) --- */
+.hud-console-mid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.hud-console-col {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  min-height: 64px;
+}
+.hud-col-label {
+  font-size: 0.62rem; color: #f0c060;
+  letter-spacing: 2px; text-transform: uppercase;
+  text-align: center; margin-bottom: 2px;
+  opacity: 0.85;
+}
+.hud-col-label kbd {
+  font-size: 0.58rem; padding: 0 4px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 3px; margin-left: 4px; color: #ccc;
+}
+.hud-col-weapons .hud-weapons { justify-content: center; }
+.hud-col-pass .hud-passives {
+  justify-content: center; padding: 0;
+  max-width: 100%; margin-top: 0;
+}
+.hud-col-pass .hud-passives.expanded { max-width: 100%; }
+
+/* パッシブアイコン: 画面右下の独立フロート（ラベルなし、枠付き） */
+.hud-passives-float {
+  position: absolute;
+  right: 16px; bottom: 16px;
+  max-width: min(260px, 24vw);
+  padding: 6px 8px;
+  background: rgba(18,14,28,0.75);
+  border: 1px solid rgba(240,192,96,0.3);
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  display: flex; flex-wrap: wrap; gap: 3px;
+  justify-content: flex-end;
+  pointer-events: none;
+  margin-top: 0;
+  min-height: 24px;
+}
+
+/* Tab 押下で表示されるパッシブ詳細パネル（パッシブフロートの上側） */
+.hud-passives-detail {
+  position: absolute;
+  right: 16px; bottom: 80px;  /* float(bottom:16px, ~40px高) の上 */
+  width: min(240px, 30vw);
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(18,14,28,0.95) 0%, rgba(10,8,18,0.96) 100%);
+  border: 1px solid rgba(240,192,96,0.5);
+  border-radius: 10px;
+  box-shadow: 0 0 18px rgba(0,0,0,0.7), 0 0 10px rgba(240,192,96,0.1) inset;
+  pointer-events: none;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  z-index: 6;
+}
+.hud-passives-detail.hidden { display: none; }
+.hud-pdet-header {
+  font-size: 0.7rem; letter-spacing: 2px; color: #f0c060;
+  text-transform: uppercase; text-align: center; opacity: 0.9;
+  margin-bottom: 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(240,192,96,0.25);
+}
+.hud-pdet-list {
+  display: flex; flex-direction: column; gap: 3px;
+  max-height: 50vh; overflow-y: auto;
+}
+.hud-pdet-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 5px;
+  background: rgba(0,0,0,0.25);
+  border-radius: 4px;
+  font-size: 0.78rem;
+}
+.hud-pdet-icon { font-size: 0.9rem; flex-shrink: 0; }
+.hud-pdet-name { flex: 1; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-pdet-count { color: #f0c060; font-weight: 700; flex-shrink: 0; }
+.hud-pdet-empty { color: #888; font-size: 0.8rem; text-align: center; padding: 8px 0; }
+
+/* 狭い画面: 詳細パネルは画面上部中央にフォールバック */
+@media (max-width: 720px) {
+  .hud-passives-detail {
+    right: auto; left: 50%; transform: translateX(-50%);
+    bottom: auto; top: 80px;
+    width: min(320px, 90vw);
+  }
+}
+
+/* 武器/消耗品スロットのコンソール内サイズ調整 */
+.hud-console .hud-weapon-slot { padding: 4px; }
+.hud-console .hud-wpn-img-wrap { width: 40px; height: 40px; }
+.hud-console .hud-wpn-name { font-size: 0.62rem; max-width: 48px; }
+.hud-console .hud-cons-slot { min-width: 110px; padding: 4px 8px; }
+
+/* レスポンシブ: 小画面ではカラムを縦積み */
+@media (max-width: 720px) {
+  .hud-console { width: calc(100% - 16px); padding: 8px 10px; bottom: 12px; }
+  .hud-console-top { flex-wrap: wrap; gap: 8px; }
+  .hud-console-hp { flex: 1 1 100%; }
+  .hud-console-mid { grid-template-columns: 1fr; gap: 6px; }
+  .hud-console-col { min-height: 56px; }
+}
+
+/* Boss HP Bar — タイマーの直下、スキル発動バナーの上 */
 .hud-boss-bar {
   position: absolute;
-  top: 98px;
+  top: 95px;
   left: 50%;
   transform: translateX(-50%);
   width: min(400px, 70vw);
@@ -1534,10 +1752,9 @@ a:focus-visible,
   border: 1px solid rgba(255,136,0,0.3);
 }
 
-/* ===== HUD Weapon Slots (Image) ===== */
+/* ===== HUD Weapon Slots (Image) — コンソール内に配置 ===== */
 .hud-weapons {
-  position: absolute; bottom: 70px; left: 16px;
-  display: flex; gap: 6px; pointer-events: none;
+  display: flex; gap: 6px; pointer-events: none; flex-wrap: wrap; justify-content: center;
 }
 .hud-weapon-slot {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -1588,9 +1805,8 @@ a:focus-visible,
 .hud-wpn-skill-fill.ready { background: #4f4; }
 .hud-weapon-slot.skill-ready { border-color: #4f4; box-shadow: 0 0 6px rgba(68,255,68,0.4); }
 
-/* ===== HUD Stats (Right Bottom) ===== */
+/* ===== HUD Stats — コンソール内に配置 ===== */
 .hud-stats {
-  position: absolute; bottom: 70px; right: 16px;
   pointer-events: none;
 }
 .hud-stats-mini {
@@ -1638,25 +1854,26 @@ a:focus-visible,
   .hud-stats-hint { display: none; }
 }
 
-/* ===== HUD Consumables (Image + Enhanced) ===== */
+/* ===== HUD Consumables — コンソール内に配置 ===== */
 .hud-consumables {
-  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
   display: flex; gap: 8px; pointer-events: none;
   flex-wrap: wrap; justify-content: center;
 }
+/* 縦長レイアウト: 武器スロットと同じサイズ（key / icon / dots） */
 .hud-cons-slot {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 10px; background: rgba(0,0,0,0.7);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 4px; background: rgba(0,0,0,0.6);
   border: 2px solid #555; border-radius: 10px; position: relative; overflow: hidden;
-  min-width: 130px;
   transition: border-color 0.15s;
 }
 .hud-cons-slot.empty { opacity: 0.3; }
 .hud-cons-slot.on-cd { border-color: #333; }
 .hud-cons-key {
-  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-  background: rgba(240,192,96,0.3); color: #f0c060; border-radius: 4px;
-  font-size: 0.8rem; font-weight: 700; flex-shrink: 0;
+  position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+  background: rgba(240,192,96,0.55); color: #fff; border-radius: 3px;
+  font-size: 0.65rem; font-weight: 700;
+  z-index: 3;
 }
 .hud-cons-img-wrap {
   width: 40px; height: 40px;
@@ -1665,6 +1882,10 @@ a:focus-visible,
   border-radius: 6px;
   background: rgba(255,255,255,0.04);
   flex-shrink: 0;
+}
+.hud-cons-dots {
+  font-size: 0.6rem; color: #4af; letter-spacing: 1px;
+  line-height: 1; text-align: center;
 }
 .hud-cons-img {
   width: 100%; height: 100%;
@@ -1685,7 +1906,7 @@ a:focus-visible,
   font-size: 0.8rem; color: #e0e0e0; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px;
 }
-.hud-cons-dots { font-size: 0.7rem; color: #4af; letter-spacing: 2px; }
+.hud-cons-dots { font-size: 0.65rem; color: #4af; letter-spacing: 1px; line-height: 1; text-align: center; }
 
 /* Active Buff Bar */
 .hud-buff-bar {
@@ -1815,9 +2036,13 @@ a:focus-visible,
 .game-toast.toast-special { border-color: #f0c060; color: #f0c060; }
 .game-toast.toast-warning { border-color: #cc4; color: #ff8; }
 
-/* ===== Skill Banner (timer section下) ===== */
+/* ===== Skill Banner (タイマーウィンドウ下、ボスHPの上） ===== */
 .hud-skill-banner {
-  margin-top: 0.35rem;
+  /* top-center パネルの外側・ボスHPバーの下に絶対配置 */
+  position: absolute;
+  top: 150px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.6) translateY(-8px);
   padding: 0.35rem 1.2rem;
   background: rgba(10,10,20,0.78);
   border: 2px solid #ffd766;
@@ -1830,21 +2055,21 @@ a:focus-visible,
   text-shadow: 0 0 12px currentColor, 0 2px 4px rgba(0,0,0,0.6);
   box-shadow: 0 0 20px currentColor, 0 0 4px rgba(0,0,0,0.5);
   opacity: 0;
-  transform: scale(0.6) translateY(-8px);
   pointer-events: none;
   white-space: nowrap;
   transition: opacity 0.2s ease-out, transform 0.2s ease-out;
   min-height: 0;
+  z-index: 5;
 }
 .hud-skill-banner.show {
   animation: hud-skill-banner-pop 1.4s ease-out forwards;
 }
 @keyframes hud-skill-banner-pop {
-  0%   { opacity: 0; transform: scale(0.5) translateY(-12px); }
-  15%  { opacity: 1; transform: scale(1.15) translateY(0); }
-  25%  { transform: scale(1) translateY(0); }
-  75%  { opacity: 1; transform: scale(1) translateY(0); }
-  100% { opacity: 0; transform: scale(1) translateY(-4px); }
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.5) translateY(-12px); }
+  15%  { opacity: 1; transform: translateX(-50%) scale(1.15) translateY(0); }
+  25%  { transform: translateX(-50%) scale(1) translateY(0); }
+  75%  { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1) translateY(-4px); }
 }
 
 /* ===== Skill Flash (画面全体の一瞬のフラッシュ) ===== */

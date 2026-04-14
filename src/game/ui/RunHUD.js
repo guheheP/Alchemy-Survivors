@@ -5,7 +5,10 @@
 import { eventBus } from '../core/EventBus.js';
 import { ItemBlueprints } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
+import { PassiveDefs } from '../data/passives.js';
 import { assetPath } from '../core/assetPath.js';
+
+const _passiveDefById = Object.fromEntries(PassiveDefs.map(p => [p.id, p]));
 
 const WEAPON_ICONS = {
   sword: '\u2694\uFE0F', spear: '\uD83D\uDDE1\uFE0F', bow: '\uD83C\uDFF9',
@@ -30,27 +33,14 @@ export class RunHUD {
     this.el = document.createElement('div');
     this.el.id = 'run-hud';
     this.el.innerHTML = `
-      <!-- Top Left: HP + Level + Passives -->
-      <div class="hud-top-left">
-        <div class="hud-hp-bar">
-          <div class="hud-hp-fill" id="hud-hp-fill"></div>
-          <span class="hud-hp-text" id="hud-hp-text">100 / 100</span>
-        </div>
-        <div class="hud-level" id="hud-level">Lv.1</div>
-        <div class="hud-dash" id="hud-dash" title="Space / Shift でダッシュ">
-          <span class="hud-dash-icon">\uD83D\uDCA8</span>
-          <div class="hud-dash-bar"><div class="hud-dash-fill" id="hud-dash-fill"></div></div>
-          <span class="hud-dash-text" id="hud-dash-text">READY</span>
-        </div>
-        <div class="hud-passives" id="hud-passives"></div>
+      <!-- Top Center: Timer + Wave -->
+      <div class="hud-top-center">
+        <div class="hud-timer" id="hud-timer">5:00</div>
+        <div class="hud-wave" id="hud-wave"></div>
       </div>
 
-      <!-- Top Center: Timer + Wave + Skill Banner -->
-      <div class="hud-top-center">
-        <div class="hud-timer" id="hud-timer">20:00</div>
-        <div class="hud-wave" id="hud-wave"></div>
-        <div class="hud-skill-banner" id="hud-skill-banner"></div>
-      </div>
+      <!-- Skill activation banner (timer下) -->
+      <div class="hud-skill-banner" id="hud-skill-banner"></div>
 
       <!-- Full-screen flash overlay for skill activation -->
       <div class="hud-skill-flash" id="hud-skill-flash"></div>
@@ -75,18 +65,49 @@ export class RunHUD {
       <!-- Alert -->
       <div class="hud-alert hidden" id="hud-alert"></div>
 
-      <!-- Bottom Left: Weapon Slots -->
-      <div class="hud-weapons" id="hud-weapons"></div>
+      <!-- ═══ 中央下 コンソールパネル（HP/Lv/Dash/Stats/武器/消耗品/リソース統合） ═══ -->
+      <div class="hud-console">
+        <!-- 上段: HP / Lv / Dash / Stats -->
+        <div class="hud-console-top">
+          <div class="hud-console-hp">
+            <div class="hud-hp-bar">
+              <div class="hud-hp-lag" id="hud-hp-lag"></div>
+              <div class="hud-hp-fill" id="hud-hp-fill"></div>
+              <span class="hud-hp-text" id="hud-hp-text">100 / 100</span>
+            </div>
+          </div>
+          <div class="hud-console-lv">
+            <span class="hud-level" id="hud-level">Lv.1</span>
+          </div>
+          <div class="hud-console-dash" id="hud-dash" title="Space / Shift でダッシュ">
+            <span class="hud-dash-icon">\uD83D\uDCA8</span>
+            <div class="hud-dash-bar"><div class="hud-dash-fill" id="hud-dash-fill"></div></div>
+            <span class="hud-dash-text" id="hud-dash-text">READY</span>
+          </div>
+          <div class="hud-console-stats" id="hud-stats">
+            <div class="hud-stats-mini" id="hud-stats-mini"></div>
+            <div class="hud-stats-detail hidden" id="hud-stats-detail"></div>
+          </div>
+        </div>
 
-      <!-- Bottom Center: Consumable Slots -->
-      <div class="hud-consumables" id="hud-consumables"></div>
-
-      <!-- Bottom Right: Mini Stats -->
-      <div class="hud-stats" id="hud-stats">
-        <div class="hud-stats-mini" id="hud-stats-mini"></div>
-        <div class="hud-stats-detail hidden" id="hud-stats-detail"></div>
-        <div class="hud-stats-hint"><kbd>Tab</kbd> で詳細</div>
+        <!-- 中段: 武器 | 消耗品 -->
+        <div class="hud-console-mid">
+          <div class="hud-console-col hud-col-weapons">
+            <div class="hud-col-label">武器</div>
+            <div class="hud-weapons" id="hud-weapons"></div>
+          </div>
+          <div class="hud-console-col hud-col-cons">
+            <div class="hud-col-label">消耗品</div>
+            <div class="hud-consumables" id="hud-consumables"></div>
+          </div>
+        </div>
       </div>
+
+      <!-- パッシブアイコン（右下フロート、ラベルなし） -->
+      <div class="hud-passives-float" id="hud-passives"></div>
+
+      <!-- パッシブ詳細パネル（Tabで表示） -->
+      <div class="hud-passives-detail hidden" id="hud-passives-detail"></div>
 
       <!-- EXP Bar -->
       <div class="hud-exp-bar">
@@ -114,6 +135,8 @@ export class RunHUD {
     this._statsDetail = this.el.querySelector('#hud-stats-detail');
     this._dashFill = this.el.querySelector('#hud-dash-fill');
     this._dashText = this.el.querySelector('#hud-dash-text');
+    this._passivesDetail = this.el.querySelector('#hud-passives-detail');
+    this._hpLag = this.el.querySelector('#hud-hp-lag');
 
     this._skillBanner = this.el.querySelector('#hud-skill-banner');
     this._skillFlash = this.el.querySelector('#hud-skill-flash');
@@ -129,10 +152,9 @@ export class RunHUD {
       if (e.code === 'Tab') {
         e.preventDefault();
         this._statsExpanded = !this._statsExpanded;
-        this._passivesExpanded = this._statsExpanded;
         this._statsDetail.classList.toggle('hidden', !this._statsExpanded);
-        this._passivesEl.classList.toggle('expanded', this._passivesExpanded);
-        this._renderPassives();
+        this._passivesDetail.classList.toggle('hidden', !this._statsExpanded);
+        this._renderPassivesDetail();
       }
     };
     window.addEventListener('keydown', this._onKeyDown);
@@ -186,6 +208,21 @@ export class RunHUD {
     this._hpFill.style.width = hpPct + '%';
     this._hpFill.style.backgroundColor = hpPct > 50 ? '#4c4' : hpPct > 25 ? '#cc4' : '#c44';
     this._hpText.textContent = `${Math.ceil(hp)} / ${Math.ceil(maxHp)}`;
+    // HP遅延バー: 減少時は lag が遅れて追従（赤い差分が一瞬見える）、回復時は即追従
+    if (this._hpLag) {
+      const prev = this._lastHpPct == null ? hpPct : this._lastHpPct;
+      if (hpPct >= prev) {
+        // 回復または横ばい: 遅延なしで即追従（赤い残像を残さない）
+        this._hpLag.classList.add('no-delay');
+        this._hpLag.style.width = hpPct + '%';
+        // 次フレームで遅延クラスを戻す
+        requestAnimationFrame(() => this._hpLag && this._hpLag.classList.remove('no-delay'));
+      } else {
+        // 被ダメージ: lag は遅れて追従（CSS transition-delay）
+        this._hpLag.style.width = hpPct + '%';
+      }
+      this._lastHpPct = hpPct;
+    }
 
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
@@ -291,6 +328,33 @@ export class RunHUD {
     this._passivesEl.innerHTML = badges.join('');
   }
 
+  _renderPassivesDetail() {
+    if (!this._passivesDetail) return;
+    if (this._passiveList.length === 0) {
+      this._passivesDetail.innerHTML = '<div class="hud-pdet-empty">パッシブ未取得</div>';
+      return;
+    }
+    const counts = {};
+    const order = [];
+    for (const id of this._passiveList) {
+      if (!(id in counts)) order.push(id);
+      counts[id] = (counts[id] || 0) + 1;
+    }
+    const rows = order.map(id => {
+      const def = _passiveDefById[id] || { name: id, icon: '⭐', description: '' };
+      const count = counts[id];
+      return `<div class="hud-pdet-row">
+        <span class="hud-pdet-icon">${def.icon || '⭐'}</span>
+        <span class="hud-pdet-name">${def.name || id}</span>
+        ${count > 1 ? `<span class="hud-pdet-count">×${count}</span>` : ''}
+      </div>`;
+    }).join('');
+    this._passivesDetail.innerHTML = `
+      <div class="hud-pdet-header">取得パッシブ (${this._passiveList.length})</div>
+      <div class="hud-pdet-list">${rows}</div>
+    `;
+  }
+
   // --- Wave / Difficulty ---
   _updateWave(elapsed, bossSpawnTimes) {
     let nextBoss = null;
@@ -375,17 +439,14 @@ export class RunHUD {
         ? `<img class="hud-cons-img" src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : '';
 
-      return `<div class="hud-cons-slot ${empty ? 'empty' : ''} ${cdPct > 0 ? 'on-cd' : ''}">
+      return `<div class="hud-cons-slot ${empty ? 'empty' : ''} ${cdPct > 0 ? 'on-cd' : ''}" title="${s.name}">
         <span class="hud-cons-key">${i + 1}</span>
         <div class="hud-cons-img-wrap">
           ${imgHtml}
           <span class="hud-cons-fallback" ${imgUrl ? 'style="display:none"' : ''}>${fallbackIcon}</span>
           ${cdPct > 0 ? `<div class="hud-cons-cd-overlay" style="height:${cdPct}%"></div>` : ''}
         </div>
-        <div class="hud-cons-info">
-          <span class="hud-cons-name">${s.name}</span>
-          <span class="hud-cons-dots">${dots.join('')}</span>
-        </div>
+        <span class="hud-cons-dots">${dots.join('')}</span>
       </div>`;
     }).join('');
 

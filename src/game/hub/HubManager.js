@@ -29,6 +29,8 @@ export class HubManager {
     this.weaponSlots = [null, null, null, null];
     this.equippedArmor = null;
     this.equippedAccessory = null;
+    // 消耗品スロット（UIDで保持、Gameから注入）
+    this.savedConsumableUids = [];
 
     this._unsubEquip = eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => {
       this.weaponSlots = [...weaponSlots];
@@ -128,7 +130,7 @@ export class HubManager {
         break;
       }
       case 'prep': {
-        const screen = new RunPrepScreen(content, () => this.weaponSlots, () => this.equippedArmor, () => this.equippedAccessory, this.inventory);
+        const screen = new RunPrepScreen(content, () => this.weaponSlots, () => this.equippedArmor, () => this.equippedAccessory, this.inventory, this.savedConsumableUids);
         screen.render();
         this.screens.prep = screen;
         break;

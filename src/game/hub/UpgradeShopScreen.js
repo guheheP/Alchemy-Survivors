@@ -21,7 +21,7 @@ function statCost(currentLevel) {
 const STAT_DEFS = [
   { key: 'hp',  icon: '❤️', name: '最大HP強化',   desc: '最大HPを Lv% 上昇' },
   { key: 'atk', icon: '⚔️', name: '攻撃力強化',   desc: '攻撃力を Lv% 上昇' },
-  { key: 'def', icon: '🛡️', name: '防御力強化',   desc: '被ダメージを Lv% 軽減（最大75%）' },
+  { key: 'def', icon: '🛡️', name: '防御力強化',   desc: '防御力 +Lv（敵ATKに対し1/3軽減・最大75%）' },
 ];
 
 export class UpgradeShopScreen {
@@ -38,8 +38,10 @@ export class UpgradeShopScreen {
     const maxedOut = lv >= max;
     const cost = maxedOut ? 0 : statCost(lv);
     const canAfford = this.inventory.gold >= cost;
-    const currentPct = lv;
-    const nextPct = lv + 1;
+    // DEF は数値加算、HP/ATK は% 表記
+    const suffix = def.key === 'def' ? '' : '%';
+    const currentStr = `+${lv}${suffix}`;
+    const nextStr = `+${lv + 1}${suffix}`;
     return `
       <div class="shop-card upgrade-card stat-upgrade ${maxedOut ? 'owned' : ''} ${!canAfford && !maxedOut ? 'expensive' : ''}">
         <div class="shop-card-header">
@@ -49,8 +51,8 @@ export class UpgradeShopScreen {
         <div class="shop-card-body">
           <p class="shop-card-desc">
             ${def.desc}<br>
-            現在: <b>+${currentPct}%</b>
-            ${maxedOut ? '' : ` → <b style="color:#8f8">+${nextPct}%</b>`}
+            現在: <b>${currentStr}</b>
+            ${maxedOut ? '' : ` → <b style="color:#8f8">${nextStr}</b>`}
           </p>
           <div class="shop-level-bar">
             <div class="shop-level-fill" style="width: ${(lv / max * 100).toFixed(1)}%"></div>

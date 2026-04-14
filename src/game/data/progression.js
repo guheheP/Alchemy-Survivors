@@ -101,10 +101,8 @@ export const Progression = {
     return _statLevels[stat];
   },
   getStatBonusPercent(stat) {
-    const pct = (_statLevels[stat] || 0) / 100;
-    // DEF は %軽減として使うため完全無敵を防ぐキャップを入れる
-    if (stat === 'def') return Math.min(pct, 0.75);
-    return pct;
+    // HP/ATK 用の +Lv% 乗数として使用。DEF は PlayerController 側で数値防御力として扱う。
+    return (_statLevels[stat] || 0) / 100;
   },
   getStatLevels() { return { ..._statLevels }; },
   loadStatLevels(obj) {

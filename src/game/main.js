@@ -33,6 +33,7 @@ class Game {
     this.weaponSlots = [null, null, null, null];
     this.equippedArmor = null;
     this.equippedAccessory = null;
+    this.savedConsumableUids = [];
     this.stats = {
       totalRuns: 0,
       totalKills: 0,
@@ -67,6 +68,7 @@ class Game {
     eventBus.on('run:complete', (data) => this._onRunComplete(data));
     eventBus.on('result:continue', (data) => this._returnToHub(data));
     eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => { this.weaponSlots = [...weaponSlots]; this.equippedArmor = armor; this.equippedAccessory = accessory; });
+    eventBus.on('consumables:selected', ({ uids }) => { this.savedConsumableUids = [...(uids || [])]; });
     eventBus.on('save:request', () => { try { this._autoSave(); } catch (e) { /* ignore */ } });
 
     // インベントリからUIDが消えたら装備欄もクリア（クラフト・売却・消費で発生）
@@ -80,6 +82,11 @@ class Game {
       }
       if (this.equippedArmor && uidSet.has(this.equippedArmor.uid)) { this.equippedArmor = null; changed = true; }
       if (this.equippedAccessory && uidSet.has(this.equippedAccessory.uid)) { this.equippedAccessory = null; changed = true; }
+      // 消耗品選択からも消えたUIDを除外
+      if (this.savedConsumableUids.length > 0) {
+        const filtered = this.savedConsumableUids.filter(uid => !uidSet.has(uid));
+        if (filtered.length !== this.savedConsumableUids.length) this.savedConsumableUids = filtered;
+      }
       if (changed) {
         eventBus.emit('equipment:changed', { weaponSlots: this.weaponSlots, armor: this.equippedArmor, accessory: this.equippedAccessory });
         eventBus.emit('toast', { message: '⚠️ 消費した素材が装備欄から外されました', type: 'warning' });
@@ -152,6 +159,12 @@ class Game {
           this.equippedArmor = saveData.restoredEquipment.armor;
           this.equippedAccessory = saveData.restoredEquipment.accessory;
         }
+        // 消耗品選択UIDを復元（インベントリにまだ存在するものだけ）
+        if (saveData.savedConsumableUids) {
+          this.savedConsumableUids = saveData.savedConsumableUids.filter(
+            uid => this.inventory.getItemByUid(uid)
+          );
+        }
         // 実績復元
         this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
       }
@@ -184,6 +197,7 @@ class Game {
     this.hubManager.weaponSlots = [...this.weaponSlots];
     this.hubManager.equippedArmor = this.equippedArmor;
     this.hubManager.equippedAccessory = this.equippedAccessory;
+    this.hubManager.savedConsumableUids = [...this.savedConsumableUids];
     this.hubManager.render();
 
     // 自動セーブ
@@ -330,6 +344,7 @@ class Game {
       equippedWeaponUids: this.weaponSlots.map(w => w?.uid || null),
       equippedArmorUid: this.equippedArmor?.uid || null,
       equippedAccessoryUid: this.equippedAccessory?.uid || null,
+      savedConsumableUids: [...this.savedConsumableUids],
       stats: this.stats,
       achievements: this.achievements ? this.achievements.getUnlockedIds() : [],
     });

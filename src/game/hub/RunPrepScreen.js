@@ -9,17 +9,27 @@ import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 
 export class RunPrepScreen {
-  constructor(container, getWeaponSlots, getArmor, getAccessory, inventory) {
+  constructor(container, getWeaponSlots, getArmor, getAccessory, inventory, initialConsumableUids = []) {
     this.container = container;
     this.getWeaponSlots = getWeaponSlots;
     this.getArmor = getArmor;
     this.getAccessory = getAccessory;
     this.inventory = inventory;
-    this.selectedConsumables = [];
+    // 前回の選択をUID経由で復元（売却/クラフトで消えたUIDは除外）
+    this.selectedConsumables = (initialConsumableUids || [])
+      .map(uid => this.inventory?.getItemByUid?.(uid))
+      .filter(Boolean);
     this.el = document.createElement('div');
     this.el.className = 'prep-screen';
     this.selectedArea = 'plains';
     this.hardMode = false;
+  }
+
+  /** 選択状態変更時に UID を emit（Game側で永続化） */
+  _emitConsumablesChanged() {
+    eventBus.emit('consumables:selected', {
+      uids: this.selectedConsumables.map(c => c.uid),
+    });
   }
 
   render() {
@@ -138,6 +148,7 @@ export class RunPrepScreen {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.idx, 10);
         this.selectedConsumables.splice(idx, 1);
+        this._emitConsumablesChanged();
         this.render();
       });
     });
@@ -208,6 +219,7 @@ export class RunPrepScreen {
           } else {
             this.selectedConsumables.push(selected);
           }
+          this._emitConsumablesChanged();
           overlay.remove();
           this.render();
         }

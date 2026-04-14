@@ -61,11 +61,11 @@ export const PassiveDefs = [
   },
   {
     id: 'extra_drop',
-    name: 'ドロップ率+10%',
-    description: '素材ドロップ確率を10%増加',
+    name: 'ドロップ率+30%',
+    description: '素材ドロップ率を30%増加（乗算）',
     icon: '🎁',
     maxStacks: 5,
-    effect: { stat: 'dropRateBonus', value: 0.10 },
+    effect: { stat: 'dropRateBonus', value: 0.30 },
   },
   {
     id: 'extra_projectile',

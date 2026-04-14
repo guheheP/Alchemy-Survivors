@@ -68,8 +68,8 @@ export class DropSystem {
     expDrop.color = '#ff0';
     expDrop.radius = 4;
 
-    // 素材ドロップ判定
-    const chance = (GameConfig.run.dropChance + dropRateBonus) * this.dropRateMultiplier;
+    // 素材ドロップ判定 — dropRateBonus は基本ドロップ率への乗算倍率（+30%=1.3倍）
+    const chance = GameConfig.run.dropChance * (1 + dropRateBonus) * this.dropRateMultiplier;
     if (Math.random() < chance) {
       const matDrop = this.pool.get();
       const mat = this._pickMaterial();
