@@ -60,6 +60,7 @@ export class BossEntity extends Enemy {
     this.color = '#f80';
     this.enemyId = bossDef.id;
     this.bossName = bossDef.name;
+    this.preset = bossDef.preset || null;
     this.phases = [...(bossDef.phases || [])];
     this.skills = [...(bossDef.skills || [])];
     this.currentPhaseIndex = -1;

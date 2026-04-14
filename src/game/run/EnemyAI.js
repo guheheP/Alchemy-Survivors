@@ -16,6 +16,7 @@ export class Enemy extends Entity {
     this.expValue = 0;
     this.color = '#f00';
     this.enemyId = '';
+    this.enemyDef = null;
     this.hitFlashTimer = 0;
     // デバフ管理
     this._debuffTimer = 0;
@@ -31,6 +32,7 @@ export class Enemy extends Entity {
     this.expValue = 0;
     this.color = '#f00';
     this.enemyId = '';
+    this.enemyDef = null;
     this.hitFlashTimer = 0;
     this._debuffTimer = 0;
     this._baseSpeed = 0;
@@ -51,6 +53,7 @@ export class Enemy extends Entity {
     this.radius = def.radius;
     this.color = def.color;
     this.enemyId = def.id;
+    this.enemyDef = def;
   }
 
   /** デバフを適用（速度変更 + 持続時間） */
