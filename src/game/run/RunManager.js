@@ -20,6 +20,10 @@ import { HardModeModifiers } from '../data/hardmode.js';
 import { BossSystem } from './BossSystem.js';
 import { ConsumableSystem } from './ConsumableSystem.js';
 import { DamageNumberSystem } from './DamageNumberSystem.js';
+import { ParticleSystem } from './render/ParticleSystem.js';
+import { SpriteCache } from './render/SpriteCache.js';
+import { BackgroundRenderer } from './render/BackgroundRenderer.js';
+import { EnemyDefs, AreaEnemyConfig } from '../data/enemies.js';
 
 export class RunManager {
   /**
@@ -57,6 +61,14 @@ export class RunManager {
     this.damageNumbers = new DamageNumberSystem();
     this.materialCount = 0;
     this.highestDamage = 0;
+
+    // --- グラフィック強化システム ---
+    const isMobile = ('ontouchstart' in globalThis || navigator.maxTouchPoints > 0);
+    this.particles = new ParticleSystem(isMobile ? 250 : 500);
+    this.spriteCache = new SpriteCache();
+    this.background = new BackgroundRenderer(areaId, this.particles);
+    this._playerTrailTimer = 0;
+    this._preloadAssets();
     // 毎フレーム再利用するオブジェクト（GC削減）
     this._tickData = {
       elapsed: 0, remaining: 0, killCount: 0, hp: 0, maxHp: 0,
@@ -100,8 +112,36 @@ export class RunManager {
       eventBus.on('material:collected', () => {
         this.materialCount++;
       }),
-      eventBus.on('enemy:damaged', ({ damage }) => {
+      eventBus.on('enemy:damaged', ({ damage, x, y }) => {
         if (damage > this.highestDamage) this.highestDamage = damage;
+        // 被弾粒子
+        if (x != null && y != null) {
+          this.particles.emitBurst(x, y, 4, {
+            speed: 60, life: 0.25, size: 2, color: '#fff', shape: 'circle',
+          });
+        }
+      }),
+      eventBus.on('enemy:killed', ({ enemy }) => {
+        // 撃破時の爆散粒子
+        this.particles.emitBurst(enemy.x, enemy.y, enemy.isBoss ? 24 : 10, {
+          speed: enemy.isBoss ? 180 : 120,
+          life: enemy.isBoss ? 0.7 : 0.4,
+          size: enemy.isBoss ? 4 : 3,
+          color: enemy.color || '#f88',
+          shape: 'square',
+          gravity: 40,
+        });
+      }),
+      eventBus.on('material:collected', ({ x, y }) => {
+        if (x != null && y != null) this.particles.emitSpark(x, y, '#ff8');
+      }),
+      eventBus.on('exp:collected', () => {
+        this.particles.emitSpark(this.player.x, this.player.y, '#fc4');
+      }),
+      eventBus.on('player:damaged', () => {
+        this.particles.emitBurst(this.player.x, this.player.y, 10, {
+          speed: 90, life: 0.4, size: 3, color: '#f44', shape: 'circle', gravity: 60,
+        });
       }),
       eventBus.on('consumable:used', ({ type, value }) => {
         if (type === 'heal') {
@@ -142,8 +182,34 @@ export class RunManager {
     this.camera.y = this.player.y - this.camera.height / 2;
   }
 
+  /** エリアで使用する敵/ボス/ドロップアセットを事前ロード（非同期・非ブロッキング） */
+  _preloadAssets() {
+    // ボス preset
+    const presetPaths = new Set();
+    if (this.area.boss?.preset) presetPaths.add(this.area.boss.preset);
+    // 該当エリアの敵 preset（wave定義から引用）
+    const waves = AreaEnemyConfig[this.areaId]?.waves || [];
+    for (const w of waves) {
+      for (const e of (w.enemies || [])) {
+        const def = EnemyDefs[e.id];
+        if (def?.preset) presetPaths.add(def.preset);
+      }
+    }
+    this.spriteCache.preloadPresets([...presetPaths], { voxelSize: 3 });
+
+    // ドロップテーブルのアイテム画像
+    const imagePaths = new Set();
+    for (const d of (this.area.dropTable || [])) {
+      const bp = ItemBlueprints[d.blueprintId];
+      if (bp?.image) imagePaths.add(bp.image);
+    }
+    this.spriteCache.preloadImages([...imagePaths]);
+  }
+
   start() {
     this.gameLoop.start();
+    // 背景のアンビエント粒子を初期配置
+    this.background.seedAmbientParticles(this.camera);
   }
 
   _update(dt) {
@@ -208,6 +274,17 @@ export class RunManager {
     // ダメージ数字更新
     this.damageNumbers.update(dt);
 
+    // パーティクル更新
+    this.particles.update(dt, this.camera);
+    this.background.update(dt, this.camera);
+
+    // プレイヤー残像（低頻度）
+    this._playerTrailTimer += dt;
+    if (this._playerTrailTimer > 0.08) {
+      this._playerTrailTimer = 0;
+      this.particles.emitTrail(this.player.x, this.player.y, '#4af');
+    }
+
     this.camera.follow(this.player.x, this.player.y, dt);
 
     // 生存ボーナス
@@ -243,6 +320,13 @@ export class RunManager {
       this.weapon,
       this.bossSystem,
       this.damageNumbers,
+      {
+        background: this.background,
+        particles: this.particles,
+        spriteCache: this.spriteCache,
+        itemBlueprints: ItemBlueprints,
+        elapsed: this.elapsed,
+      },
     );
   }
 
@@ -312,6 +396,7 @@ export class RunManager {
     this.bossSystem.destroy();
     if (this.consumables) this.consumables.destroy();
     this.damageNumbers.destroy();
+    this.particles.clear();
     this.canvas.destroy();
   }
 }

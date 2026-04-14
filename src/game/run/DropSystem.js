@@ -119,14 +119,14 @@ export class DropSystem {
       // 収集判定
       if (dist < 20) {
         if (drop.dropType === 'exp') {
-          eventBus.emit('exp:collected', { value: drop.value });
+          eventBus.emit('exp:collected', { value: drop.value, x: drop.x, y: drop.y });
         } else if (drop.dropType === 'material') {
           this.collectedMaterials.push({
             blueprintId: drop.blueprintId,
             quality: drop.quality,
             traits: [...drop.traits],
           });
-          eventBus.emit('material:collected', { blueprintId: drop.blueprintId });
+          eventBus.emit('material:collected', { blueprintId: drop.blueprintId, x: drop.x, y: drop.y });
         }
         this.pool.release(drop);
       }
