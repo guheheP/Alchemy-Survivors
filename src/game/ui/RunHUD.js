@@ -4,6 +4,7 @@
 
 import { eventBus } from '../core/EventBus.js';
 import { ItemBlueprints } from '../data/items.js';
+import { GameConfig } from '../data/config.js';
 import { assetPath } from '../core/assetPath.js';
 
 const WEAPON_ICONS = {
@@ -36,6 +37,11 @@ export class RunHUD {
           <span class="hud-hp-text" id="hud-hp-text">100 / 100</span>
         </div>
         <div class="hud-level" id="hud-level">Lv.1</div>
+        <div class="hud-dash" id="hud-dash" title="Space / Shift でダッシュ">
+          <span class="hud-dash-icon">\uD83D\uDCA8</span>
+          <div class="hud-dash-bar"><div class="hud-dash-fill" id="hud-dash-fill"></div></div>
+          <span class="hud-dash-text" id="hud-dash-text">READY</span>
+        </div>
         <div class="hud-passives" id="hud-passives"></div>
       </div>
 
@@ -106,6 +112,8 @@ export class RunHUD {
     this._waveEl = this.el.querySelector('#hud-wave');
     this._statsMini = this.el.querySelector('#hud-stats-mini');
     this._statsDetail = this.el.querySelector('#hud-stats-detail');
+    this._dashFill = this.el.querySelector('#hud-dash-fill');
+    this._dashText = this.el.querySelector('#hud-dash-text');
 
     this._skillBanner = this.el.querySelector('#hud-skill-banner');
     this._skillFlash = this.el.querySelector('#hud-skill-flash');
@@ -191,7 +199,26 @@ export class RunHUD {
 
     if (weaponSlots) this._updateWeapons(weaponSlots);
     if (elapsed !== undefined && bossSpawnTimes) this._updateWave(elapsed, bossSpawnTimes);
-    if (player) this._updateStats(player);
+    if (player) {
+      this._updateStats(player);
+      this._updateDash(player);
+    }
+  }
+
+  _updateDash(player) {
+    if (!this._dashFill) return;
+    const cd = player.dashCooldownTimer || 0;
+    const cdMax = GameConfig.run.dashCooldown;
+    if (cd <= 0) {
+      this._dashFill.style.width = '100%';
+      this._dashFill.classList.add('ready');
+      this._dashText.textContent = 'READY';
+    } else {
+      const pct = Math.max(0, (1 - cd / cdMax)) * 100;
+      this._dashFill.style.width = pct.toFixed(0) + '%';
+      this._dashFill.classList.remove('ready');
+      this._dashText.textContent = cd.toFixed(1) + 's';
+    }
   }
 
   _onExpChanged({ exp, expToNext, level }) {

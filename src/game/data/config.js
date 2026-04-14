@@ -18,25 +18,31 @@ export const GameConfig = {
 
   // --- ラン設定 ---
   run: {
-    duration: 600,              // 10分（秒）
+    duration: 600,              // 10分: ボス出現タイミング & スポーン率上昇カーブの上限
     playerBaseHp: 100,
     playerBaseSpeed: 150,       // px/sec
     playerBaseDamage: 10,
     playerRadius: 12,
     dashSpeed: 400,
     dashDuration: 0.15,
-    dashCooldown: 1.5,
+    dashCooldown: 5.0,
     invincibilityDuration: 0.5, // 被弾後の無敵フレーム（秒）
     magnetRange: 60,            // 経験値ジェム吸引範囲
     expScale: 1.5,              // レベルアップ経験値曲線指数
     expBase: 10,                // Lv1→2に必要な経験値
-    maxEnemies: ('ontouchstart' in globalThis || navigator.maxTouchPoints > 0) ? 150 : 300,
+    get maxEnemies() {
+      // import 時評価を避けるため getter 化（SSR/テスト互換）
+      if (typeof globalThis === 'undefined') return 300;
+      const hasTouch = 'ontouchstart' in globalThis
+        || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+      return hasTouch ? 150 : 300;
+    },
     spawnRateStart: 1.0,        // 敵/秒（開始時）
     spawnRateEnd: 6.0,          // 敵/秒（10分時点）
     dropChance: 0.02,           // 素材ドロップ確率
     traitChance: 0.25,          // ドロップ素材に特性が付く確率
-    bossSpawnTimes: [180, 360],       // 3分/6分にボス出現
-    reaperSpawnTime: 600,              // 10分に死神出現
+    bossSpawnTimes: [600],            // 10分にエリアボス出現（撃破でクリア）
+    reaperSpawnTime: 999999,          // 死神は無効化
   },
 
   // --- ゴールド ---

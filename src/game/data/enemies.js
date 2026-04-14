@@ -210,7 +210,9 @@ export const EnemyDefs = {
   },
 };
 
-/** エリアごとの敵スポーン設定 */
+/** エリアごとの敵スポーン設定
+ * 注: 現在はボス撃破(10分)でクリアのため startTime>=600 の wave は到達不能。
+ *     将来 duration を延長する場合に備えて保持している。 */
 export const AreaEnemyConfig = {
   plains: {
     waves: [

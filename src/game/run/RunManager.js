@@ -205,6 +205,39 @@ export class RunManager {
     // カメラ初期位置
     this.camera.x = this.player.x - this.camera.width / 2;
     this.camera.y = this.player.y - this.camera.height / 2;
+
+    // ESC で一時停止メニュー
+    this._levelUpActive = false;
+    this._onKeyDown = (e) => {
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        if (this._levelUpActive || this.state === 'ended') return;
+        this.togglePause();
+      }
+    };
+    window.addEventListener('keydown', this._onKeyDown);
+  }
+
+  togglePause() {
+    if (this.state === 'paused' && this._pausedByMenu) {
+      this.state = 'running';
+      this.gameLoop.resume();
+      this._pausedByMenu = false;
+      eventBus.emit('pauseMenu:hide');
+    } else if (this.state === 'running') {
+      this.state = 'paused';
+      this.gameLoop.pause();
+      this._pausedByMenu = true;
+      eventBus.emit('pauseMenu:show');
+    }
+  }
+
+  retreat() {
+    // 撤退: ラン強制終了。獲得済み素材・ゴールドはリザルトに含まれる
+    this._pausedByMenu = false;
+    eventBus.emit('pauseMenu:hide');
+    if (this.state === 'paused') this.gameLoop.resume();
+    this._endRun('retreat');
   }
 
   /** エリアで使用する敵/ボス/ドロップアセットを事前ロード（非同期・非ブロッキング） */
@@ -243,11 +276,19 @@ export class RunManager {
 
     this.elapsed += dt;
 
-    if (this.elapsed >= GameConfig.run.duration) {
-      this._endRun('timeout');
-      return;
+    // ボス撃破演出のディレイ（ゲーム時間ベース、ポーズに追従）
+    // 演出中はプレイヤーを無敵にしてクリア取り消しを防止
+    if (this._clearPending != null) {
+      this._clearPending -= dt;
+      this.player.invincibleTimer = Math.max(this.player.invincibleTimer, 0.1);
+      if (this._clearPending <= 0) {
+        this._clearPending = null;
+        this._endRun('clear');
+        return;
+      }
     }
 
+    // duration 到達でも自動終了しない（ボスを倒すまで戦闘継続）
     this.player.update(dt);
     // ラン経過時間をドロップシステムに伝達（品質時間ボーナス用）
     this.drops.setElapsedTime(this.elapsed);
@@ -320,7 +361,7 @@ export class RunManager {
     // tick データ再利用（GC削減）
     const td = this._tickData;
     td.elapsed = this.elapsed;
-    td.remaining = GameConfig.run.duration - this.elapsed;
+    td.remaining = Math.max(0, GameConfig.run.duration - this.elapsed);
     td.killCount = this.killCount;
     td.hp = this.player.hp;
     td.maxHp = this.player.effectiveMaxHp;
@@ -380,11 +421,13 @@ export class RunManager {
   }
 
   _onLevelUpShow() {
+    this._levelUpActive = true;
     this.state = 'paused';
     this.gameLoop.pause();
   }
 
   _onLevelUpSelected() {
+    this._levelUpActive = false;
     this.state = 'running';
     this.gameLoop.resume();
   }
@@ -394,7 +437,9 @@ export class RunManager {
   }
 
   _onBossDefeated() {
-    // ボス撃破後、通常スポーン再開
+    // エリアボス撃破 = ステージクリア。ゲーム時間で1.5秒のディレイを入れて演出を見せる
+    if (this.state === 'ended') return;
+    this._clearPending = 1.5;
   }
 
   _endRun(reason) {
@@ -419,6 +464,7 @@ export class RunManager {
 
   destroy() {
     this.gameLoop.stop();
+    if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
     for (const unsub of this._unsubs) unsub();
     this.player.destroy();
     this.spawner.destroy();

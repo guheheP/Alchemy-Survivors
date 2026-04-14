@@ -50,8 +50,11 @@ export class LevelUpModal {
       card.style.animationDelay = `${i * 0.1}s`;
     });
 
-    // Click handlers
+    // Click handlers — 連打による多重発火を selectedLocked でガード
+    this._selectedLocked = false;
     const handleSelect = (card) => {
+      if (this._selectedLocked) return;
+      this._selectedLocked = true;
       const passiveId = card.dataset.id;
       card.classList.add('selected');
       const tid = setTimeout(() => {

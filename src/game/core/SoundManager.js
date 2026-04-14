@@ -22,9 +22,33 @@ const BATTLE_TRACKS = {
   boss_time_lord:     assetPath('/bgm/battle_08.mp3'),
 };
 const BATTLE_TRACK_DEFAULT = assetPath('/bgm/battle_EX.mp3');
-const GAME_TRACKS = Array.from({ length: 15 }, (_, i) =>
+// 拠点（ハブ）BGM — シャッフル再生
+const GAME_TRACKS = Array.from({ length: 6 }, (_, i) =>
   assetPath(`/bgm/bgm_${String(i + 1).padStart(2, '0')}.mp3`)
 );
+// ラン中BGM — エリアID → run_NN.mp3
+const RUN_TRACKS = {
+  plains:        assetPath('/bgm/run_01.mp3'),
+  cave:          assetPath('/bgm/run_02.mp3'),
+  forest:        assetPath('/bgm/run_03.mp3'),
+  volcano:       assetPath('/bgm/run_04.mp3'),
+  deep_sea:      assetPath('/bgm/run_05.mp3'),
+  dragon_nest:   assetPath('/bgm/run_06.mp3'),
+  sky_tower:     assetPath('/bgm/run_07.mp3'),
+  time_corridor: assetPath('/bgm/run_08.mp3'),
+};
+const RUN_TRACK_DEFAULT = assetPath('/bgm/run_01.mp3');
+// ボス戦BGM — エリアID → battle_NN.mp3
+const BOSS_TRACKS_BY_AREA = {
+  plains:        assetPath('/bgm/battle_01.mp3'),
+  cave:          assetPath('/bgm/battle_02.mp3'),
+  forest:        assetPath('/bgm/battle_03.mp3'),
+  volcano:       assetPath('/bgm/battle_04.mp3'),
+  deep_sea:      assetPath('/bgm/battle_05.mp3'),
+  dragon_nest:   assetPath('/bgm/battle_06.mp3'),
+  sky_tower:     assetPath('/bgm/battle_07.mp3'),
+  time_corridor: assetPath('/bgm/battle_08.mp3'),
+};
 
 class SoundManagerClass {
   constructor() {
@@ -47,6 +71,8 @@ class SoundManagerClass {
     this.currentTrackIndex = 0;
     this.isTitleBGM = false;
     this.isBattleBGM = false;
+    this.isRunBGM = false;
+    this.currentAreaId = null;
     this.preBattleTrackSrc = null;
     this.preBattleTrackTime = 0;
     this.isFading = false;
@@ -110,8 +136,8 @@ class SoundManagerClass {
 
     // 曲終了時に次の曲へ
     this.audioEl.addEventListener('ended', () => {
-      if (this.isTitleBGM) {
-        // タイトル曲はループ
+      if (this.isTitleBGM || this.isRunBGM) {
+        // タイトル / ラン中BGMはループ
         this.audioEl.currentTime = 0;
         this.audioEl.play().catch(() => {});
       } else {
@@ -268,9 +294,12 @@ class SoundManagerClass {
     this._playTrack(TITLE_TRACK);
   }
 
-  /** ゲームBGM開始（シャッフルプレイリスト） */
+  /** 拠点BGM開始（bgm_01〜06 シャッフル） */
   startGameBGM() {
     this.isTitleBGM = false;
+    this.isRunBGM = false;
+    this.currentAreaId = null;
+    if (this.audioEl) this.audioEl.loop = false;
     // タイトル曲がまだ再生中ならそのまま流す → 次のday:newDayで切り替わる
     // ただし、タイトル曲のloopは解除
     if (this.audioEl && !this.audioEl.paused && this.audioEl.src.includes('title_01')) {
@@ -286,7 +315,28 @@ class SoundManagerClass {
     this._playTrack(this.shuffledPlaylist[this.currentTrackIndex]);
   }
 
+  // ===== ラン中BGM =====
+
+  /** ラン中BGM開始 — エリア毎の固定曲をループ再生 */
+  startRunBGM(areaId) {
+    const track = RUN_TRACKS[areaId] || RUN_TRACK_DEFAULT;
+    this.isTitleBGM = false;
+    this.isBattleBGM = false;
+    this.isRunBGM = true;
+    this.currentAreaId = areaId;
+    this._fadeOutThen(() => {
+      this._playTrack(track);
+      if (this.audioEl) this.audioEl.loop = true;
+    }, 800);
+  }
+
   // ===== バトルBGM =====
+
+  /** エリア毎のボス戦BGMを開始 */
+  startBossBGM(areaId) {
+    const track = BOSS_TRACKS_BY_AREA[areaId] || BATTLE_TRACK_DEFAULT;
+    this.startBattleBGM(track);
+  }
 
   /** バトルBGM開始 — 現在のBGMをフェードアウトし、バトル曲へ切替 */
   startBattleBGM(track) {
@@ -311,13 +361,14 @@ class SoundManagerClass {
     // バトル終了時に全アクティブSEノードを強制切断
     this._forceCleanupAllSeNodes();
     this._fadeOutThen(() => {
-      if (this.audioEl) this.audioEl.loop = false;
+      if (this.audioEl) this.audioEl.loop = this.isRunBGM;
       // 保存していた曲を再開、または次の曲を再生
       if (this.preBattleTrackSrc) {
         this._playTrack(this.preBattleTrackSrc);
         // 復帰位置を少し戻す（自然にする）
         if (this.audioEl) {
           this.audioEl.currentTime = Math.max(0, this.preBattleTrackTime - 2);
+          this.audioEl.loop = this.isRunBGM;
         }
         this.preBattleTrackSrc = null;
       } else {
@@ -366,9 +417,9 @@ class SoundManagerClass {
     } catch { /* quota exceeded etc. */ }
   }
 
-  /** day:newDayイベント → フェードアウトして次の曲 */
+  /** day:newDayイベント → フェードアウトして次の曲（拠点シャッフル時のみ） */
   _onNewDay() {
-    if (this.isTitleBGM || this.isBattleBGM) return;
+    if (this.isTitleBGM || this.isBattleBGM || this.isRunBGM) return;
     this._fadeOutThen(() => {
       this.playNextTrack();
     });

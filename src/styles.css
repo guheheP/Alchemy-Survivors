@@ -747,6 +747,24 @@ a:focus-visible,
   color: #f0c060; font-size: 1.1rem; font-weight: 700; margin-top: 6px;
   text-shadow: 0 0 8px rgba(240,192,96,0.4);
 }
+.hud-dash {
+  display: flex; align-items: center; gap: 6px; margin-top: 4px;
+  font-size: 0.75rem; color: #ccc;
+}
+.hud-dash-icon { font-size: 0.95rem; }
+.hud-dash-bar {
+  width: 90px; height: 8px; background: rgba(0,0,0,0.55);
+  border: 1px solid #444; border-radius: 4px; overflow: hidden;
+}
+.hud-dash-fill {
+  height: 100%; background: linear-gradient(to right, #4af, #8cf);
+  transition: width 0.1s linear;
+}
+.hud-dash-fill.ready {
+  background: linear-gradient(to right, #ff6, #fc4);
+  box-shadow: 0 0 8px rgba(255,204,68,0.7);
+}
+.hud-dash-text { color: #ccc; font-weight: 700; min-width: 36px; text-align: right; }
 .hud-timer {
   font-size: 2.2rem; color: #fff; font-weight: 700;
   text-shadow: 2px 2px 6px #000;
@@ -1197,10 +1215,11 @@ a:focus-visible,
 .wh-item:hover { border-color: #f0c060; }
 .wh-item.equipped { border-color: #4a8; background: rgba(68,170,136,0.08); }
 .wh-item.locked { opacity: 0.85; }
-.wh-tag { display: inline-block; font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+.wh-item-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.wh-tag { display: inline-flex; align-items: center; font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; vertical-align: middle; flex-shrink: 0; }
 .wh-tag-equipped { background: #4a8; color: #fff; }
 .wh-tag-locked { background: rgba(240,192,96,0.2); color: #f0c060; }
-.wh-item-price { display: block; font-size: 0.75rem; color: #fc4; margin-top: 2px; }
+.wh-item-price { display: inline; font-size: 0.7rem; color: #fc4; }
 .wh-detail-price { color: #fc4; margin-left: 8px; }
 .wh-detail-actions { margin-left: auto; }
 .wh-lock-btn { background: rgba(240,192,96,0.1); border: 1px solid #f0c060; color: #f0c060; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
@@ -1267,6 +1286,54 @@ a:focus-visible,
 .wh-tf.active { background: rgba(240,192,96,0.2); border-color: #f0c060; color: #f0c060; }
 
 .hidden { display: none !important; }
+
+/* ===== ポーズメニュー ===== */
+.pause-menu { position: fixed; inset: 0; z-index: 60; }
+.pause-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); }
+.pause-content {
+  position: relative; max-width: 460px; margin: 12vh auto 0;
+  padding: 2rem 2.4rem;
+  background: linear-gradient(160deg, #1c1c2e 0%, #14141f 100%);
+  border: 1px solid #444; border-radius: 12px;
+  text-align: center; color: #e0e0e0;
+  box-shadow: 0 0 40px rgba(0,0,0,0.7);
+}
+.pause-title {
+  color: #f0c060; font-size: 2rem; margin: 0 0 0.4rem;
+  letter-spacing: 4px; text-shadow: 0 0 16px rgba(240,192,96,0.4);
+}
+.pause-sub { color: #aaa; font-size: 0.85rem; margin: 0 0 1.4rem; }
+.pause-actions { display: flex; flex-direction: column; gap: 0.7rem; }
+.pause-btn {
+  font-family: inherit; font-size: 1rem; font-weight: 700;
+  padding: 0.85rem 1.2rem; border-radius: 8px; cursor: pointer;
+  border: 1px solid #555; background: rgba(255,255,255,0.04); color: #e0e0e0;
+  transition: all 0.15s;
+}
+.pause-btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
+.pause-btn-resume {
+  background: linear-gradient(to bottom, #4af, #38c);
+  border-color: #6cf; color: #fff;
+}
+.pause-btn-retreat {
+  background: rgba(200,80,80,0.12);
+  border-color: #a44; color: #f99;
+}
+.pause-btn-retreat-yes {
+  background: linear-gradient(to bottom, #c44, #922);
+  border-color: #f88; color: #fff;
+}
+.pause-btn-cancel { background: rgba(255,255,255,0.04); border-color: #555; color: #ccc; }
+.pause-confirm {
+  margin-top: 1.2rem; padding: 1rem; border-radius: 8px;
+  background: rgba(200,80,80,0.08); border: 1px solid #a44;
+}
+.pause-confirm p { margin: 0 0 0.8rem; color: #f99; font-size: 0.95rem; }
+.pause-confirm-note { color: #aaa; font-size: 0.75rem; }
+.pause-confirm-actions { display: flex; gap: 0.6rem; justify-content: center; }
+.pause-confirm-actions .pause-btn { flex: 1; padding: 0.6rem 1rem; font-size: 0.9rem; }
+
+.result-title-retreat { color: #fc8; }
 
 /* クイック選択 */
 .warehouse-quickselect { display: flex; gap: 6px; padding: 4px 0; flex-wrap: wrap; }

@@ -195,7 +195,7 @@ export class InventorySystem {
   }
 
   /** 容量拡張 (アップグレード購入時) — 倉庫Lvを+1し、容量は getter で派生 */
-  expandCapacity(_amount) {
+  expandCapacity() {
     Progression.incrementWarehouseLevel();
     const per = GameConfig.warehouseExpansionPerLevel;
     eventBus.emit('toast', { message: `📦 倉庫容量が ${per} 増えました！（${this.maxCapacity}枠）`, type: 'success' });

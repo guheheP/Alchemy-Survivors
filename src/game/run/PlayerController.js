@@ -31,6 +31,19 @@ export class PlayerController extends Entity {
     // 無敵フレーム
     this.invincibleTimer = 0;
 
+    // ダッシュ
+    this.dashTimer = 0;          // ダッシュ持続中の残り秒
+    this.dashCooldownTimer = 0;  // 次回発動までのCD残り秒
+    this.dashVx = 0;
+    this.dashVy = 0;
+    this._dashKeyHeld = false;
+
+    // 入力関連（applyWeaponTraits 前の update 呼び出しに備えて初期化）
+    this._keys = new Set();
+    this._onKeyDown = null;
+    this._onKeyUp = null;
+    this.mobileControls = null;
+
     // レベル
     this.level = 1;
     this.exp = 0;
@@ -81,15 +94,15 @@ export class PlayerController extends Entity {
   /** 武器スロットの特性もパッシブに適用（RunManagerから呼ぶ） */
   applyWeaponTraits(weaponSlots) {
     this._applyTraitPassives(weaponSlots);
+    this._bindInput();
+  }
 
-    // 入力
-    this._keys = new Set();
+  _bindInput() {
+    if (this._onKeyDown) return; // 二重登録防止
     this._onKeyDown = (e) => this._keys.add(e.code);
     this._onKeyUp = (e) => this._keys.delete(e.code);
     window.addEventListener('keydown', this._onKeyDown);
     window.addEventListener('keyup', this._onKeyUp);
-
-    // モバイル入力
     this.mobileControls = new MobileControls();
   }
 
@@ -112,6 +125,10 @@ export class PlayerController extends Entity {
     if (this.invincibleTimer > 0) {
       this.invincibleTimer -= dt;
     }
+
+    // ダッシュ各種タイマー
+    if (this.dashTimer > 0) this.dashTimer -= dt;
+    if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
 
     // リジェネ
     if (this.passives.regenPerSec > 0) {
@@ -138,12 +155,44 @@ export class PlayerController extends Entity {
       dy /= len;
     }
 
-    // 移動適用
-    if (dx !== 0 || dy !== 0) {
+    // ダッシュ発動判定（Space / Shift / モバイルダッシュボタン）
+    const dashPressed = this._keys.has('Space') || this._keys.has('ShiftLeft') || this._keys.has('ShiftRight')
+      || (this.mobileControls?.dashRequested === true);
+    if (dashPressed && !this._dashKeyHeld && this.dashTimer <= 0 && this.dashCooldownTimer <= 0) {
+      this._tryDash(dx, dy);
+    }
+    this._dashKeyHeld = dashPressed;
+    if (this.mobileControls) this.mobileControls.dashRequested = false;
+
+    // 移動適用 — ダッシュ中は dashV を優先、無敵
+    if (this.dashTimer > 0) {
+      this.x += this.dashVx * dt;
+      this.y += this.dashVy * dt;
+      this.invincibleTimer = Math.max(this.invincibleTimer, this.dashTimer);
+    } else if (dx !== 0 || dy !== 0) {
       this.x += dx * this.speed * dt;
       this.y += dy * this.speed * dt;
       this.facingAngle = Math.atan2(dy, dx);
     }
+  }
+
+  /** ダッシュ発動 — 入力方向（無入力なら facingAngle）に dashSpeed×dashDuration 直進 */
+  _tryDash(dx, dy) {
+    let ux = dx, uy = dy;
+    const len = Math.sqrt(ux * ux + uy * uy);
+    if (len === 0) {
+      ux = Math.cos(this.facingAngle);
+      uy = Math.sin(this.facingAngle);
+    } else {
+      ux /= len; uy /= len;
+    }
+    const sp = GameConfig.run.dashSpeed;
+    this.dashVx = ux * sp;
+    this.dashVy = uy * sp;
+    this.dashTimer = GameConfig.run.dashDuration;
+    this.dashCooldownTimer = GameConfig.run.dashCooldown;
+    this.facingAngle = Math.atan2(uy, ux);
+    eventBus.emit('player:dashed');
   }
 
   takeDamage(amount) {
@@ -199,8 +248,8 @@ export class PlayerController extends Entity {
   }
 
   destroy() {
-    window.removeEventListener('keydown', this._onKeyDown);
-    window.removeEventListener('keyup', this._onKeyUp);
+    if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
+    if (this._onKeyUp) window.removeEventListener('keyup', this._onKeyUp);
     if (this.mobileControls) this.mobileControls.destroy();
   }
 }

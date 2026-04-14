@@ -24,9 +24,11 @@ export class RunResultScreen {
     const mins = Math.floor(elapsed / 60);
     const secs = Math.floor(elapsed % 60);
     const timeStr = `${mins}:${String(secs).padStart(2, '0')}`;
-    const isVictory = reason === 'timeout';
-    const reasonText = isVictory ? '🏆 生存成功！' : '💀 力尽きた...';
-    const titleClass = isVictory ? 'result-title result-title-victory' : 'result-title result-title-defeat';
+    const isClear = reason === 'clear';
+    const isVictory = reason === 'timeout' || isClear;
+    const isRetreat = reason === 'retreat';
+    const reasonText = isClear ? '🏆 ステージクリア！' : reason === 'timeout' ? '🏆 生存成功！' : isRetreat ? '🏳️ 撤退完了' : '💀 力尽きた...';
+    const titleClass = isVictory ? 'result-title result-title-victory' : isRetreat ? 'result-title result-title-retreat' : 'result-title result-title-defeat';
 
     const materialCount = materials.length;
     const materialHtml = materialCount > 0

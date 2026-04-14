@@ -16,6 +16,7 @@ import { HubManager } from './hub/HubManager.js';
 import { RunManager } from './run/RunManager.js';
 import { RunHUD } from './ui/RunHUD.js';
 import { LevelUpModal } from './ui/LevelUpModal.js';
+import { PauseMenu } from './ui/PauseMenu.js';
 import { RunResultScreen } from './ui/RunResultScreen.js';
 import { AchievementSystem } from './AchievementSystem.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
@@ -100,17 +101,17 @@ class Game {
     eventBus.on('boss:spawned', () => SoundManager.playEventChime());
     eventBus.on('boss:defeated', ({ bossId }) => {
       SoundManager.playBattleVictory();
-      // Boss BGM → normal BGM
-      SoundManager.startGameBGM();
+      // ボスBGM → ラン中BGMに復帰
+      SoundManager.stopBattleBGM();
       // ラン中のクラッシュで解放が失われないように即時チェックポイントセーブ
       if (this.saveSystem) {
         try { this._autoSave(); } catch (e) { /* save 失敗は致命的でないので握りつぶす */ }
       }
     });
     eventBus.on('boss:intro', ({ name }) => {
-      // Switch to battle BGM if it's a real boss (not reaper)
-      if (name !== '死神') {
-        SoundManager.startBattleBGM();
+      // 死神以外はエリア毎のボスBGMに切替
+      if (name !== '死神' && this.runManager?.areaId) {
+        SoundManager.startBossBGM(this.runManager.areaId);
       }
     });
 
@@ -205,10 +206,11 @@ class Game {
     // ランUI
     this.runHUD = new RunHUD(this.uiRoot);
     this.levelUpModal = new LevelUpModal(this.uiRoot);
+    this.pauseMenu = new PauseMenu(this.uiRoot, this.runManager);
 
     // ラン開始
     this.runManager.start();
-    SoundManager.startGameBGM();
+    SoundManager.startRunBGM(areaId);
     this.stats.totalRuns++;
   }
 
@@ -218,6 +220,7 @@ class Game {
     // ランUI片付け
     if (this.runHUD) { this.runHUD.destroy(); this.runHUD = null; }
     if (this.levelUpModal) { this.levelUpModal.destroy(); this.levelUpModal = null; }
+    if (this.pauseMenu) { this.pauseMenu.destroy(); this.pauseMenu = null; }
     if (this.runManager) { this.runManager.destroy(); this.runManager = null; }
 
     this.canvas.style.display = 'none';
@@ -238,13 +241,13 @@ class Game {
     }
     if (resultData.reason === 'death') {
       this.stats.totalDeaths++;
-    } else if (resultData.reason === 'timeout') {
+    } else if (resultData.reason === 'timeout' || resultData.reason === 'clear') {
       this.stats.totalSurvivals++;
     }
     if (resultData.bossDefeated) {
       this.stats.totalBossesDefeated++;
     }
-    if (resultData.hardMode && resultData.reason === 'timeout') {
+    if (resultData.hardMode && (resultData.reason === 'timeout' || resultData.reason === 'clear')) {
       this.stats.hardModeClears++;
     }
     // エリア別統計
@@ -256,7 +259,7 @@ class Game {
       const areaStats = this.stats.perArea[areaId];
       areaStats.runs++;
       areaStats.kills += resultData.killCount;
-      if (resultData.reason === 'timeout') areaStats.clears++;
+      if (resultData.reason === 'timeout' || resultData.reason === 'clear') areaStats.clears++;
       if (resultData.elapsed > areaStats.bestTime) areaStats.bestTime = resultData.elapsed;
     }
     // 武器種別統計
@@ -317,6 +320,7 @@ class Game {
     if (this.hubManager) { this.hubManager.destroy(); this.hubManager = null; }
     if (this.runHUD) { this.runHUD.destroy(); this.runHUD = null; }
     if (this.levelUpModal) { this.levelUpModal.destroy(); this.levelUpModal = null; }
+    if (this.pauseMenu) { this.pauseMenu.destroy(); this.pauseMenu = null; }
     if (this.resultScreen) { this.resultScreen.destroy(); this.resultScreen = null; }
     this.uiRoot.innerHTML = '';
   }

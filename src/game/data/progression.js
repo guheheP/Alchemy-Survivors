@@ -61,12 +61,6 @@ export const Progression = {
     return _purchasedUpgrades.has(id);
   },
 
-  getUpgradeBonus(type) {
-    let total = 0;
-    // Import not needed -- just check the set against known upgrade IDs
-    return total;
-  },
-
   loadPurchasedUpgrades(ids) {
     _purchasedUpgrades.clear();
     for (const id of (ids || [])) {
@@ -106,7 +100,12 @@ export const Progression = {
     _statLevels[stat]++;
     return _statLevels[stat];
   },
-  getStatBonusPercent(stat) { return (_statLevels[stat] || 0) / 100; },
+  getStatBonusPercent(stat) {
+    const pct = (_statLevels[stat] || 0) / 100;
+    // DEF は %軽減として使うため完全無敵を防ぐキャップを入れる
+    if (stat === 'def') return Math.min(pct, 0.75);
+    return pct;
+  },
   getStatLevels() { return { ..._statLevels }; },
   loadStatLevels(obj) {
     for (const k of Object.keys(_statLevels)) _statLevels[k] = 0;

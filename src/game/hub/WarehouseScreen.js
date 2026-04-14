@@ -231,10 +231,12 @@ export class WarehouseScreen {
         <img src="${bp?.image ? assetPath(bp.image) : ''}" class="wh-item-icon" onerror="this.style.display='none'" alt="">
         <div class="wh-item-info">
           <span class="wh-item-name">${item.name}</span>
-          <span class="wh-item-quality">Q${item.quality}</span>
-          ${isEquipped ? '<span class="wh-tag wh-tag-equipped">装備</span>' : ''}
-          ${isLocked ? '<span class="wh-tag wh-tag-locked">🔒</span>' : ''}
-          <span class="wh-item-price">💰${price}</span>
+          <span class="wh-item-meta">
+            <span class="wh-item-quality">Q${item.quality}</span>
+            <span class="wh-item-price">💰${price}</span>
+            ${isEquipped ? '<span class="wh-tag wh-tag-equipped">装備</span>' : ''}
+            ${isLocked ? '<span class="wh-tag wh-tag-locked">🔒</span>' : ''}
+          </span>
         </div>
         ${(item.traits && item.traits.length > 0) ? `<div class="wh-item-traits">${item.traits.map(t => {
           const def = TraitDefs[t];
