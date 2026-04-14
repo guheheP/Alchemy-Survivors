@@ -192,17 +192,25 @@ a:focus-visible,
 /* ===== Title Screen ===== */
 #title-screen {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   width: 100%; height: 100%;
+  padding-top: 10vh;
   background: linear-gradient(135deg, #0d0d2a 0%, #1a0d2a 50%, #0d1a2a 100%);
 }
 #title-screen.hidden { display: none; }
 
 .title-content {
   text-align: center;
-  max-width: 520px; width: 90%;
+  max-width: 640px; width: 92%;
   padding: 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 12rem;
+}
+.title-logo {
+  width: 100%; max-width: 560px;
+  height: auto;
+  image-rendering: auto;
+  filter: drop-shadow(0 0 24px rgba(240,192,96,0.35));
 }
 .title-name {
   font-size: 3rem;

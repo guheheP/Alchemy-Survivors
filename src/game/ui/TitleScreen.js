@@ -2,6 +2,8 @@
  * TitleScreen — タイトル画面
  */
 
+import { assetPath } from '../core/assetPath.js';
+
 const SAVE_KEY = 'alchemy_survivors_save_v1';
 
 function _formatLastPlayed(ts) {
@@ -42,14 +44,7 @@ export class TitleScreen {
 
     this.el.innerHTML = `
       <div class="title-content anim-fade-in">
-        <h1 class="title-name">Alchemy Survivors</h1>
-        <p class="title-sub">アルケミー・サバイバーズ</p>
-        <p class="title-tagline">錬金術で武器を鍛え、終わりなき戦場を生き抜け。</p>
-        <ul class="title-features" aria-label="ゲームの特徴">
-          <li><span class="title-feature-icon">⚔️</span>自動攻撃のサバイバルアクション</li>
-          <li><span class="title-feature-icon">🔮</span>素材からクラフトする武器・防具</li>
-          <li><span class="title-feature-icon">🌟</span>34種の特性が変えるビルド</li>
-        </ul>
+        <img class="title-logo" src="${assetPath('/art/title.png')}" alt="Alchemy Survivors">
         <div class="title-buttons">
           <button class="title-btn ${hasSave ? 'title-btn-continue' : 'title-btn-primary'}" id="title-continue" ${hasSave ? '' : 'disabled'} aria-label="${hasSave ? '前回の続きからプレイ' : 'セーブデータなし'}">
             <span class="title-btn-icon">${hasSave ? '▶' : '—'}</span>
@@ -66,7 +61,6 @@ export class TitleScreen {
             </span>
           </button>
         </div>
-        <p class="title-hint">操作: WASD/矢印キーで移動 · Spaceでダッシュ · 武器は自動攻撃</p>
       </div>
     `;
     container.appendChild(this.el);
