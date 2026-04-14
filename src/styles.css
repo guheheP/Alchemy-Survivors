@@ -76,6 +76,12 @@
 
   /* Touch targets */
   --touch-target: 44px;
+
+  /* Safe area (ノッチ / ホームインジケータ対応) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -87,6 +93,12 @@ body {
   overflow: hidden;
   width: 100vw;
   height: 100vh;
+  /* モバイルブラウザURLバーの出入りに追従（対応ブラウザのみ） */
+  height: 100dvh;
+  /* プルtoリフレッシュ / バウンスを抑止 */
+  overscroll-behavior: contain;
+  /* ダブルタップズーム無効化（ゲームUIはタップ駆動のため） */
+  touch-action: manipulation;
 }
 
 /* ===== Focus Ring (Accessibility) ===== */
@@ -178,6 +190,8 @@ a:focus-visible,
   top: 0; left: 0;
   width: 100%; height: 100%;
   display: none;
+  /* ブラウザのスクロール動作を奪う（仮想スティック/ダッシュ操作のため） */
+  touch-action: none;
 }
 
 #ui-root {
@@ -2716,4 +2730,139 @@ a:focus-visible,
   .hud-timer { font-size: 1rem; }
   .hud-top-right { top: 4px; padding: 3px 6px; }
   .hud-passives-float { top: 4px; padding: 3px 5px; }
+}
+
+/* ===============================================================
+   モバイル専用タッチボタン (ポーズ / 詳細トグル)
+   デスクトップでは非表示、タッチ端末のみ表示
+   =============================================================== */
+.hud-pause-btn,
+.hud-detail-btn {
+  display: none;
+  position: absolute;
+  width: 44px; height: 44px;
+  align-items: center; justify-content: center;
+  background: rgba(18, 14, 28, 0.72);
+  border: 1px solid rgba(240, 192, 96, 0.55);
+  border-radius: 50%;
+  color: var(--color-gold);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 12;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  padding: 0;
+}
+.hud-pause-btn:active,
+.hud-detail-btn:active {
+  background: rgba(240, 192, 96, 0.35);
+  transform: scale(0.96);
+}
+.hud-pause-btn {
+  top: calc(8px + var(--safe-top));
+  left: calc(8px + var(--safe-left));
+}
+.hud-detail-btn {
+  /* コンソール右上寄りに配置（モバイルで stats-mini を非表示にしたスペース） */
+  right: calc(8px + var(--safe-right));
+  bottom: calc(90px + var(--safe-bottom));
+}
+
+/* タッチ端末のみ表示 */
+@media (hover: none) and (pointer: coarse) {
+  .hud-pause-btn,
+  .hud-detail-btn { display: flex; }
+
+  /* モバイル: 左上を空けたのでパッシブフロートは少し下へ */
+  .hud-passives-float {
+    top: calc(60px + var(--safe-top));
+  }
+}
+
+/* ===============================================================
+   Safe-area inset: ノッチ / ホームインジケータ / ブラウザUI 対応
+   モバイルサイズ時のみ上書き
+   =============================================================== */
+@media (max-width: 768px) {
+  .hud-top-center { top: calc(8px + var(--safe-top)); }
+  .hud-top-right {
+    top: calc(8px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+  }
+  .hud-passives-float {
+    top: calc(8px + var(--safe-top));
+    left: calc(8px + var(--safe-left));
+  }
+  .hud-console {
+    bottom: calc(6px + var(--safe-bottom));
+    width: calc(100% - 8px - var(--safe-left) - var(--safe-right));
+    margin-left: calc(var(--safe-left) / 2 - var(--safe-right) / 2);
+  }
+  .hud-exp-bar {
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+    padding-bottom: var(--safe-bottom);
+    background-clip: content-box;
+    background-origin: content-box;
+  }
+  .hub-header {
+    padding-left: calc(1rem + var(--safe-left));
+    padding-right: calc(1rem + var(--safe-right));
+    padding-top: calc(0.6rem + var(--safe-top));
+  }
+  .hub-content {
+    padding-left: calc(0.5rem + var(--safe-left));
+    padding-right: calc(0.5rem + var(--safe-right));
+    padding-bottom: calc(0.5rem + var(--safe-bottom));
+  }
+}
+
+/* ===============================================================
+   特性ツールチップ タッチ端末用: タップで開閉
+   =============================================================== */
+/* タップで開いた状態を .show-tooltip クラスで表現 */
+.trait-item-wrap.show-tooltip .trait-tooltip,
+.equip-trait-wrap.show-tooltip .trait-tooltip {
+  display: block;
+}
+@media (hover: none) and (pointer: coarse) {
+  /* hover による誤表示を抑止（active残像対策） */
+  .trait-item-wrap:hover .trait-tooltip,
+  .equip-trait-wrap:hover .trait-tooltip { display: none; }
+  /* 明示的に開いた時だけ表示 */
+  .trait-item-wrap.show-tooltip .trait-tooltip,
+  .equip-trait-wrap.show-tooltip .trait-tooltip { display: block; }
+}
+
+/* ===============================================================
+   タッチスクロール: ハブ本体は縦スクロール許可、HUDは無効化
+   =============================================================== */
+.hub-content { touch-action: pan-y; }
+.warehouse-grid,
+.stats-screen,
+.achievement-screen,
+.settings-screen,
+.craft-recipes,
+.equip-inventory { touch-action: pan-y; }
+
+/* ===============================================================
+   Tutorial / LevelUp モバイル微調整
+   =============================================================== */
+@media (max-width: 768px) {
+  .tutorial-card {
+    padding: 1.2rem 1.2rem;
+  }
+  .tutorial-title { font-size: 1.15rem; }
+  .tutorial-text { font-size: 0.88rem; }
+  .tutorial-actions { flex-wrap: wrap; gap: 0.4rem; }
+}
+@media (max-width: 480px) {
+  .tutorial-card { padding: 1rem 1rem; max-width: 94vw; }
+  .tutorial-icon { font-size: 2.2rem; }
+  .tutorial-title { font-size: 1.05rem; }
+  .levelup-card-inner { padding: 1rem 0.7rem; }
+  .levelup-card { height: 220px; }
 }

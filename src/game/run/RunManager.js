@@ -216,6 +216,12 @@ export class RunManager {
       }
     };
     window.addEventListener('keydown', this._onKeyDown);
+
+    // モバイルの画面内ポーズボタンからの要求を受ける
+    this._unsubPauseToggle = eventBus.on('pauseMenu:requestToggle', () => {
+      if (this._levelUpActive || this.state === 'ended') return;
+      this.togglePause();
+    });
   }
 
   togglePause() {
@@ -465,6 +471,7 @@ export class RunManager {
   destroy() {
     this.gameLoop.stop();
     if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
+    if (this._unsubPauseToggle) this._unsubPauseToggle();
     for (const unsub of this._unsubs) unsub();
     this.player.destroy();
     this.spawner.destroy();

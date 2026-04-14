@@ -33,6 +33,12 @@ export class RunHUD {
     this.el = document.createElement('div');
     this.el.id = 'run-hud';
     this.el.innerHTML = `
+      <!-- Mobile pause button (left top; hidden on desktop via CSS) -->
+      <button class="hud-pause-btn" id="hud-pause" type="button" aria-label="一時停止">⏸</button>
+
+      <!-- Mobile detail toggle (Tab 相当; hidden on desktop via CSS) -->
+      <button class="hud-detail-btn" id="hud-detail" type="button" aria-label="詳細表示">ℹ</button>
+
       <!-- Top Center: Timer + Wave -->
       <div class="hud-top-center">
         <div class="hud-timer" id="hud-timer">5:00</div>
@@ -151,13 +157,28 @@ export class RunHUD {
     this._onKeyDown = (e) => {
       if (e.code === 'Tab') {
         e.preventDefault();
-        this._statsExpanded = !this._statsExpanded;
-        this._statsDetail.classList.toggle('hidden', !this._statsExpanded);
-        this._passivesDetail.classList.toggle('hidden', !this._statsExpanded);
-        this._renderPassivesDetail();
+        this._toggleDetail();
       }
     };
     window.addEventListener('keydown', this._onKeyDown);
+
+    // Mobile pause button — emits pauseMenu:requestToggle, RunManager handles it
+    const pauseBtn = this.el.querySelector('#hud-pause');
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        eventBus.emit('pauseMenu:requestToggle');
+      });
+    }
+
+    // Mobile detail toggle button
+    const detailBtn = this.el.querySelector('#hud-detail');
+    if (detailBtn) {
+      detailBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this._toggleDetail();
+      });
+    }
 
     this._unsubs = [
       eventBus.on('run:tick', (data) => this._onTick(data)),
@@ -174,6 +195,13 @@ export class RunHUD {
       eventBus.on('skill:activated', (data) => this._showSkillBanner(data)),
       eventBus.on('ui:flash', (data) => this._showSkillFlash(data)),
     ];
+  }
+
+  _toggleDetail() {
+    this._statsExpanded = !this._statsExpanded;
+    this._statsDetail.classList.toggle('hidden', !this._statsExpanded);
+    this._passivesDetail.classList.toggle('hidden', !this._statsExpanded);
+    this._renderPassivesDetail();
   }
 
   _showSkillBanner({ name, color }) {
