@@ -2,12 +2,52 @@
  * EquipmentScreen — 装備変更UI（4武器 + 防具 + アクセサリ）
  */
 
-import { ItemBlueprints } from '../data/items.js';
+import { ItemBlueprints, TraitDefs } from '../data/items.js';
 import { getEquipSlot } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
 import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
+
+/** 特性のラン中効果を簡潔な日本語表記に変換 */
+function formatTraitRunEffect(def) {
+  if (!def?.effects) return '';
+  const labels = {
+    runDamageFlat: 'ダメージ', runDamageReduction: '軽減', runMaxHpFlat: 'HP',
+    runMoveSpeed: '速度', runRegenPerSec: '回復/秒', runDodge: '回避',
+    runDropRate: 'ドロップ率', runAttackSpeed: '攻速', runExpBonus: '経験値',
+    runStartInvincible: '開始無敵(秒)',
+  };
+  const parts = [];
+  for (const [key, val] of Object.entries(def.effects)) {
+    if (key.startsWith('run') && labels[key]) {
+      const display = typeof val === 'number' && val < 1 && val > 0
+        ? `+${(val * 100).toFixed(0)}%` : `+${val}`;
+      parts.push(`${labels[key]}${display}`);
+    }
+  }
+  return parts.length > 0 ? parts.join(', ') : '';
+}
+
+/** アイテムの特性を「バッジ + ホバーツールチップ」として描画 */
+function renderTraitBadges(traits) {
+  if (!traits || traits.length === 0) return '';
+  return `<div class="equip-card-traits">${traits.map(t => {
+    const def = TraitDefs[t];
+    const rarity = def?.rarity || 'common';
+    const desc = def?.description || '';
+    const runFx = formatTraitRunEffect(def);
+    return `<span class="equip-trait-wrap">
+      <span class="wh-trait rarity-${rarity}">${t}</span>
+      <span class="trait-tooltip">
+        <span class="trait-tt-name rarity-${rarity}">${t}</span>
+        <span class="trait-tt-rarity">${rarity}</span>
+        ${desc ? `<p class="trait-tt-desc">${desc}</p>` : ''}
+        ${runFx ? `<p class="trait-tt-run">ラン効果: ${runFx}</p>` : ''}
+      </span>
+    </span>`;
+  }).join('')}</div>`;
+}
 
 const MAX_WEAPON_SLOTS = 4;
 
@@ -65,6 +105,7 @@ export class EquipmentScreen {
                   ? `<img src="${bp?.image ? assetPath(bp.image) : ''}" class="slot-icon" onerror="this.style.display='none'" alt="">
                      <span class="slot-name">${weapon.name}</span>
                      ${statsHtml}
+                     ${renderTraitBadges(weapon.traits)}
                      <button class="slot-remove" data-slot="${i}" data-type="weapon">✕</button>`
                   : `<span class="slot-empty-label">${i === 0 ? '初期武器（必須）' : '空きスロット'}</span>`
                 }
@@ -171,6 +212,7 @@ export class EquipmentScreen {
         ? `<img src="${bp?.image ? assetPath(bp.image) : ''}" class="slot-icon" onerror="this.style.display='none'" alt="">
            <span class="slot-name">${item.name}</span>
            ${statsHtml}
+           ${renderTraitBadges(item.traits)}
            <button class="slot-remove" data-type="${type}">✕</button>`
         : `<span class="slot-empty-label">${label}スロット</span>`
       }
@@ -187,7 +229,7 @@ export class EquipmentScreen {
         <div class="equip-card-info">
           <span class="equip-card-name">${w.name}</span>
           <span class="equip-card-quality">Q${w.quality}</span>
-          ${w.traits.length > 0 ? `<span class="equip-card-traits">${w.traits.join(', ')}</span>` : ''}
+          ${renderTraitBadges(w.traits)}
         </div>
         ${isEquipped ? '<span class="equip-badge">装備中</span>' : ''}
       </div>`;

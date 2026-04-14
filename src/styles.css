@@ -626,9 +626,12 @@ a:focus-visible,
 .equip-card-name { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .equip-card-quality { font-size: 0.75rem; color: #4af; }
 .equip-card-traits {
-  font-size: 0.7rem; color: #aaa;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: flex; flex-wrap: wrap; gap: 0.25rem;
+  font-size: 0.7rem; color: #aaa; margin-top: 0.15rem;
 }
+.equip-trait-wrap { position: relative; display: inline-block; }
+.equip-trait-wrap .trait-tooltip { display: none; }
+.equip-trait-wrap:hover .trait-tooltip { display: block; }
 .equip-badge { color: #4af; font-size: 0.75rem; margin-left: auto; flex-shrink: 0; }
 .equip-no-weapons { color: #666; font-size: 0.9rem; }
 

@@ -121,8 +121,8 @@ export class EnemySpawner {
     // エリア難易度倍率（ステージ2以降で漸増）
     const areaHp = this.areaMult.hp;
     const areaDmg = this.areaMult.dmg;
-    // 時間進行による体力上昇（1分毎 +30%、20分で+600% = 7倍）
-    const timeHp = 1 + (this.elapsed / 60) * 0.30;
+    // 時間進行による体力上昇（1分毎 +60%、5分で +300% = 4倍）
+    const timeHp = 1 + (this.elapsed / 60) * 0.60;
 
     enemy.maxHp = Math.max(1, Math.floor(enemy.maxHp * areaHp * timeHp));
     enemy.hp = enemy.maxHp;

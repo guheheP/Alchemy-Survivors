@@ -297,7 +297,7 @@ export class RunHUD {
     for (const t of bossSpawnTimes) {
       if (elapsed < t) { nextBoss = t; break; }
     }
-    const diffLevel = Math.min(5, Math.floor(elapsed / 120) + 1);
+    const diffLevel = Math.min(5, Math.floor(elapsed / 60) + 1);
     const stars = '\u2605'.repeat(diffLevel) + '\u2606'.repeat(5 - diffLevel);
     let html = `<span class="hud-diff">${stars}</span>`;
     if (nextBoss) {
