@@ -82,12 +82,18 @@ export class GameTooltip {
     const el = this.el;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    const rect = el.getBoundingClientRect();
 
-    // 一度表示してサイズ取得
+    // 小画面ではビューポート中央に固定表示（モーダル的な挙動）
+    if (vw <= 480) {
+      el.style.left = `${Math.max(pad, (vw - rect.width) / 2)}px`;
+      el.style.top = `${Math.max(pad, vh - rect.height - 80)}px`;
+      return;
+    }
+
     let x = e.clientX + pad;
     let y = e.clientY + pad;
 
-    const rect = el.getBoundingClientRect();
     if (x + rect.width > vw - pad) x = e.clientX - rect.width - pad;
     if (y + rect.height > vh - pad) y = e.clientY - rect.height - pad;
 

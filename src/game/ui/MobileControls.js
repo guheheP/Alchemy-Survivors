@@ -92,21 +92,64 @@ export class MobileControls {
   render(ctx) {
     if (!this.active || !this.visible) return;
 
-    // 外円
+    const tdx = this.stickX - this.originX;
+    const tdy = this.stickY - this.originY;
+    const dist = Math.sqrt(tdx * tdx + tdy * tdy);
+    const intensity = Math.min(1, dist / STICK_MAX); // 0..1
+
     ctx.save();
-    ctx.globalAlpha = 0.3;
+
+    // 外円: 背景塗り + グロー
+    ctx.shadowColor = 'rgba(240, 192, 96, 0.5)';
+    ctx.shadowBlur = 16;
+    ctx.globalAlpha = 0.25;
     ctx.beginPath();
     ctx.arc(this.originX, this.originY, STICK_MAX, 0, Math.PI * 2);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
+    ctx.fillStyle = '#000';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 外円: 輪郭
+    ctx.globalAlpha = 0.5 + intensity * 0.3;
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#f0c060';
     ctx.stroke();
 
-    // 内円（スティック位置）
-    ctx.globalAlpha = 0.5;
+    // 方向インジケータ (移動中のみ)
+    if (intensity > 0.15) {
+      const dirX = this.originX + (tdx / dist) * (STICK_MAX - 6);
+      const dirY = this.originY + (tdy / dist) * (STICK_MAX - 6);
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.arc(dirX, dirY, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd080';
+      ctx.fill();
+    }
+
+    // 内円（スティックノブ）: 放射グラデーション
+    const innerRadius = 22;
+    const grad = ctx.createRadialGradient(
+      this.stickX - 6, this.stickY - 6, 2,
+      this.stickX, this.stickY, innerRadius
+    );
+    grad.addColorStop(0, 'rgba(255, 240, 200, 0.95)');
+    grad.addColorStop(0.6, 'rgba(240, 192, 96, 0.85)');
+    grad.addColorStop(1, 'rgba(180, 130, 50, 0.7)');
+    ctx.globalAlpha = 0.85 + intensity * 0.15;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 6;
     ctx.beginPath();
-    ctx.arc(this.stickX, this.stickY, 20, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
+    ctx.arc(this.stickX, this.stickY, innerRadius, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
     ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // 内円: 輪郭
+    ctx.globalAlpha = 0.9;
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
+
     ctx.restore();
   }
 

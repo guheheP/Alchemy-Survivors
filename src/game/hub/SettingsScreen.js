@@ -54,7 +54,8 @@ export class SettingsScreen {
         <div class="settings-info">
           <div class="settings-key-row"><span class="settings-key">W A S D / 矢印</span><span>移動</span></div>
           <div class="settings-key-row"><span class="settings-key">Space</span><span>ダッシュ</span></div>
-          <div class="settings-key-row"><span class="settings-key">1 2 3</span><span>消耗品使用</span></div>
+          <div class="settings-key-row"><span class="settings-key">Tab</span><span>詳細ステータス表示の切替</span></div>
+          <div class="settings-key-row"><span class="settings-key">1 2 3</span><span>消耗品使用 / レベルアップ選択</span></div>
         </div>
       </div>
     `;
