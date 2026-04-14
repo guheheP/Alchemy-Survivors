@@ -18,7 +18,7 @@ export const GameConfig = {
 
   // --- ラン設定 ---
   run: {
-    duration: 600,              // 10分: ボス出現タイミング & スポーン率上昇カーブの上限
+    duration: 300,              // 5分: ボス出現タイミング & スポーン率上昇カーブの上限
     playerBaseHp: 100,
     playerBaseSpeed: 150,       // px/sec
     playerBaseDamage: 10,
@@ -39,9 +39,9 @@ export const GameConfig = {
     },
     spawnRateStart: 1.0,        // 敵/秒（開始時）
     spawnRateEnd: 6.0,          // 敵/秒（10分時点）
-    dropChance: 0.02,           // 素材ドロップ確率
+    dropChance: 0.03,           // 素材ドロップ確率
     traitChance: 0.25,          // ドロップ素材に特性が付く確率
-    bossSpawnTimes: [600],            // 10分にエリアボス出現（撃破でクリア）
+    bossSpawnTimes: [300],            // 5分にエリアボス出現（撃破でクリア）
     reaperSpawnTime: 999999,          // 死神は無効化
   },
 
