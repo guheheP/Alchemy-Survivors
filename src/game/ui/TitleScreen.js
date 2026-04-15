@@ -3,6 +3,8 @@
  */
 
 import { assetPath } from '../core/assetPath.js';
+import { PlayFabClient } from '../core/PlayFabClient.js';
+import { AccountLoginModal } from './AccountLoginModal.js';
 
 const SAVE_KEY = 'alchemy_survivors_save_v1';
 
@@ -60,6 +62,15 @@ export class TitleScreen {
               ${!hasSave ? '<span class="title-btn-sub">推奨</span>' : ''}
             </span>
           </button>
+          ${PlayFabClient.isAvailable() ? `
+          <button class="title-btn title-btn-tertiary" id="title-login" aria-label="既存アカウントでログイン">
+            <span class="title-btn-icon">🔑</span>
+            <span class="title-btn-label">
+              <span class="title-btn-main">既存アカウントでログイン</span>
+              <span class="title-btn-sub">別の端末で連携済みの方</span>
+            </span>
+          </button>
+          ` : ''}
         </div>
       </div>
     `;
@@ -77,6 +88,15 @@ export class TitleScreen {
       this.hide();
       onStart('new');
     });
+
+    const loginBtn = this.el.querySelector('#title-login');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', () => {
+        new AccountLoginModal(document.body, (ok) => {
+          // 成功時はページリロードされる
+        });
+      });
+    }
   }
 
   hide() {

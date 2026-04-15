@@ -3519,7 +3519,7 @@ a:focus-visible,
 /* =========================================================
    DisplayName prompt modal + settings name row
    ========================================================= */
-.modal-overlay.display-name-prompt {
+.modal-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.72);
   display: flex; align-items: center; justify-content: center;
@@ -3634,3 +3634,126 @@ a:focus-visible,
 .settings-name-status { margin-top: 0.35rem; min-height: 1rem; color: #888; }
 .settings-name-status .settings-name-ok { color: #6ed66e; }
 .settings-name-status .settings-name-error { color: #e86060; }
+
+/* =========================================================
+   Account link / login modal
+   ========================================================= */
+.account-link-modal .modal-card,
+.account-login-modal .modal-card {
+  background: linear-gradient(180deg, #1a1a2e 0%, #14142a 100%);
+  border: 1px solid rgba(240, 192, 96, 0.35);
+  border-radius: 10px;
+  padding: 1.5rem;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+.account-link-modal h3,
+.account-login-modal h3 {
+  color: #f0c060;
+  margin: 0 0 0.7rem;
+}
+.al-desc { color: #bbb; font-size: 0.88rem; margin: 0 0 1rem; line-height: 1.5; }
+.al-warn { color: #e8b060; }
+.al-field { margin-bottom: 0.7rem; }
+.al-field label {
+  display: block;
+  font-size: 0.82rem;
+  color: #aaa;
+  margin-bottom: 0.25rem;
+}
+.al-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 5px;
+  font-size: 0.92rem;
+  box-sizing: border-box;
+}
+.al-input:focus {
+  outline: none;
+  border-color: rgba(240, 192, 96, 0.55);
+}
+.al-error {
+  min-height: 1.2rem;
+  margin: 0.3rem 0;
+  color: #e86060;
+  font-size: 0.85rem;
+}
+.al-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.8rem;
+}
+.al-btn {
+  padding: 0.55rem 1.1rem;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background: rgba(255,255,255,0.04);
+  color: #ccc;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.al-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: #fff; }
+.al-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.al-btn-ok {
+  background: rgba(240, 192, 96, 0.22);
+  border-color: rgba(240, 192, 96, 0.55);
+  color: #f0c060;
+  font-weight: bold;
+}
+.al-btn-ok:hover:not(:disabled) { background: rgba(240, 192, 96, 0.35); color: #ffd98a; }
+.al-note { margin: 0.8rem 0 0; color: #888; text-align: center; }
+.al-note a { color: #8ab4f8; text-decoration: none; }
+.al-note a:hover { text-decoration: underline; }
+
+/* Settings account section */
+.settings-account-status {
+  padding: 0.6rem 0.8rem;
+  border-radius: 5px;
+  background: rgba(110, 214, 110, 0.08);
+  border: 1px solid rgba(110, 214, 110, 0.3);
+}
+.settings-account-status.linked .settings-account-email {
+  color: #6ed66e;
+  margin-bottom: 0.3rem;
+}
+.settings-account-status small { color: #999; }
+.settings-account-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.settings-account-btn {
+  padding: 0.5rem 0.9rem;
+  background: rgba(240, 192, 96, 0.18);
+  border: 1px solid rgba(240, 192, 96, 0.5);
+  color: #f0c060;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+.settings-account-btn:hover { background: rgba(240, 192, 96, 0.3); color: #ffd98a; }
+.settings-account-btn-secondary {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.15);
+  color: #ccc;
+}
+.settings-account-btn-secondary:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* Title screen login button */
+.title-btn-tertiary {
+  background: rgba(138, 180, 248, 0.12) !important;
+  border-color: rgba(138, 180, 248, 0.4) !important;
+}
+.title-btn-tertiary:hover {
+  background: rgba(138, 180, 248, 0.22) !important;
+}

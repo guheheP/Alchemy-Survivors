@@ -16,6 +16,13 @@ const CUSTOM_ID_KEY = 'alchemy_survivors_playfab_customid';
 const SESSION_TICKET_KEY = 'alchemy_survivors_playfab_session_ticket'; // メモリのみで十分だが、リロード耐性のため保存
 const PLAYFAB_ID_KEY = 'alchemy_survivors_playfab_id';
 const DISPLAY_NAME_KEY = 'alchemy_survivors_display_name'; // ローカルキャッシュ
+const EMAIL_KEY = 'alchemy_survivors_email'; // ローカルキャッシュ（連携済みメール表示用）
+
+/** ランダムな PlayFab 用 Username を生成（3〜20 英数字） */
+function generateUsername() {
+  const rand = Math.random().toString(36).slice(2, 12); // 10 文字
+  return `as${rand}`.slice(0, 20);
+}
 
 /** ブラウザ組み込みの UUID v4 生成（古い環境は Math.random フォールバック） */
 function generateUuid() {
@@ -204,11 +211,123 @@ export const PlayFabClient = {
   async fetchDisplayName() {
     await this.ensureLoggedIn();
     const res = await this._rawPost('/Client/GetAccountInfo', {});
-    const name = res.data?.AccountInfo?.TitleInfo?.DisplayName || null;
-    if (name) {
-      try { localStorage.setItem(DISPLAY_NAME_KEY, name); } catch (e) { /* ignore */ }
-    }
+    const info = res.data?.AccountInfo;
+    const name = info?.TitleInfo?.DisplayName || null;
+    const email = info?.PrivateInfo?.Email || null;
+    try {
+      if (name) localStorage.setItem(DISPLAY_NAME_KEY, name);
+      if (email) localStorage.setItem(EMAIL_KEY, email);
+      else localStorage.removeItem(EMAIL_KEY);
+    } catch (e) { /* ignore */ }
     return name;
+  },
+
+  /** ローカルキャッシュされたメールアドレスを取得 */
+  getEmail() {
+    try { return localStorage.getItem(EMAIL_KEY) || null; } catch (e) { return null; }
+  },
+
+  /** 連携済みか（メールアドレスが登録されているか） */
+  isAccountLinked() {
+    return !!this.getEmail();
+  },
+
+  /**
+   * 現在の匿名アカウントにメール + パスワードを紐付け（連携）
+   * Username は内部的に自動生成（ユーザーには見せない）
+   * @param {string} email
+   * @param {string} password
+   */
+  async addUsernamePassword(email, password) {
+    await this.ensureLoggedIn();
+    const trimmedEmail = String(email || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      throw new Error('有効なメールアドレスを入力してください');
+    }
+    if (!password || password.length < 6 || password.length > 100) {
+      throw new Error('パスワードは 6 文字以上で入力してください');
+    }
+    const res = await this._rawPost('/Client/AddUsernamePassword', {
+      Username: generateUsername(),
+      Email: trimmedEmail,
+      Password: password,
+    });
+    try { localStorage.setItem(EMAIL_KEY, trimmedEmail); } catch (e) { /* ignore */ }
+    return res.data;
+  },
+
+  /**
+   * 既存アカウントにメール/パスワードでログイン（別端末からの引き継ぎ時）
+   * ログイン後、現在の CustomID も同アカウントに紐付けて次回自動ログインが正しく動くようにする
+   * @param {string} email
+   * @param {string} password
+   */
+  async loginWithEmailAndPassword(email, password) {
+    if (!this.isAvailable()) throw new Error('PlayFab not initialized');
+    const trimmedEmail = String(email || '').trim();
+    if (!trimmedEmail || !password) {
+      throw new Error('メールアドレスとパスワードを入力してください');
+    }
+
+    // 現在のセッションを破棄
+    this.sessionTicket = null;
+    this.entityToken = null;
+    try { sessionStorage.removeItem(SESSION_TICKET_KEY); } catch (e) { /* ignore */ }
+
+    const res = await this._rawPost('/Client/LoginWithEmailAddress', {
+      TitleId: this.titleId,
+      Email: trimmedEmail,
+      Password: password,
+    }, /* auth */ false);
+
+    const data = res.data;
+    this.sessionTicket = data.SessionTicket;
+    this.playFabId = data.PlayFabId;
+    if (data.EntityToken) {
+      this.entityToken = data.EntityToken.EntityToken;
+      this.entityId = data.EntityToken.Entity?.Id || null;
+      this.entityType = data.EntityToken.Entity?.Type || null;
+    }
+    try {
+      sessionStorage.setItem(SESSION_TICKET_KEY, this.sessionTicket);
+      localStorage.setItem(PLAYFAB_ID_KEY, this.playFabId);
+      localStorage.setItem(EMAIL_KEY, trimmedEmail);
+    } catch (e) { /* ignore */ }
+
+    if (!this.entityToken) {
+      try { await this._fetchEntityToken(); } catch (e) { /* ignore */ }
+    }
+
+    // この端末の CustomID を紐付け（次回の匿名自動ログインで同じアカウントに接続される）
+    try {
+      await this._rawPost('/Client/LinkCustomID', {
+        CustomId: this.customId,
+        ForceLink: true,
+      });
+    } catch (e) {
+      console.warn('[PlayFab] LinkCustomID after email login failed (non-fatal):', e.message || e);
+    }
+
+    // 表示名も取り直してキャッシュを更新
+    try { await this.fetchDisplayName(); } catch (e) { /* ignore */ }
+
+    return data;
+  },
+
+  /**
+   * パスワード再設定メールの送信をリクエスト
+   * @param {string} email
+   */
+  async sendAccountRecoveryEmail(email) {
+    if (!this.isAvailable()) throw new Error('PlayFab not initialized');
+    const trimmedEmail = String(email || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      throw new Error('有効なメールアドレスを入力してください');
+    }
+    return (await this._rawPost('/Client/SendAccountRecoveryEmail', {
+      TitleId: this.titleId,
+      Email: trimmedEmail,
+    }, /* auth */ false)).data;
   },
 
   /**

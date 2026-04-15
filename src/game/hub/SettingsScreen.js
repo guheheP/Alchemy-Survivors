@@ -4,6 +4,8 @@
 
 import { SoundManager } from '../core/SoundManager.js';
 import { PlayFabClient } from '../core/PlayFabClient.js';
+import { AccountLinkModal } from '../ui/AccountLinkModal.js';
+import { AccountLoginModal } from '../ui/AccountLoginModal.js';
 
 export class SettingsScreen {
   constructor(container) {
@@ -64,6 +66,11 @@ export class SettingsScreen {
           <small>3〜25 文字。ランキング表示に使われます。</small>
         </div>
       </div>
+
+      <div class="settings-section" id="settings-account-section">
+        <h4>アカウント連携</h4>
+        ${this._renderAccountSection()}
+      </div>
       ` : ''}
 
       <div class="settings-section">
@@ -102,6 +109,61 @@ export class SettingsScreen {
 
     // 表示名
     this._bindDisplayName();
+
+    // アカウント連携
+    this._bindAccount();
+  }
+
+  _renderAccountSection() {
+    const email = PlayFabClient.getEmail();
+    const linked = !!email;
+    if (linked) {
+      return `
+        <div class="settings-account-status linked">
+          <div class="settings-account-email">✓ 連携済み: <strong>${this._escape(email)}</strong></div>
+          <small>別の端末で「既存アカウントでログイン」を選ぶと、ここと同じ進行状況でプレイできます。</small>
+        </div>
+      `;
+    }
+    return `
+      <p><small>メール + パスワードを登録すると、別の端末（スマホ等）から同じ進行状況でプレイできます。</small></p>
+      <div class="settings-account-buttons">
+        <button id="settings-account-link" class="settings-account-btn">🔗 連携する</button>
+        <button id="settings-account-switch" class="settings-account-btn settings-account-btn-secondary">🔑 既存アカウントでログイン</button>
+      </div>
+    `;
+  }
+
+  _bindAccount() {
+    const section = this.el.querySelector('#settings-account-section');
+    if (!section) return;
+
+    const linkBtn = section.querySelector('#settings-account-link');
+    if (linkBtn) {
+      linkBtn.addEventListener('click', () => {
+        new AccountLinkModal(document.body, (email) => {
+          if (email) {
+            // セクションを再描画
+            const container = section;
+            container.innerHTML = '<h4>アカウント連携</h4>' + this._renderAccountSection();
+            this._bindAccount();
+          }
+        });
+      });
+    }
+
+    const switchBtn = section.querySelector('#settings-account-switch');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => {
+        new AccountLoginModal(document.body, (ok) => {
+          // 成功時はページリロードされる
+        });
+      });
+    }
+  }
+
+  _escape(s) {
+    return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
   _bindDisplayName() {
