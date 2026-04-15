@@ -1581,6 +1581,26 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
   padding: 0.05rem 0.3rem; border-radius: 3px;
   background: rgba(240,192,96,0.15); color: #f0c060; border: 1px solid rgba(240,192,96,0.3);
 }
+.preview-dual-section {
+  margin-top: 0.45rem; padding: 0.45rem 0.55rem;
+  border-radius: 6px;
+}
+.preview-dual-section + .preview-dual-section { margin-top: 0.35rem; }
+.preview-dual-section h5 {
+  margin: 0 0 0.3rem; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.preview-dual-weapon {
+  background: rgba(240,120,80,0.06);
+  border: 1px solid rgba(240,120,80,0.25);
+}
+.preview-dual-weapon h5 { color: #f78; text-shadow: 0 0 4px rgba(247,120,128,0.3); }
+.preview-dual-armor {
+  background: rgba(100,180,240,0.06);
+  border: 1px solid rgba(100,180,240,0.25);
+}
+.preview-dual-armor h5 { color: #6bf; text-shadow: 0 0 4px rgba(100,180,240,0.3); }
+
 .preview-fusion-section {
   margin-top: 0.6rem; padding: 0.5rem 0.6rem;
   background: linear-gradient(135deg, rgba(160,100,240,0.08), rgba(240,192,96,0.08));

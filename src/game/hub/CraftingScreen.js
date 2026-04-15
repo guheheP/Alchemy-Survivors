@@ -473,7 +473,10 @@ export class CraftingScreen {
     html += `<div class="preview-stats">`;
     html += `<div class="preview-row"><span>予測品質:</span><span class="preview-val">Q${finalQ}${capped ? ' <span class="preview-cap-badge">上限</span>' : ''}</span></div>`;
 
-    if (bp.type === 'equipment' && this._isWeaponType(bp.equipType)) {
+    if (bp.type === 'equipment' && bp.equipType === 'shield') {
+      // 盾は武器スロット・防具スロットどちらにも装備可能なので両方のステータスを表示
+      html += this._renderShieldDualPreview(bp, finalQ, recipe.targetId);
+    } else if (bp.type === 'equipment' && this._isWeaponType(bp.equipType)) {
       const wc = GameConfig.weapon;
       const dmg = bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor;
       const spd = wc.speedBase + finalQ / wc.speedQualityDivisor;
@@ -500,11 +503,6 @@ export class CraftingScreen {
       html += `<div class="preview-row"><span>最大HP:</span><span class="preview-val">+${hpBonus.toFixed(0)}${cmp.hp}</span></div>`;
       html += `<div class="preview-row"><span>種別:</span><span class="preview-val">${this._getArmorTypeName(bp.equipType)}</span></div>`;
       if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
-      const skillInfo = this._getSkillInfo(bp.equipType, bp.baseValue, recipe.targetId);
-      if (skillInfo) {
-        html += `<div class="preview-row preview-skill"><span>スキル:</span><span class="preview-val">${skillInfo.name}</span></div>`;
-        html += `<div class="preview-row"><span></span><span class="preview-skill-desc">${skillInfo.desc}（CD ${skillInfo.cd}秒）</span></div>`;
-      }
     } else if (bp.type === 'accessory') {
       const spdBonus = (bp.baseValue / 500 + finalQ / 1000);
       const cmp = this._compareAccessory(spdBonus);
@@ -752,6 +750,47 @@ export class CraftingScreen {
     // 装備中の同名消耗品と比較（簡易）
     const cmp = this._compareConsumable(bp);
     if (cmp) html += `<div class="preview-compare">${cmp}</div>`;
+
+    return html;
+  }
+
+  /**
+   * 盾プレビュー — 武器スロット装備時と防具スロット装備時の両方のステータスを表示
+   */
+  _renderShieldDualPreview(bp, finalQ, targetId) {
+    let html = '';
+
+    // ── 武器として装備した場合 ──
+    const wc = GameConfig.weapon;
+    const dmg = bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor;
+    const spd = wc.speedBase + finalQ / wc.speedQualityDivisor;
+    const typeConfig = GameConfig.weaponTypes.shield;
+    const range = typeConfig.baseRange * (1 + finalQ / wc.rangeQualityDivisor);
+    const wCmp = this._compareWithEquipped(bp, { dmg, spd, range });
+
+    html += `<div class="preview-dual-section preview-dual-weapon"><h5>⚔️ 武器スロット装備時</h5>`;
+    html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${dmg.toFixed(1)}${wCmp.dmg}</span></div>`;
+    html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd.toFixed(2)}x${wCmp.spd}</span></div>`;
+    html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range.toFixed(0)}px${wCmp.range}</span></div>`;
+    html += `<div class="preview-row"><span>パターン:</span><span class="preview-val">${this._getPatternName('shield')}</span></div>`;
+    if (wCmp.label) html += `<div class="preview-compare">${wCmp.label}</div>`;
+    const skillInfo = this._getSkillInfo('shield', bp.baseValue, targetId);
+    if (skillInfo) {
+      html += `<div class="preview-row preview-skill"><span>スキル:</span><span class="preview-val">${skillInfo.name}</span></div>`;
+      html += `<div class="preview-row"><span></span><span class="preview-skill-desc">${skillInfo.desc}（CD ${skillInfo.cd}秒）</span></div>`;
+    }
+    html += `</div>`;
+
+    // ── 防具として装備した場合 ──
+    const defVal = bp.baseValue / 12 + finalQ / 8;
+    const hpBonus = finalQ * 0.5;
+    const aCmp = this._compareArmor({ def: defVal, hp: hpBonus });
+
+    html += `<div class="preview-dual-section preview-dual-armor"><h5>🛡️ 防具スロット装備時</h5>`;
+    html += `<div class="preview-row"><span>防御値:</span><span class="preview-val">+${defVal.toFixed(1)}${aCmp.def}</span></div>`;
+    html += `<div class="preview-row"><span>最大HP:</span><span class="preview-val">+${hpBonus.toFixed(0)}${aCmp.hp}</span></div>`;
+    if (aCmp.label) html += `<div class="preview-compare">${aCmp.label}</div>`;
+    html += `</div>`;
 
     return html;
   }
