@@ -10,27 +10,40 @@ import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 
 export class CraftingScreen {
-  constructor(container, inventorySystem) {
+  constructor(container, inventorySystem, options = {}) {
     this.container = container;
     this.inventory = inventorySystem;
+    this.getEquipment = options.getEquipment || (() => ({ weaponSlots: [], armor: null, accessory: null }));
     this.el = document.createElement('div');
     this.el.className = 'craft-screen';
     this.selectedRecipeId = null;
     this.assignedMaterials = []; // index corresponds to recipe.materials slot
     this.selectedTraits = [];
+    this.typeFilter = 'all';
+    this.craftableOnly = false;
+    this.searchText = '';
   }
 
   render() {
     this.el.innerHTML = `
       <div class="craft-layout">
         <div class="craft-recipes">
-          <h3>レシピ一覧</h3>
+          <h3>レシピ一覧 <span class="recipe-count" id="recipe-count"></span></h3>
+          <div class="craft-search">
+            <input type="text" class="recipe-search-input" id="recipe-search" placeholder="🔍 レシピ名で検索" />
+          </div>
           <div class="craft-filter">
             <button class="filter-btn active" data-filter="all">全て</button>
             <button class="filter-btn" data-filter="equipment">装備</button>
             <button class="filter-btn" data-filter="consumable">消耗品</button>
             <button class="filter-btn" data-filter="accessory">アクセサリ</button>
             <button class="filter-btn" data-filter="material">素材</button>
+          </div>
+          <div class="craft-filter-toggles">
+            <label class="craftable-toggle">
+              <input type="checkbox" id="craftable-only" />
+              <span>作成可能のみ</span>
+            </label>
           </div>
           <div class="recipe-list" id="recipe-list"></div>
         </div>
@@ -43,30 +56,52 @@ export class CraftingScreen {
     `;
     this.container.appendChild(this.el);
 
-    // フィルターボタン
+    // タイプフィルタ
     this.el.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         this.el.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        this._renderRecipeList(btn.dataset.filter);
+        this.typeFilter = btn.dataset.filter;
+        this._renderRecipeList();
       });
     });
 
-    this._renderRecipeList('all');
+    // 作成可能のみトグル
+    const craftableToggle = this.el.querySelector('#craftable-only');
+    craftableToggle.addEventListener('change', (e) => {
+      this.craftableOnly = e.target.checked;
+      this._renderRecipeList();
+    });
+
+    // 検索
+    const searchInput = this.el.querySelector('#recipe-search');
+    searchInput.addEventListener('input', (e) => {
+      this.searchText = e.target.value.trim().toLowerCase();
+      this._renderRecipeList();
+    });
+
+    this._renderRecipeList();
     return this.el;
   }
 
-  _renderRecipeList(filter) {
+  _renderRecipeList() {
     const listEl = this.el.querySelector('#recipe-list');
+    const countEl = this.el.querySelector('#recipe-count');
     listEl.innerHTML = '';
 
+    let shown = 0;
+    let total = 0;
     for (const [id, recipe] of Object.entries(Recipes)) {
       if (!recipe.unlocked) continue;
       const bp = ItemBlueprints[recipe.targetId];
       if (!bp) continue;
-      if (filter !== 'all' && bp.type !== filter) continue;
+      total++;
+      if (this.typeFilter !== 'all' && bp.type !== this.typeFilter) continue;
+      if (this.searchText && !bp.name.toLowerCase().includes(this.searchText)) continue;
 
       const craftable = this._hasEnoughMaterials(recipe);
+      if (this.craftableOnly && !craftable) continue;
+
       const card = document.createElement('div');
       card.className = 'recipe-card' + (id === this.selectedRecipeId ? ' selected' : '') + (craftable ? '' : ' unavailable');
       card.innerHTML = `
@@ -78,6 +113,12 @@ export class CraftingScreen {
       `;
       card.addEventListener('click', () => this._selectRecipe(id));
       listEl.appendChild(card);
+      shown++;
+    }
+
+    if (countEl) countEl.textContent = `${shown} / ${total}`;
+    if (shown === 0) {
+      listEl.innerHTML = '<p class="recipe-empty">該当するレシピがありません</p>';
     }
   }
 
@@ -105,16 +146,57 @@ export class CraftingScreen {
     this.assignedMaterials = [];
     this.selectedTraits = [];
 
-    // リスト更新
+    // 最高品質の素材で自動充填
+    this._autoFillBestMaterials();
+
+    // 選択状態の更新（再描画ではなくクラス付け替え）
     this.el.querySelectorAll('.recipe-card').forEach(c => c.classList.remove('selected'));
     const cards = this.el.querySelectorAll('.recipe-card');
-    const idx = Object.keys(Recipes).filter(k => Recipes[k].unlocked).indexOf(recipeId);
-    if (cards[idx]) cards[idx].classList.add('selected');
+    cards.forEach(card => {
+      const name = card.querySelector('.recipe-name')?.textContent;
+      const bp = ItemBlueprints[Recipes[recipeId]?.targetId];
+      if (bp && name === bp.name) card.classList.add('selected');
+    });
 
     this._renderWorkspace();
 
     // モバイル: レシピリストの下に workspace が現れるので末尾まで自動スクロール
     this._scrollWorkspaceToBottomMobile();
+  }
+
+  /**
+   * 選択中レシピの各スロットに、手持ち最高品質の素材を自動割り当て。
+   * スロット順に、未使用素材からマッチする最高品質を選ぶ (greedy)。
+   * 特性レアリティをサブキーにし、高レアを優先。
+   */
+  _autoFillBestMaterials() {
+    const recipe = Recipes[this.selectedRecipeId];
+    if (!recipe) return;
+
+    const available = this.inventory.getItemsByType('material');
+    const used = new Set();
+    const rarityScore = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
+    const traitScore = (item) => {
+      if (!item.traits || item.traits.length === 0) return 0;
+      let max = 0;
+      for (const t of item.traits) {
+        const r = TraitDefs[t]?.rarity;
+        if (r && rarityScore[r] > max) max = rarityScore[r];
+      }
+      return max;
+    };
+
+    this.assignedMaterials = recipe.materials.map(slot => {
+      const candidates = available
+        .filter(item => !used.has(item.uid) && materialMatchesSlot(item.blueprintId, slot))
+        .sort((a, b) => (b.quality - a.quality) || (traitScore(b) - traitScore(a)));
+      const best = candidates[0];
+      if (best) {
+        used.add(best.uid);
+        return best;
+      }
+      return null;
+    });
   }
 
   /** モバイル時に .craft-workspace の末尾までスクロール (デスクトップは無効) */
@@ -138,7 +220,7 @@ export class CraftingScreen {
     const recipe = Recipes[this.selectedRecipeId];
     const bp = ItemBlueprints[recipe.targetId];
 
-    // 素材スロット初期化
+    // 素材スロット初期化（自動充填で既に埋まっているはず）
     if (this.assignedMaterials.length !== recipe.materials.length) {
       this.assignedMaterials = new Array(recipe.materials.length).fill(null);
     }
@@ -204,27 +286,45 @@ export class CraftingScreen {
     const slot = recipe.materials[slotIndex];
     const usedUids = new Set(this.assignedMaterials.filter(m => m).map(m => m.uid));
 
-    // 対象素材を絞り込み
-    const candidates = this.inventory.getItemsByType('material').filter(item => {
-      if (usedUids.has(item.uid)) return false;
-      return materialMatchesSlot(item.blueprintId, slot);
-    });
+    // 対象素材を絞り込み + 品質降順ソート + 特性レアリティ降順
+    const rarityScore = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
+    const traitScore = (item) => {
+      if (!item.traits || item.traits.length === 0) return 0;
+      let max = 0;
+      for (const t of item.traits) {
+        const r = TraitDefs[t]?.rarity;
+        if (r && rarityScore[r] > max) max = rarityScore[r];
+      }
+      return max;
+    };
+    const candidates = this.inventory.getItemsByType('material')
+      .filter(item => {
+        if (usedUids.has(item.uid)) return false;
+        return materialMatchesSlot(item.blueprintId, slot);
+      })
+      .sort((a, b) => (b.quality - a.quality) || (traitScore(b) - traitScore(a)));
 
     // 簡易ピッカーモーダル
     const picker = document.createElement('div');
     picker.className = 'material-picker-overlay';
     picker.innerHTML = `
       <div class="material-picker">
-        <h4>素材を選択</h4>
+        <h4>素材を選択（品質順）</h4>
         <div class="picker-list">
           ${candidates.length === 0 ? '<p class="picker-empty">対応する素材がありません</p>' :
-            candidates.map(item => `
-              <div class="picker-item" data-uid="${item.uid}">
-                <span class="picker-name">${item.name}</span>
-                <span class="picker-quality">Q${item.quality}</span>
-                ${item.traits.length > 0 ? `<span class="picker-traits">${item.traits.join(', ')}</span>` : ''}
-              </div>
-            `).join('')}
+            candidates.map(item => {
+              const traitBadges = (item.traits || []).map(t => {
+                const r = TraitDefs[t]?.rarity || 'common';
+                return `<span class="picker-trait-badge rarity-${r}" title="${t}">${t}</span>`;
+              }).join('');
+              return `
+                <div class="picker-item" data-uid="${item.uid}">
+                  <span class="picker-name">${item.name}</span>
+                  <span class="picker-quality">Q${item.quality}</span>
+                  ${traitBadges ? `<span class="picker-traits">${traitBadges}</span>` : ''}
+                </div>
+              `;
+            }).join('')}
         </div>
         <button class="picker-cancel">キャンセル</button>
       </div>
@@ -335,15 +435,19 @@ export class CraftingScreen {
 
     if (bp.type === 'equipment' && bp.equipType) {
       const wc = GameConfig.weapon;
-      const dmg = (bp.baseValue / wc.damageBaseDivisor + avgQ / wc.damageQualityDivisor).toFixed(1);
-      const spd = (wc.speedBase + avgQ / wc.speedQualityDivisor).toFixed(2);
+      const dmg = bp.baseValue / wc.damageBaseDivisor + avgQ / wc.damageQualityDivisor;
+      const spd = wc.speedBase + avgQ / wc.speedQualityDivisor;
       const typeConfig = GameConfig.weaponTypes[bp.equipType];
       if (typeConfig) {
-        const range = (typeConfig.baseRange * (1 + avgQ / wc.rangeQualityDivisor)).toFixed(0);
-        html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${dmg}</span></div>`;
-        html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd}x</span></div>`;
-        html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range}px</span></div>`;
+        const range = typeConfig.baseRange * (1 + avgQ / wc.rangeQualityDivisor);
+        const cmp = this._compareWithEquipped(bp, { dmg, spd, range });
+        html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${dmg.toFixed(1)}${cmp.dmg}</span></div>`;
+        html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd.toFixed(2)}x${cmp.spd}</span></div>`;
+        html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range.toFixed(0)}px${cmp.range}</span></div>`;
         html += `<div class="preview-row"><span>パターン:</span><span class="preview-val">${this._getPatternName(bp.equipType)}</span></div>`;
+        if (cmp.label) {
+          html += `<div class="preview-compare">${cmp.label}</div>`;
+        }
         const skillInfo = this._getSkillInfo(bp.equipType, bp.baseValue, recipe.targetId);
         if (skillInfo) {
           html += `<div class="preview-row preview-skill"><span>スキル:</span><span class="preview-val">${skillInfo.name}</span></div>`;
@@ -352,7 +456,9 @@ export class CraftingScreen {
       }
     } else if (bp.type === 'accessory') {
       const spdBonus = (bp.baseValue / 500 + avgQ / 1000);
-      html += `<div class="preview-row"><span>移動速度:</span><span class="preview-val">+${(spdBonus * 100).toFixed(1)}%</span></div>`;
+      const cmp = this._compareAccessory(spdBonus);
+      html += `<div class="preview-row"><span>移動速度:</span><span class="preview-val">+${(spdBonus * 100).toFixed(1)}%${cmp.spd}</span></div>`;
+      if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
     }
 
     // 選択中特性のラン効果
@@ -382,6 +488,57 @@ export class CraftingScreen {
 
     html += `</div>`;
     preview.innerHTML = html;
+  }
+
+  /**
+   * 同 equipType の装備中武器と数値比較。
+   * @returns {{dmg:string, spd:string, range:string, label:string}} 各値に付与する差分表記と一行サマリ
+   */
+  _compareWithEquipped(newBp, newStats) {
+    const empty = { dmg: '', spd: '', range: '', label: '' };
+    const eq = this.getEquipment();
+    if (!eq || !eq.weaponSlots) return empty;
+    const equipped = eq.weaponSlots.find(w => {
+      if (!w) return false;
+      const bp = ItemBlueprints[w.blueprintId];
+      return bp && bp.equipType === newBp.equipType;
+    });
+    if (!equipped) return { ...empty, label: `現在 ${newBp.equipType} 未装備` };
+
+    const bp = ItemBlueprints[equipped.blueprintId];
+    const wc = GameConfig.weapon;
+    const curDmg = bp.baseValue / wc.damageBaseDivisor + equipped.quality / wc.damageQualityDivisor;
+    const curSpd = wc.speedBase + equipped.quality / wc.speedQualityDivisor;
+    const typeConfig = GameConfig.weaponTypes[bp.equipType];
+    const curRange = typeConfig ? typeConfig.baseRange * (1 + equipped.quality / wc.rangeQualityDivisor) : 0;
+
+    return {
+      dmg: this._diffBadge(newStats.dmg, curDmg, 1),
+      spd: this._diffBadge(newStats.spd, curSpd, 2),
+      range: this._diffBadge(newStats.range, curRange, 0),
+      label: `現在装備: ${equipped.name} (Q${equipped.quality})`,
+    };
+  }
+
+  _compareAccessory(newSpdBonus) {
+    const eq = this.getEquipment();
+    if (!eq?.accessory) return { spd: '', label: '現在 アクセサリ 未装備' };
+    const bp = ItemBlueprints[eq.accessory.blueprintId];
+    if (!bp) return { spd: '', label: '' };
+    const curSpdBonus = bp.baseValue / 500 + eq.accessory.quality / 1000;
+    return {
+      spd: this._diffBadge(newSpdBonus * 100, curSpdBonus * 100, 1, '%'),
+      label: `現在装備: ${eq.accessory.name} (Q${eq.accessory.quality})`,
+    };
+  }
+
+  _diffBadge(next, cur, digits, unit = '') {
+    const d = next - cur;
+    if (Math.abs(d) < Math.pow(10, -digits) / 2) return ` <span class="preview-diff same">±0</span>`;
+    const sign = d > 0 ? '+' : '';
+    const cls = d > 0 ? 'up' : 'down';
+    const arrow = d > 0 ? '▲' : '▼';
+    return ` <span class="preview-diff ${cls}">${arrow}${sign}${d.toFixed(digits)}${unit}</span>`;
   }
 
   _getPatternName(equipType) {

@@ -117,7 +117,13 @@ export class HubManager {
 
     switch (this.activeTab) {
       case 'craft': {
-        const screen = new CraftingScreen(content, this.inventory);
+        const screen = new CraftingScreen(content, this.inventory, {
+          getEquipment: () => ({
+            weaponSlots: this.weaponSlots,
+            armor: this.equippedArmor,
+            accessory: this.equippedAccessory,
+          }),
+        });
         screen.render();
         this.screens.craft = screen;
         break;

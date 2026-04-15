@@ -394,12 +394,89 @@ a:focus-visible,
   grid-template-columns: 300px 1fr;
   gap: 1rem;
   height: 100%;
+  min-height: 0;
 }
 .craft-recipes {
   background: #1a1a2e;
   border-radius: 8px;
   padding: 1rem;
   overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.craft-recipes .recipe-list {
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.recipe-count {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: normal;
+  margin-left: 0.4rem;
+}
+.recipe-empty {
+  color: #666;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+}
+.craft-search { margin-bottom: 0.6rem; }
+.recipe-search-input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid #444;
+  color: #eee;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+.recipe-search-input:focus {
+  outline: none;
+  border-color: #f0c060;
+}
+.craft-filter-toggles {
+  margin-bottom: 0.6rem;
+}
+.craftable-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #bbb;
+  cursor: pointer;
+  user-select: none;
+}
+.craftable-toggle input { cursor: pointer; accent-color: #f0c060; }
+.craftable-toggle:hover { color: #f0c060; }
+.picker-trait-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  margin-right: 0.25rem;
+  border: 1px solid currentColor;
+  background: rgba(0,0,0,0.3);
+}
+.preview-diff {
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+}
+.preview-diff.up { color: #7fff7f; background: rgba(127,255,127,0.1); }
+.preview-diff.down { color: #ff7f7f; background: rgba(255,127,127,0.1); }
+.preview-diff.same { color: #888; background: rgba(255,255,255,0.05); }
+.preview-compare {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin: 0.3rem 0 0.6rem;
+  padding: 0.3rem 0.5rem;
+  border-left: 2px solid #555;
+  background: rgba(255,255,255,0.03);
 }
 .craft-recipes h3 { color: #f0c060; margin-bottom: 0.8rem; }
 
@@ -444,6 +521,8 @@ a:focus-visible,
   background: #1a1a2e;
   border-radius: 8px;
   padding: 1.2rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 .craft-placeholder { color: #666; text-align: center; padding: 3rem; }
 .craft-effect-info {
@@ -2451,7 +2530,10 @@ a:focus-visible,
   .title-tagline { font-size: 0.85rem; }
   .title-hint { display: none; }
 
-  .craft-layout { grid-template-columns: 1fr; height: auto; }
+  .craft-layout { grid-template-columns: 1fr; height: auto; min-height: 0; }
+  /* モバイルは親(.hub-content)スクロールに戻す */
+  .craft-recipes, .craft-workspace { overflow-y: visible; }
+  .craft-recipes .recipe-list { overflow-y: visible; max-height: none; }
   .equip-layout { grid-template-columns: 1fr; }
   /* モバイル: 「装備可能アイテム」を上、「装備セット」を下に入れ替え */
   .equip-inventory { order: 1; }
