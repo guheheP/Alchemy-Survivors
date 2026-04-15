@@ -266,8 +266,20 @@ export class CraftingScreen {
       return;
     }
 
+    // 素材レシピ (中間素材) は特性を後続へパススルーする目的のため、
+    // ユーザーが未選択の場合は全特性を自動選択しておく (上限は調合時にレアリティで決まる)
+    const recipe = Recipes[this.selectedRecipeId];
+    const isMaterialRecipe = !!(recipe && recipe.isMaterialRecipe);
+    if (isMaterialRecipe && this.selectedTraits.length === 0) {
+      this.selectedTraits = [...traitSet];
+    }
+
+    const headerLabel = isMaterialRecipe
+      ? `引き継ぎ特性（素材レシピ: 自動引き継ぎ）`
+      : `引き継ぎ特性（${GameConfig.maxTraitSlots}枠まで）`;
+
     traitsEl.innerHTML = `
-      <h4>引き継ぎ特性（${GameConfig.maxTraitSlots}枠まで）</h4>
+      <h4>${headerLabel}</h4>
       <div class="trait-list">
         ${[...traitSet].map(t => {
           const def = TraitDefs[t];

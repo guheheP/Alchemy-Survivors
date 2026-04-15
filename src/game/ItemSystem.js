@@ -109,9 +109,21 @@ export function craftItem(recipeId, materialInstances, selectedTraits = [], qual
     allAvailableTraits.add(upgraded);
   }
 
+  // 素材レシピ (isMaterialRecipe) は中間素材として後続の調合へ特性を引き継ぐのが目的のため、
+  // ユーザー選択が無くても全ての基底特性を自動継承する。
+  // (装備・消耗品はランエフェクトとして消費されるため、従来通りユーザー選択を尊重する)
+  let effectiveSelectedTraits = selectedTraits;
+  if (recipe.isMaterialRecipe && effectiveSelectedTraits.length === 0) {
+    const baseTraits = new Set();
+    materialInstances.forEach(item => {
+      item.traits.forEach(t => baseTraits.add(t));
+    });
+    effectiveSelectedTraits = [...baseTraits];
+  }
+
   const finalTraits = [];
   const usedFusions = new Set();
-  for (const t of selectedTraits) {
+  for (const t of effectiveSelectedTraits) {
     if (fusionMap[t] && !usedFusions.has(t)) {
       finalTraits.push(fusionMap[t]);
       usedFusions.add(t);
