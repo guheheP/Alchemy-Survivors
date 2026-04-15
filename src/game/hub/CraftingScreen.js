@@ -266,6 +266,18 @@ export class CraftingScreen {
       return;
     }
 
+    // 特性はデフォルトで全て有効 (ユーザーが任意に外すことは可能)。
+    // maxTraitSlots を超える場合はレアリティの高い順に優先選択しておく。
+    if (this.selectedTraits.length === 0) {
+      const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
+      const prioritized = [...traitSet].sort((a, b) => {
+        const ra = rarityOrder[TraitDefs[a]?.rarity] ?? 5;
+        const rb = rarityOrder[TraitDefs[b]?.rarity] ?? 5;
+        return ra - rb;
+      });
+      this.selectedTraits = prioritized.slice(0, GameConfig.maxTraitSlots);
+    }
+
     traitsEl.innerHTML = `
       <h4>引き継ぎ特性（${GameConfig.maxTraitSlots}枠まで）</h4>
       <div class="trait-list">

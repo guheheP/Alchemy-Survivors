@@ -109,9 +109,21 @@ export function craftItem(recipeId, materialInstances, selectedTraits = [], qual
     allAvailableTraits.add(upgraded);
   }
 
+  // 特性は調合時にデフォルトで全て有効とする。
+  // ユーザー選択が空の場合は素材側の基底特性を自動継承する
+  // (レアリティ順で maxTraitSlots に後段でキャップされる)
+  let effectiveSelectedTraits = selectedTraits;
+  if (effectiveSelectedTraits.length === 0) {
+    const baseTraits = new Set();
+    materialInstances.forEach(item => {
+      item.traits.forEach(t => baseTraits.add(t));
+    });
+    effectiveSelectedTraits = [...baseTraits];
+  }
+
   const finalTraits = [];
   const usedFusions = new Set();
-  for (const t of selectedTraits) {
+  for (const t of effectiveSelectedTraits) {
     if (fusionMap[t] && !usedFusions.has(t)) {
       finalTraits.push(fusionMap[t]);
       usedFusions.add(t);
