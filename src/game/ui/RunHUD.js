@@ -53,6 +53,9 @@ export class RunHUD {
       <!-- Full-screen flash overlay for skill activation -->
       <div class="hud-skill-flash" id="hud-skill-flash"></div>
 
+      <!-- 被弾ビネット（画面端の赤い脈動） -->
+      <div class="hud-damage-vignette" id="hud-damage-vignette"></div>
+
       <!-- Top Right: Kills + Resources -->
       <div class="hud-top-right">
         <div class="hud-kills" id="hud-kills">0 kills</div>
@@ -148,6 +151,8 @@ export class RunHUD {
 
     this._skillBanner = this.el.querySelector('#hud-skill-banner');
     this._skillFlash = this.el.querySelector('#hud-skill-flash');
+    this._damageVignette = this.el.querySelector('#hud-damage-vignette');
+    this._damageVignetteTimeout = null;
     this._skillBannerTimeout = null;
     this._skillFlashTimeout = null;
 
@@ -221,6 +226,7 @@ export class RunHUD {
       eventBus.on('levelup:selected', (data) => this._onPassiveSelected(data)),
       eventBus.on('skill:activated', (data) => this._showSkillBanner(data)),
       eventBus.on('ui:flash', (data) => this._showSkillFlash(data)),
+      eventBus.on('player:damaged', () => this._flashDamageVignette()),
     ];
   }
 
@@ -256,6 +262,15 @@ export class RunHUD {
     this._skillFlashTimeout = setTimeout(() => {
       this._skillFlash.classList.remove('show');
     }, 40);
+  }
+
+  _flashDamageVignette() {
+    if (!this._damageVignette) return;
+    this._damageVignette.classList.add('show');
+    if (this._damageVignetteTimeout) clearTimeout(this._damageVignetteTimeout);
+    this._damageVignetteTimeout = setTimeout(() => {
+      this._damageVignette.classList.remove('show');
+    }, 80);
   }
 
   _onTick({ remaining, killCount, hp, maxHp, goldEarned, materialCount, weaponSlots, player, bossSpawnTimes, elapsed }) {

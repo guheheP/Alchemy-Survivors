@@ -109,11 +109,13 @@ export class BossEntity extends Enemy {
     }
   }
 
-  takeDamage(amount) {
+  takeDamage(amount, isCrit = false) {
     const effectiveDmg = Math.max(1, amount - this.defense * 0.3);
     this.hp -= effectiveDmg;
     this.hitFlashTimer = 0.1;
     eventBus.emit('boss:hpChanged', { hp: this.hp, maxHp: this.maxHp, name: this.bossName });
+    // ボス被弾も enemy:damaged で通知（パーティクル/ダメージ数字/カメラシェイク連携）
+    eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: effectiveDmg, isCrit });
     return this.hp <= 0;
   }
 

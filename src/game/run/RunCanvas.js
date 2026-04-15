@@ -190,6 +190,11 @@ export class RunCanvas {
       if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) continue;
 
       const flash = enemy.hitFlashTimer > 0 ? enemy.hitFlashTimer / 0.1 : 0;
+      // クリティカル命中時の黄色ハイライト（敵サイズより少し大きい発光）
+      if (enemy.critFlashTimer > 0) {
+        const critAlpha = Math.min(0.7, enemy.critFlashTimer / 0.18);
+        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 2.2, '#ffdc6a', critAlpha);
+      }
 
       // behavior別の背景オーラ
       if (enemy.armorHits > 0) {

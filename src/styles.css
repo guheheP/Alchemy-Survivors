@@ -2235,6 +2235,24 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
   transition: opacity 0.05s ease-out;
 }
 
+/* ===== Damage Vignette (被弾時のみ画面端が赤く脈動) ===== */
+.hud-damage-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 85;
+  opacity: 0;
+  background: radial-gradient(ellipse at center,
+    transparent 55%,
+    rgba(255, 40, 40, 0.35) 85%,
+    rgba(200, 0, 0, 0.55) 100%);
+  transition: opacity 0.45s ease-out;
+}
+.hud-damage-vignette.show {
+  opacity: 1;
+  transition: opacity 0.05s ease-out;
+}
+
 @media (max-width: 720px) {
   .hud-skill-banner { font-size: 1.1rem; padding: 0.25rem 0.8rem; }
 }

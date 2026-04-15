@@ -30,7 +30,7 @@ export class SpearStrategy extends WeaponStrategy {
       // 横方向の距離
       const lateral = Math.abs(-dx * sin + dy * cos);
       if (lateral < thrustWidth + enemy.radius) {
-        if (enemy.takeDamage(dmg)) this._emitKill(enemy);
+        if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
       }
     }
 

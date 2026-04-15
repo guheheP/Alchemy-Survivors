@@ -26,6 +26,7 @@ export class Enemy extends Entity {
     this.enemyId = '';
     this.enemyDef = null;
     this.hitFlashTimer = 0;
+    this.critFlashTimer = 0;
     // デバフ管理
     this._debuffTimer = 0;
     this._baseSpeed = 0;
@@ -51,6 +52,7 @@ export class Enemy extends Entity {
     this.enemyId = '';
     this.enemyDef = null;
     this.hitFlashTimer = 0;
+    this.critFlashTimer = 0;
     this._debuffTimer = 0;
     this._baseSpeed = 0;
     this.behavior = 'chase';
@@ -154,6 +156,9 @@ export class Enemy extends Entity {
     if (this.hitFlashTimer > 0) {
       this.hitFlashTimer -= dt;
     }
+    if (this.critFlashTimer > 0) {
+      this.critFlashTimer -= dt;
+    }
 
     // デバフ解除
     if (this._debuffTimer > 0) {
@@ -250,6 +255,7 @@ export class Enemy extends Entity {
     }
     this.hp -= amount;
     this.hitFlashTimer = 0.1;
+    if (isCrit) this.critFlashTimer = 0.18;
     eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: amount, isCrit });
     return this.hp <= 0;
   }

@@ -2,6 +2,8 @@
  * Camera — ビューポート追従カメラ
  */
 
+import { GameFeelSettings } from '../core/GameFeelSettings.js';
+
 export class Camera {
   constructor(width, height) {
     this.x = 0;
@@ -14,6 +16,10 @@ export class Camera {
     this._shakeMax = 0;
     this._shakeOffsetX = 0;
     this._shakeOffsetY = 0;
+    // 方向付きシェイク: 衝撃方向に寄った振動（ノックバック/突進演出用）
+    this._shakeDirX = 0;
+    this._shakeDirY = 0;
+    this._shakeBias = 0; // 0=全方向ランダム, 1=完全に方向付き
   }
 
   /** ターゲットを追従 */
@@ -27,8 +33,12 @@ export class Camera {
       this._shakeTimer -= dt;
       const pct = Math.max(0, this._shakeTimer / this._shakeMax);
       const mag = this._shakePower * pct;
-      this._shakeOffsetX = (Math.random() - 0.5) * 2 * mag;
-      this._shakeOffsetY = (Math.random() - 0.5) * 2 * mag;
+      // bias 0=ランダム, 1=方向オフセット固定、中間でブレンド
+      const rx = (Math.random() - 0.5) * 2 * mag;
+      const ry = (Math.random() - 0.5) * 2 * mag;
+      const bias = this._shakeBias;
+      this._shakeOffsetX = rx * (1 - bias) + this._shakeDirX * mag * bias;
+      this._shakeOffsetY = ry * (1 - bias) + this._shakeDirY * mag * bias;
       if (this._shakeTimer <= 0) {
         this._shakeOffsetX = 0;
         this._shakeOffsetY = 0;
@@ -38,10 +48,32 @@ export class Camera {
 
   /** 画面シェイクを追加（既存より強ければ上書き） */
   shake(power, duration) {
+    if (!GameFeelSettings.screenShakeEnabled) return;
     if (power > this._shakePower * (this._shakeTimer / Math.max(0.01, this._shakeMax))) {
       this._shakePower = power;
       this._shakeTimer = duration;
       this._shakeMax = duration;
+      this._shakeBias = 0;
+      this._shakeDirX = 0;
+      this._shakeDirY = 0;
+    }
+  }
+
+  /**
+   * 方向付きシェイク — 衝撃方向に寄った振動。
+   * (dx, dy) は正規化されたベクトル（自動正規化）。
+   */
+  shakeDir(dx, dy, power, duration, bias = 0.6) {
+    if (!GameFeelSettings.screenShakeEnabled) return;
+    const len = Math.sqrt(dx * dx + dy * dy) || 1;
+    const nx = dx / len, ny = dy / len;
+    if (power > this._shakePower * (this._shakeTimer / Math.max(0.01, this._shakeMax))) {
+      this._shakePower = power;
+      this._shakeTimer = duration;
+      this._shakeMax = duration;
+      this._shakeBias = Math.max(0, Math.min(1, bias));
+      this._shakeDirX = nx;
+      this._shakeDirY = ny;
     }
   }
 

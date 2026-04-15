@@ -3,6 +3,7 @@
  */
 
 import { SoundManager } from '../core/SoundManager.js';
+import { GameFeelSettings } from '../core/GameFeelSettings.js';
 import { PlayFabClient } from '../core/PlayFabClient.js';
 import { AccountLinkModal } from '../ui/AccountLinkModal.js';
 import { AccountLoginModal } from '../ui/AccountLoginModal.js';
@@ -51,6 +52,22 @@ export class SettingsScreen {
           <label for="settings-se">効果音</label>
           <input type="range" id="settings-se" min="0" max="100" value="${se}" ${muted ? 'disabled' : ''}>
           <span class="settings-vol-value" id="settings-se-val">${se}%</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h4>ゲームフィール</h4>
+        <div class="settings-mute-row">
+          <label class="settings-mute-toggle">
+            <input type="checkbox" id="settings-hitstop" ${GameFeelSettings.hitStopEnabled ? 'checked' : ''}>
+            <span>ヒットストップ（クリティカル・ボス撃破で一瞬停止）</span>
+          </label>
+        </div>
+        <div class="settings-mute-row">
+          <label class="settings-mute-toggle">
+            <input type="checkbox" id="settings-shake" ${GameFeelSettings.screenShakeEnabled ? 'checked' : ''}>
+            <span>画面シェイク（被弾・大技時の揺れ）</span>
+          </label>
         </div>
       </div>
 
@@ -110,6 +127,20 @@ export class SettingsScreen {
     this._bindSlider('settings-se', 'settings-se-val', (v) => {
       SoundManager.setSeVolume(v / 100);
     });
+
+    // ゲームフィール
+    const hitstopEl = this.el.querySelector('#settings-hitstop');
+    if (hitstopEl) {
+      hitstopEl.addEventListener('change', (e) => {
+        GameFeelSettings.setHitStopEnabled(e.target.checked);
+      });
+    }
+    const shakeEl = this.el.querySelector('#settings-shake');
+    if (shakeEl) {
+      shakeEl.addEventListener('change', (e) => {
+        GameFeelSettings.setScreenShakeEnabled(e.target.checked);
+      });
+    }
 
     // 表示名
     this._bindDisplayName();

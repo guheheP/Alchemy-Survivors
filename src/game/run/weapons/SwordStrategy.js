@@ -33,11 +33,11 @@ export class SwordStrategy extends WeaponStrategy {
         const dx = enemy.x - px;
         const dy = enemy.y - py;
         if (dx * dx + dy * dy < range * range) {
-          if (enemy.takeDamage(dmg * 0.8)) this._emitKill(enemy);
+          if (enemy.takeDamage(dmg * 0.8, this._lastCrit)) this._emitKill(enemy);
         }
       } else {
         if (CollisionSystem.pointInFan(enemy.x, enemy.y, px, py, angle, attackArc, range)) {
-          if (enemy.takeDamage(dmg)) this._emitKill(enemy);
+          if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
         }
       }
     }

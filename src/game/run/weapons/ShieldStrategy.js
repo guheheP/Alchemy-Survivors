@@ -40,7 +40,7 @@ export class ShieldStrategy extends WeaponStrategy {
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist < range + enemy.radius) {
-        if (enemy.takeDamage(dmg)) {
+        if (enemy.takeDamage(dmg, this._lastCrit)) {
           this._emitKill(enemy);
         } else if (dist > 0.1) {
           enemy.tryKnockback?.(dx, dy, dist, knockbackDist);

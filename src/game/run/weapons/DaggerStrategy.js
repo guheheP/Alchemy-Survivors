@@ -30,7 +30,7 @@ export class DaggerStrategy extends WeaponStrategy {
         if (!enemy.active || hitEnemies.has(enemy)) continue;
         if (CollisionSystem.pointInFan(enemy.x, enemy.y, px, py, slashAngle, slashArc, range)) {
           hitEnemies.add(enemy);
-          if (enemy.takeDamage(dmg)) this._emitKill(enemy);
+          if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
         }
       }
     }

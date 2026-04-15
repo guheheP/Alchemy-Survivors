@@ -17,6 +17,7 @@ import { RunCanvas } from './RunCanvas.js';
 import { GameConfig } from '../data/config.js';
 import { AreaDefs } from '../data/areas.js';
 import { eventBus } from '../core/EventBus.js';
+import { GameFeelSettings } from '../core/GameFeelSettings.js';
 import { ItemBlueprints } from '../data/items.js';
 import { HardModeModifiers } from '../data/hardmode.js';
 import { BossSystem } from './BossSystem.js';
@@ -90,6 +91,11 @@ export class RunManager {
       })
     )];
 
+    // ヒットストップ: 指定秒数だけ update を凍結して「手応え」を強化
+    this._hitStopRemaining = 0;
+    // 衝撃波エフェクト（ボス撃破・大技用）。 { x, y, color, maxRadius, t, duration }
+    this._shockwaves = [];
+
     // ゲームループ
     this.gameLoop = new GameLoop(
       (dt) => this._update(dt),
@@ -116,19 +122,35 @@ export class RunManager {
         for (const enemy of this.spawner.enemies) hit(enemy);
         for (const boss of this.bossSystem.getActiveBosses()) hit(boss);
       }),
-      eventBus.on('player:damaged', ({ damage }) => {
+      eventBus.on('player:damaged', ({ damage, sourceX, sourceY }) => {
         eventBus.emit('damageNumber:playerHit', { x: this.player.x, y: this.player.y, damage });
+        // 被弾方向に軽いシェイク（ダメージ量でスケール）
+        const power = Math.min(6, 1.5 + damage / 40);
+        if (typeof sourceX === 'number' && typeof sourceY === 'number') {
+          this.camera.shakeDir(this.player.x - sourceX, this.player.y - sourceY, power, 0.18, 0.5);
+        } else {
+          this.camera.shake(power, 0.18);
+        }
       }),
       eventBus.on('material:collected', () => {
         this.materialCount++;
       }),
-      eventBus.on('enemy:damaged', ({ damage, x, y }) => {
+      eventBus.on('enemy:damaged', ({ damage, x, y, isCrit }) => {
         if (damage > this.highestDamage) this.highestDamage = damage;
         // 被弾粒子
         if (x != null && y != null) {
-          this.particles.emitBurst(x, y, 4, {
-            speed: 60, life: 0.25, size: 2, color: '#fff', shape: 'circle',
-          });
+          if (isCrit) {
+            // クリティカル: より強いスパーク + 軽いシェイク + 微ヒットストップ
+            this.particles.emitBurst(x, y, 10, {
+              speed: 160, life: 0.32, size: 3, color: '#ffdc6a', shape: 'spark',
+            });
+            this.camera.shake(2, 0.1);
+            this.hitStop(0.02);
+          } else {
+            this.particles.emitBurst(x, y, 4, {
+              speed: 60, life: 0.25, size: 2, color: '#fff', shape: 'circle',
+            });
+          }
         }
       }),
       // armored: ダメージ無効時の装甲パリィ演出
@@ -153,6 +175,16 @@ export class RunManager {
           shape: 'square',
           gravity: 40,
         });
+        // ボス撃破: 衝撃波リング + 全画面フラッシュ + 強シェイク + 長めのヒットストップ
+        if (boss) {
+          // 衝撃波（白い二重リング）
+          eventBus.emit('fx:shockwave', { x: ex, y: ey, color: '#fff', maxRadius: 180, duration: 0.6 });
+          eventBus.emit('fx:shockwave', { x: ex, y: ey, color: col, maxRadius: 120, duration: 0.45 });
+          // 全画面フラッシュ
+          eventBus.emit('ui:flash', { duration: 0.15, color: 'rgba(255,255,255,0.5)' });
+          this.camera.shake(12, 0.5);
+          this.hitStop(0.2);
+        }
       }),
       // スキルからのパーティクル発生
       eventBus.on('particles:burst', ({ x, y, count, config }) => {
@@ -161,6 +193,16 @@ export class RunManager {
       // スキルからのカメラシェイク
       eventBus.on('camera:shake', ({ power, duration }) => {
         this.camera.shake(power || 5, duration || 0.2);
+      }),
+      // 衝撃波 (ボス撃破などの大技演出)
+      eventBus.on('fx:shockwave', ({ x, y, color, maxRadius, duration }) => {
+        this._shockwaves.push({
+          x, y,
+          color: color || '#fff',
+          maxRadius: maxRadius || 150,
+          t: 0,
+          duration: duration || 0.5,
+        });
       }),
       eventBus.on('material:collected', ({ x, y }) => {
         if (x != null && y != null) this.particles.emitSpark(x, y, '#ff8');
@@ -229,6 +271,15 @@ export class RunManager {
     });
   }
 
+  /**
+   * 指定時間だけゲーム進行を凍結する（ヒットストップ）。
+   * 設定でOFFの場合は何もしない。複数回呼ばれた場合はより長い方を採用。
+   */
+  hitStop(seconds) {
+    if (!GameFeelSettings.hitStopEnabled) return;
+    if (seconds > this._hitStopRemaining) this._hitStopRemaining = seconds;
+  }
+
   togglePause() {
     if (this.state === 'paused' && this._pausedByMenu) {
       this.state = 'running';
@@ -293,6 +344,18 @@ export class RunManager {
 
   _update(dt) {
     if (this.state !== 'running') return;
+
+    // 衝撃波アニメ進行（ヒットストップ中も継続）
+    for (const sw of this._shockwaves) sw.t += dt;
+
+    // ヒットストップ: 残り時間分だけゲーム時間を凍結（パーティクルやカメラは動かす）
+    if (this._hitStopRemaining > 0) {
+      this._hitStopRemaining -= dt;
+      // カメラ追従とパーティクルだけ動かす（視覚的に死亡演出は続いていると見せる）
+      this.camera.follow(this.player.x, this.player.y, dt);
+      this.particles.update(dt, this.camera);
+      return;
+    }
 
     this.elapsed += dt;
 
@@ -413,6 +476,39 @@ export class RunManager {
         playerSpriteFrameH: PLAYER_SPRITE_FRAME_H,
       },
     );
+    this._renderShockwaves();
+  }
+
+  /** 衝撃波リングの更新+描画（ボス撃破などの大技演出） */
+  _renderShockwaves() {
+    if (this._shockwaves.length === 0) return;
+    const ctx = this.canvas.ctx;
+    const cam = this.camera;
+    ctx.save();
+    ctx.translate(cam.shakeX, cam.shakeY);
+    for (let i = this._shockwaves.length - 1; i >= 0; i--) {
+      const sw = this._shockwaves[i];
+      const pct = sw.t / sw.duration;
+      if (pct >= 1) {
+        const last = this._shockwaves.length - 1;
+        if (i !== last) this._shockwaves[i] = this._shockwaves[last];
+        this._shockwaves.pop();
+        continue;
+      }
+      const r = sw.maxRadius * pct;
+      const alpha = 1 - pct;
+      const sx = sw.x - cam.x;
+      const sy = sw.y - cam.y;
+      if (sx + r < -20 || sx - r > cam.width + 20 || sy + r < -20 || sy - r > cam.height + 20) continue;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = sw.color;
+      ctx.lineWidth = 4 * (1 - pct * 0.5);
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 
   _onEnemyKilled(enemy) {

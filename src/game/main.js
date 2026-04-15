@@ -107,10 +107,36 @@ class Game {
 
     // SE
     eventBus.on('item:crafted', () => { SoundManager.playCraftSuccess(); this.stats.totalCrafted++; });
-    eventBus.on('enemy:killed', () => SoundManager.playBattleAdvAttack());
+    // ボス撃破だけは重め(playBattleKO)、通常敵は軽め(playBattleAdvAttack)に差別化
+    eventBus.on('enemy:killed', ({ isBoss }) => {
+      if (isBoss) SoundManager.playBattleKO?.() || SoundManager.playBattleAdvAttack();
+      else SoundManager.playBattleAdvAttack();
+    });
     eventBus.on('player:damaged', () => SoundManager.playBattleDamage());
+    eventBus.on('player:died', () => SoundManager.playGameOver?.() || SoundManager.playBattleDefeat?.());
     eventBus.on('levelup:show', () => SoundManager.playLevelUp());
     eventBus.on('boss:spawned', () => SoundManager.playEventChime());
+    eventBus.on('weapon:unlocked', () => SoundManager.playFanfare?.());
+    eventBus.on('area:unlocked', () => SoundManager.playFanfare?.());
+    eventBus.on('skill:activated', () => SoundManager.playBattleBuff?.());
+    eventBus.on('player:dashed', () => SoundManager.playHover?.());
+    // 消耗品: type 別に分岐
+    eventBus.on('consumable:used', ({ type }) => {
+      if (type === 'heal') SoundManager.playBattleHeal?.();
+      else if (type === 'buff') SoundManager.playBattleBuff?.();
+      else if (type === 'damage') SoundManager.playBattleBossAttack?.();
+      else if (type === 'debuff') SoundManager.playBattleDebuff?.();
+      else if (type === 'stun') SoundManager.playBattleStun?.();
+      else SoundManager.playBattleItemUse?.();
+    });
+    // 経験値収集: 連続取得時の重複発火を抑制（16ms以内はマージ）
+    let _lastExpSeAt = 0;
+    eventBus.on('exp:collected', () => {
+      const now = performance.now();
+      if (now - _lastExpSeAt < 16) return;
+      _lastExpSeAt = now;
+      SoundManager.playMaterialPickup?.();
+    });
     eventBus.on('boss:defeated', ({ bossId }) => {
       SoundManager.playBattleVictory();
       // ボスBGM → ラン中BGMに復帰
