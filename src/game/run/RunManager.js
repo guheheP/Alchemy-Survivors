@@ -254,15 +254,17 @@ export class RunManager {
     this.camera.y = this.player.y - this.camera.height / 2;
 
     // ESC で一時停止メニュー
+    // capture 相で登録して、他コンポーネント (モーダル等) より先に確実に拾う。
+    // code / key どちらでもヒットさせる (IME や一部ブラウザで片方しか来ないケースの保険)。
     this._levelUpActive = false;
     this._onKeyDown = (e) => {
-      if (e.code === 'Escape') {
-        e.preventDefault();
+      if (e.code === 'Escape' || e.key === 'Escape') {
         if (this._levelUpActive || this.state === 'ended') return;
+        e.preventDefault();
         this.togglePause();
       }
     };
-    window.addEventListener('keydown', this._onKeyDown);
+    window.addEventListener('keydown', this._onKeyDown, { capture: true });
 
     // モバイルの画面内ポーズボタンからの要求を受ける
     this._unsubPauseToggle = eventBus.on('pauseMenu:requestToggle', () => {
@@ -582,7 +584,7 @@ export class RunManager {
     this.gameLoop.stop();
     releaseWakeLock();
     if (this._onVisibilityChange) document.removeEventListener('visibilitychange', this._onVisibilityChange);
-    if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
+    if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown, { capture: true });
     if (this._unsubPauseToggle) this._unsubPauseToggle();
     for (const unsub of this._unsubs) unsub();
     this.player.destroy();

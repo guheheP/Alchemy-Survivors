@@ -4,12 +4,16 @@
 
 import { WeaponStrategy } from './WeaponStrategy.js';
 
+// オーブの当たり判定半径 (敵半径に加算) とビジュアル外周半径を同期させる
+const ORB_HIT_RADIUS = 14;
+const ORB_CORE_RADIUS = 6;
+
 export class StaffStrategy extends WeaponStrategy {
   constructor(player, weaponItem) {
     super(player, weaponItem);
     this.orbs = []; // active orbiting orbs
     this.orbCount = 3;
-    this.orbDamageInterval = 0.5; // damage tick interval per orb
+    this.orbDamageInterval = 0.25; // damage tick interval per orb
   }
 
   update(dt, enemies, collisionSystem) {
@@ -25,18 +29,27 @@ export class StaffStrategy extends WeaponStrategy {
       orb.y = this.player.y + Math.sin(orb.angle) * orb.radius;
 
       // Damage enemies on tick — 空間ハッシュで近傍のみ走査
+      // ビジュアルの外周(ORB_HIT_RADIUS)に重なった敵を対象にするので見た目と一致する
       if (orb.damageTick <= 0) {
         orb.damageTick = this.orbDamageInterval;
         const candidates = collisionSystem
-          ? collisionSystem.query(orb.x, orb.y, 32)
+          ? collisionSystem.query(orb.x, orb.y, ORB_HIT_RADIUS + 24)
           : enemies;
         for (const enemy of candidates) {
           if (!enemy.active) continue;
           const dx = orb.x - enemy.x;
           const dy = orb.y - enemy.y;
-          const hitR = 8 + enemy.radius;
+          const hitR = ORB_HIT_RADIUS + enemy.radius;
           if (dx * dx + dy * dy < hitR * hitR) {
-            if (enemy.takeDamage(this.damage * 0.4, this._lastCrit)) this._emitKill(enemy);
+            // tick 半減に合わせてダメージも半減 (1秒あたりの合計DPSは概ね維持)
+            if (enemy.takeDamage(this.damage * 0.2, this._lastCrit)) this._emitKill(enemy);
+            // ヒットエフェクト: 命中位置に小さなスパーク (既存エフェクト配列に渡す)
+            if (this.effects.length < 64) {
+              this.effects.push({
+                type: 'orb_hit', x: enemy.x, y: enemy.y, angle: 0, range: 4,
+                timer: 0.12, maxTimer: 0.12, color: '#d9b8ff',
+              });
+            }
           }
         }
       }
@@ -86,21 +99,53 @@ export class StaffStrategy extends WeaponStrategy {
   }
 
   render(ctx, camera, alpha) {
-    // Render orbs
+    // Render orbs — 当たり判定 (ORB_HIT_RADIUS) を可視化する二層構造
     for (const orb of this.orbs) {
       const sx = camera.worldToScreenX(orb.x);
       const sy = camera.worldToScreenY(orb.y);
-      const pulse = 1 + Math.sin(orb.life * 8) * 0.2;
+      const pulse = 1 + Math.sin(orb.life * 8) * 0.15;
+      const lifeAlpha = Math.min(1, orb.life / 0.5);
 
       ctx.save();
-      ctx.globalAlpha = Math.min(1, orb.life / 0.5);
-      ctx.fillStyle = '#a6f';
-      ctx.shadowColor = '#a6f';
-      ctx.shadowBlur = 8;
+
+      // 外周オーラ (当たり判定範囲を示すラジアルグラデ)
+      ctx.globalAlpha = lifeAlpha * 0.8;
+      const outerR = ORB_HIT_RADIUS * pulse;
+      const grad = ctx.createRadialGradient(sx, sy, ORB_CORE_RADIUS * 0.5, sx, sy, outerR);
+      grad.addColorStop(0, 'rgba(200,150,255,0.9)');
+      grad.addColorStop(0.5, 'rgba(170,100,255,0.45)');
+      grad.addColorStop(1, 'rgba(170,100,255,0)');
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(sx, sy, 6 * pulse, 0, Math.PI * 2);
+      ctx.arc(sx, sy, outerR, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur = 0;
+
+      // コア (明るい中心球)
+      ctx.globalAlpha = lifeAlpha;
+      ctx.fillStyle = '#f0e0ff';
+      ctx.shadowColor = '#c08fff';
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(sx, sy, ORB_CORE_RADIUS * pulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // ヒット位置のスパーク (命中直後に短時間残るフィードバック)
+    for (const fx of this.effects) {
+      if (fx.type !== 'orb_hit') continue;
+      const sx = camera.worldToScreenX(fx.x);
+      const sy = camera.worldToScreenY(fx.y);
+      const t = 1 - (fx.timer / fx.maxTimer);
+      const r = 4 + t * 10;
+      ctx.save();
+      ctx.globalAlpha = (1 - t) * 0.9;
+      ctx.strokeStyle = fx.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
 
