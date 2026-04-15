@@ -43,9 +43,12 @@ function collectConsumableMods(item) {
   return { mods, regenAfter };
 }
 
-// 品質倍率: Q1 → 1.0, Q10 → 1.45, Q50 → 3.45
+// 品質倍率: Q1 → 1.0, Q50 → 1.49, Q100 → 1.99, Q500 → 5.99
+// 実クオリティは 0〜999 スケール (Progression.getQualityCap)。
+// 0.05/step だと Q50 で 3.45× となり 回復薬(base 40) が maxHp=100 を余裕で超え
+// 常時 全回復 してしまうため、他ステータス系 (quality/50〜/100) と揃えて 0.01/step に縮小。
 function qualityMultiplier(quality) {
-  return 1 + Math.max(0, (quality || 1) - 1) * 0.05;
+  return 1 + Math.max(0, (quality || 1) - 1) * 0.01;
 }
 
 export class ConsumableSystem {
