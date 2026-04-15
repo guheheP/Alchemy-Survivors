@@ -19,9 +19,9 @@ function statCost(currentLevel) {
 }
 
 const STAT_DEFS = [
-  { key: 'hp',  icon: '❤️', name: '最大HP強化',   desc: '最大HPを Lv% 上昇' },
-  { key: 'atk', icon: '⚔️', name: '攻撃力強化',   desc: '攻撃力を Lv% 上昇' },
-  { key: 'def', icon: '🛡️', name: '防御力強化',   desc: '防御力 +Lv（敵ATKに対し1/3軽減・最大75%）' },
+  { key: 'hp',  icon: '❤️', name: '最大HP強化',   desc: '最大HPを上昇' },
+  { key: 'atk', icon: '⚔️', name: '攻撃力強化',   desc: '攻撃力を上昇' },
+  { key: 'def', icon: '🛡️', name: '防御力強化',   desc: '防御力を上昇' },
 ];
 
 export class UpgradeShopScreen {
