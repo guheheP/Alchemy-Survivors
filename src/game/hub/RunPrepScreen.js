@@ -9,7 +9,7 @@ import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 
 export class RunPrepScreen {
-  constructor(container, getWeaponSlots, getArmor, getAccessory, inventory, initialConsumableUids = []) {
+  constructor(container, getWeaponSlots, getArmor, getAccessory, inventory, initialConsumableUids = [], initialAreaId = null) {
     this.container = container;
     this.getWeaponSlots = getWeaponSlots;
     this.getArmor = getArmor;
@@ -21,8 +21,15 @@ export class RunPrepScreen {
       .filter(Boolean);
     this.el = document.createElement('div');
     this.el.className = 'prep-screen';
-    this.selectedArea = 'plains';
+    // 前回のステージ選択を復元（未解放なら草原にフォールバック）
+    const savedArea = initialAreaId && AreaDefs[initialAreaId];
+    this.selectedArea = (savedArea && savedArea.unlocked) ? initialAreaId : 'plains';
     this.hardMode = false;
+  }
+
+  /** ステージ選択変更を emit（Game側で永続化） */
+  _emitAreaChanged() {
+    eventBus.emit('area:selected', { areaId: this.selectedArea });
   }
 
   /** 選択状態変更時に UID を emit（Game側で永続化） */
@@ -133,6 +140,7 @@ export class RunPrepScreen {
     this.el.querySelectorAll('.area-card:not(.locked)').forEach(card => {
       card.addEventListener('click', () => {
         this.selectedArea = card.dataset.area;
+        this._emitAreaChanged();
         this.render();
       });
     });

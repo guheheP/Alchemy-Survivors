@@ -80,6 +80,7 @@ export class SaveSystem {
       equippedArmorUid: extraData.equippedArmorUid || null,
       equippedAccessoryUid: extraData.equippedAccessoryUid || null,
       savedConsumableUids: extraData.savedConsumableUids || [],
+      lastSelectedAreaId: extraData.lastSelectedAreaId || null,
       unlockedRecipes: Object.entries(Recipes)
         .filter(([, r]) => r.unlocked)
         .map(([id]) => id),
