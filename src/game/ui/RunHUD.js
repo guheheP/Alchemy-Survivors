@@ -41,15 +41,6 @@ export class RunHUD {
         </svg>
       </button>
 
-      <!-- Mobile detail toggle (Tab 相当; hidden on desktop via CSS) -->
-      <button class="hud-detail-btn" id="hud-detail" type="button" aria-label="ステータス詳細">
-        <svg class="hud-btn-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="9"/>
-          <path d="M12 11.5v5"/>
-          <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/>
-        </svg>
-      </button>
-
       <!-- Top Center: Timer + Wave -->
       <div class="hud-top-center">
         <div class="hud-timer" id="hud-timer">5:00</div>
@@ -174,21 +165,21 @@ export class RunHUD {
     window.addEventListener('keydown', this._onKeyDown);
 
     // Mobile pause button — emits pauseMenu:requestToggle, RunManager handles it
+    // touchstart で先にトグル発火（モバイルで click イベントが何らかの理由で
+    // 届かないケースに対する保険）。デスクトップは click が動く。
     const pauseBtn = this.el.querySelector('#hud-pause');
     if (pauseBtn) {
-      pauseBtn.addEventListener('click', (e) => {
-        e.preventDefault();
+      let lastTriggerAt = 0;
+      const triggerPause = (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        // touchstart→click の二重発火を抑止
+        const now = Date.now();
+        if (now - lastTriggerAt < 350) return;
+        lastTriggerAt = now;
         eventBus.emit('pauseMenu:requestToggle');
-      });
-    }
-
-    // Mobile detail toggle button
-    const detailBtn = this.el.querySelector('#hud-detail');
-    if (detailBtn) {
-      detailBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this._toggleDetail();
-      });
+      };
+      pauseBtn.addEventListener('click', triggerPause);
+      pauseBtn.addEventListener('touchstart', triggerPause, { passive: false });
     }
 
     this._unsubs = [
