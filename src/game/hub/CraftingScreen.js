@@ -266,20 +266,20 @@ export class CraftingScreen {
       return;
     }
 
-    // 素材レシピ (中間素材) は特性を後続へパススルーする目的のため、
-    // ユーザーが未選択の場合は全特性を自動選択しておく (上限は調合時にレアリティで決まる)
-    const recipe = Recipes[this.selectedRecipeId];
-    const isMaterialRecipe = !!(recipe && recipe.isMaterialRecipe);
-    if (isMaterialRecipe && this.selectedTraits.length === 0) {
-      this.selectedTraits = [...traitSet];
+    // 特性はデフォルトで全て有効 (ユーザーが任意に外すことは可能)。
+    // maxTraitSlots を超える場合はレアリティの高い順に優先選択しておく。
+    if (this.selectedTraits.length === 0) {
+      const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
+      const prioritized = [...traitSet].sort((a, b) => {
+        const ra = rarityOrder[TraitDefs[a]?.rarity] ?? 5;
+        const rb = rarityOrder[TraitDefs[b]?.rarity] ?? 5;
+        return ra - rb;
+      });
+      this.selectedTraits = prioritized.slice(0, GameConfig.maxTraitSlots);
     }
 
-    const headerLabel = isMaterialRecipe
-      ? `引き継ぎ特性（素材レシピ: 自動引き継ぎ）`
-      : `引き継ぎ特性（${GameConfig.maxTraitSlots}枠まで）`;
-
     traitsEl.innerHTML = `
-      <h4>${headerLabel}</h4>
+      <h4>引き継ぎ特性（${GameConfig.maxTraitSlots}枠まで）</h4>
       <div class="trait-list">
         ${[...traitSet].map(t => {
           const def = TraitDefs[t];

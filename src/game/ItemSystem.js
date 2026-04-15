@@ -109,11 +109,11 @@ export function craftItem(recipeId, materialInstances, selectedTraits = [], qual
     allAvailableTraits.add(upgraded);
   }
 
-  // 素材レシピ (isMaterialRecipe) は中間素材として後続の調合へ特性を引き継ぐのが目的のため、
-  // ユーザー選択が無くても全ての基底特性を自動継承する。
-  // (装備・消耗品はランエフェクトとして消費されるため、従来通りユーザー選択を尊重する)
+  // 特性は調合時にデフォルトで全て有効とする。
+  // ユーザー選択が空の場合は素材側の基底特性を自動継承する
+  // (レアリティ順で maxTraitSlots に後段でキャップされる)
   let effectiveSelectedTraits = selectedTraits;
-  if (recipe.isMaterialRecipe && effectiveSelectedTraits.length === 0) {
+  if (effectiveSelectedTraits.length === 0) {
     const baseTraits = new Set();
     materialInstances.forEach(item => {
       item.traits.forEach(t => baseTraits.add(t));
