@@ -4,6 +4,7 @@
  */
 
 import { GameLoop } from '../core/GameLoop.js';
+import { isMobileDevice } from '../core/isMobileDevice.js';
 import { PlayerController } from './PlayerController.js';
 import { EnemySpawner } from './EnemySpawner.js';
 import { WeaponSystem } from './WeaponSystem.js';
@@ -68,7 +69,7 @@ export class RunManager {
     this.highestDamage = 0;
 
     // --- グラフィック強化システム ---
-    const isMobile = ('ontouchstart' in globalThis || navigator.maxTouchPoints > 0);
+    const isMobile = isMobileDevice();
     this.particles = new ParticleSystem(isMobile ? 250 : 500);
     this.spriteCache = new SpriteCache();
     this.background = new BackgroundRenderer(areaId, this.particles);

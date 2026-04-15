@@ -182,6 +182,26 @@ export class RunHUD {
       pauseBtn.addEventListener('touchstart', triggerPause, { passive: false });
     }
 
+    // Consumable slots — クリック/タップで発動（キー 1-3 と同等）
+    const consEl = this.el.querySelector('#hud-consumables');
+    if (consEl) {
+      let lastConsTriggerAt = 0;
+      const triggerCons = (e) => {
+        const slotEl = e.target.closest('.hud-cons-slot');
+        if (!slotEl || !consEl.contains(slotEl)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        // touchstart→click の二重発火を抑止
+        const now = Date.now();
+        if (now - lastConsTriggerAt < 350) return;
+        lastConsTriggerAt = now;
+        const idx = parseInt(slotEl.dataset.slot, 10);
+        if (Number.isInteger(idx)) eventBus.emit('consumable:requestUse', { slot: idx });
+      };
+      consEl.addEventListener('click', triggerCons);
+      consEl.addEventListener('touchstart', triggerCons, { passive: false });
+    }
+
     this._unsubs = [
       eventBus.on('run:tick', (data) => this._onTick(data)),
       eventBus.on('player:expChanged', (data) => this._onExpChanged(data)),
@@ -469,7 +489,7 @@ export class RunHUD {
         ? `<img class="hud-cons-img" src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : '';
 
-      return `<div class="hud-cons-slot ${empty ? 'empty' : ''} ${cdPct > 0 ? 'on-cd' : ''}" title="${s.name}">
+      return `<div class="hud-cons-slot ${empty ? 'empty' : ''} ${cdPct > 0 ? 'on-cd' : ''}" title="${s.name}" data-slot="${i}" role="button" tabindex="-1">
         <span class="hud-cons-key">${i + 1}</span>
         <div class="hud-cons-img-wrap">
           ${imgHtml}

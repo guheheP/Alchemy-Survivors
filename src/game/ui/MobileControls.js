@@ -2,6 +2,8 @@
  * MobileControls — モバイル仮想スティック + ダッシュボタン
  */
 
+import { isMobileDevice } from '../core/isMobileDevice.js';
+
 const DEAD_ZONE = 10;
 const STICK_MAX = 60;
 const DASH_BTN_RADIUS = 44;
@@ -28,10 +30,9 @@ export class MobileControls {
     this.dashTouchId = null;
     this.dashPressed = false;
 
-    // タッチデバイス検出 — CSS の `(hover: none) and (pointer: coarse)` と揃える
-    // ( `ontouchstart` だと タッチスクリーン付きデスクトップ で true になり、
-    //   デスクトップ でも ダッシュボタン が表示されてしまうため )
-    this.isMobile = !!(window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+    // タッチデバイス検出 — 共通判定へ委譲
+    // (タッチ有り かつ (hover:none & pointer:coarse) または 幅 ≤900)
+    this.isMobile = isMobileDevice();
 
     // ボタン位置（resize時に更新）
     this._updateLayout();

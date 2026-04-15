@@ -32,10 +32,13 @@ export const GameConfig = {
     expBase: 10,                // Lv1→2に必要な経験値
     get maxEnemies() {
       // import 時評価を避けるため getter 化（SSR/テスト互換）
-      if (typeof globalThis === 'undefined') return 300;
-      const hasTouch = 'ontouchstart' in globalThis
+      if (typeof window === 'undefined') return 300;
+      const hasTouch = ('ontouchstart' in window)
         || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
-      return hasTouch ? 150 : 300;
+      if (!hasTouch) return 300;
+      const mql = window.matchMedia ? window.matchMedia('(hover: none) and (pointer: coarse)') : null;
+      const isMobile = (mql && mql.matches) || window.innerWidth <= 900;
+      return isMobile ? 150 : 300;
     },
     spawnRateStart: 1.0,        // 敵/秒（開始時）
     spawnRateEnd: 6.0,          // 敵/秒（10分時点）

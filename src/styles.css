@@ -1886,8 +1886,17 @@ a:focus-visible,
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 4px; background: rgba(0,0,0,0.6);
   border: 2px solid #555; border-radius: 10px; position: relative; overflow: hidden;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, transform 0.1s, background 0.15s;
+  /* クリック/タップで消耗品発動 (親 .hud-consumables は pointer-events: none) */
+  pointer-events: auto;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
+.hud-cons-slot:hover:not(.empty):not(.on-cd) { border-color: #f0c060; background: rgba(30,20,10,0.75); }
+.hud-cons-slot:active:not(.empty):not(.on-cd) { transform: scale(0.94); }
+.hud-cons-slot.empty, .hud-cons-slot.on-cd { cursor: default; }
 .hud-cons-slot.empty { opacity: 0.3; }
 .hud-cons-slot.on-cd { border-color: #333; }
 .hud-cons-key {

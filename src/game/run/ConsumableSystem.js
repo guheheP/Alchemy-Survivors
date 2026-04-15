@@ -39,6 +39,11 @@ export class ConsumableSystem {
     };
     window.addEventListener('keydown', this._onKeyDown);
 
+    // HUD (クリック/タップ) からの発動リクエスト
+    this._unsubRequestUse = eventBus.on('consumable:requestUse', ({ slot }) => {
+      if (Number.isInteger(slot)) this._use(slot);
+    });
+
     // 初期状態をHUDに通知
     if (this.slots.length > 0) {
       eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo(), buffs: this.getActiveBuffs() });
@@ -155,5 +160,6 @@ export class ConsumableSystem {
 
   destroy() {
     window.removeEventListener('keydown', this._onKeyDown);
+    if (this._unsubRequestUse) this._unsubRequestUse();
   }
 }
