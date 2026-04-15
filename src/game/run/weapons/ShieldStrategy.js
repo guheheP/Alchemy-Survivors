@@ -39,8 +39,7 @@ export class ShieldStrategy extends WeaponStrategy {
         if (enemy.takeDamage(dmg)) {
           this._emitKill(enemy);
         } else if (dist > 0.1) {
-          enemy.x += (dx / dist) * knockbackDist;
-          enemy.y += (dy / dist) * knockbackDist;
+          enemy.tryKnockback?.(dx, dy, dist, knockbackDist);
         }
       }
     }

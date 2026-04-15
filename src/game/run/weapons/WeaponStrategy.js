@@ -119,10 +119,7 @@ export class WeaponStrategy {
             if (enemy.takeDamage(dmg * (p.dmgMult || 2))) this._emitKill(enemy);
             else if (knockback > 0) {
               const d = Math.sqrt(distSq);
-              if (d > 0.1) {
-                enemy.x += (dx / d) * knockback;
-                enemy.y += (dy / d) * knockback;
-              }
+              if (d > 0.1) enemy.tryKnockback?.(dx, dy, d, knockback);
             }
           }
         }
@@ -396,8 +393,7 @@ export class WeaponStrategy {
             if (enemy.takeDamage(dmg * (p.dmgMult || 1))) {
               this._emitKill(enemy);
             } else if (dist > 0.1) {
-              enemy.x += (dx / dist) * knockback;
-              enemy.y += (dy / dist) * knockback;
+              enemy.tryKnockback?.(dx, dy, dist, knockback);
             }
           }
         }
@@ -424,8 +420,7 @@ export class WeaponStrategy {
           if (dist < radius + enemy.radius) {
             if (enemy.takeDamage(dmg * (p.dmgMult || 1))) this._emitKill(enemy);
             else if (dist > 0.1) {
-              enemy.x += (dx / dist) * knockback;
-              enemy.y += (dy / dist) * knockback;
+              enemy.tryKnockback?.(dx, dy, dist, knockback);
             }
           }
         }
@@ -461,8 +456,7 @@ export class WeaponStrategy {
           if (dist < radius + enemy.radius) {
             if (enemy.takeDamage(dmg * (p.dmgMult || 0.8))) this._emitKill(enemy);
             else if (dist > 0.1) {
-              enemy.x += (dx / dist) * knockback;
-              enemy.y += (dy / dist) * knockback;
+              enemy.tryKnockback?.(dx, dy, dist, knockback);
             }
           }
         }
@@ -491,10 +485,7 @@ export class WeaponStrategy {
             if (enemy.takeDamage(dmg * (p.dmgMult || 3))) this._emitKill(enemy);
             else {
               const d = Math.sqrt(distSq);
-              if (d > 0.1) {
-                enemy.x += (dx / d) * knockback;
-                enemy.y += (dy / d) * knockback;
-              }
+              if (d > 0.1) enemy.tryKnockback?.(dx, dy, d, knockback);
             }
           }
         }

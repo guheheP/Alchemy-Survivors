@@ -60,24 +60,41 @@ function traitColorClass(traitName) {
  * 特性の効果カテゴリを判定
  *  - equip: 装備中に発動する `run*` 効果を持つ
  *  - craft: 素材として調合に使った時に発動する効果 (craftQualityBonus) を持つ
+ *  - consume: 消耗品として使用した時に発動する効果 (consumable*) を持つ
  */
 export function getTraitCategory(traitName) {
   const def = TraitDefs[traitName];
-  if (!def?.effects) return { equip: false, craft: false };
-  let equip = false, craft = false;
+  if (!def?.effects) return { equip: false, craft: false, consume: false };
+  let equip = false, craft = false, consume = false;
   for (const key of Object.keys(def.effects)) {
     if (key.startsWith('run')) equip = true;
     else if (key === 'craftQualityBonus') craft = true;
+    else if (key.startsWith('consumable')) consume = true;
   }
-  return { equip, craft };
+  return { equip, craft, consume };
 }
 
-/** 特性バッジ用のカテゴリピル HTML (装/素) */
+/** 消耗品効果の説明テキストを組み立てる (tooltip 用) */
+function describeConsumableEffects(def) {
+  if (!def?.effects) return '';
+  const e = def.effects;
+  const parts = [];
+  if (e.consumableHealMult)     parts.push(`回復+${Math.round(e.consumableHealMult * 100)}%`);
+  if (e.consumableDamageMult)   parts.push(`ダメージ+${Math.round(e.consumableDamageMult * 100)}%`);
+  if (e.consumableBuffMult)     parts.push(`バフ効果+${Math.round(e.consumableBuffMult * 100)}%`);
+  if (e.consumableDurationMult) parts.push(`継続時間+${Math.round(e.consumableDurationMult * 100)}%`);
+  if (e.consumableCooldownMult) parts.push(`CD${e.consumableCooldownMult >= 0 ? '+' : ''}${Math.round(e.consumableCooldownMult * 100)}%`);
+  if (e.consumableRegenAfter)   parts.push(`使用後${e.consumableRegenAfter.duration}秒 HP+${e.consumableRegenAfter.amount}/s`);
+  return parts.join(', ');
+}
+
+/** 特性バッジ用のカテゴリピル HTML (装/素/消) */
 function renderTraitCategoryPills(traitName) {
   const cat = getTraitCategory(traitName);
   let html = '';
   if (cat.equip) html += `<span class="trait-cat-pill trait-cat-equip" title="装備中に発動">装</span>`;
   if (cat.craft) html += `<span class="trait-cat-pill trait-cat-craft" title="素材として調合時に発動">素</span>`;
+  if (cat.consume) html += `<span class="trait-cat-pill trait-cat-consume" title="消耗品として使用時に発動">消</span>`;
   return html;
 }
 
@@ -85,7 +102,11 @@ function renderTraitCategoryPills(traitName) {
 export function createTraitBadgeHTML(traitName, extra = '') {
   const def = TraitDefs[traitName];
   const colorCls = traitColorClass(traitName);
-  const desc = def?.description ?? '';
+  const baseDesc = def?.description ?? '';
+  const consumeDesc = describeConsumableEffects(def);
+  const desc = consumeDesc
+    ? `${baseDesc}${baseDesc ? ' / ' : ''}消: ${consumeDesc}`
+    : baseDesc;
   const rarity = def?.rarity ?? '';
   const pills = renderTraitCategoryPills(traitName);
   return `<span class="trait-badge ${colorCls} ${extra}" data-tooltip="${desc}" data-tooltip-title="${traitName}" data-tooltip-rarity="${rarity}">${pills}${traitName}</span>`;

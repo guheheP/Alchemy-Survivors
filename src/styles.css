@@ -3413,6 +3413,11 @@ a:focus-visible,
   color: #f0c060;
   border-color: rgba(240, 192, 96, 0.5);
 }
+.trait-cat-pill.trait-cat-consume {
+  background: rgba(170, 255, 170, 0.22);
+  color: #9fe89f;
+  border-color: rgba(170, 255, 170, 0.5);
+}
 /* 効果説明行の左に付ける小タグ */
 .trait-effect-tag {
   display: inline-block;
@@ -3433,6 +3438,11 @@ a:focus-visible,
   background: rgba(240, 192, 96, 0.18);
   color: #f0c060;
   border-color: rgba(240, 192, 96, 0.45);
+}
+.trait-effect-tag.trait-cat-consume {
+  background: rgba(170, 255, 170, 0.18);
+  color: #9fe89f;
+  border-color: rgba(170, 255, 170, 0.45);
 }
 
 /* =========================================================

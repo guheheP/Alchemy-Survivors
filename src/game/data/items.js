@@ -441,6 +441,95 @@ export const TraitDefs = {
 };
 
 /**
+ * 消耗品として使用された時の効果 (素材用特性)。
+ * ConsumableSystem が参照する追加キー群を TraitDefs にマージする。
+ *
+ * キー仕様:
+ *  - consumableDamageMult    : damage 系の値に (1 + n) 倍
+ *  - consumableHealMult      : heal / healfull の回復量に (1 + n) 倍
+ *  - consumableBuffMult      : buff の効果量に (1 + n) 倍
+ *  - consumableDurationMult  : buff/debuff/stun の継続時間に (1 + n) 倍
+ *  - consumableCooldownMult  : クールダウンに (1 + n) 倍 (負で短縮)
+ *  - consumableRegenAfter    : heal/healfull 使用後 N 秒間 HP+X/s
+ *
+ * 上限: 各倍率は ConsumableSystem 側で +2.0 (=3× 倍) / -0.9 にクランプ。
+ */
+const ConsumableTraitMods = {
+  // ── Common ──
+  '闘志': { consumableDamageMult: 0.15 },
+  '堅固': { consumableBuffMult: 0.20 },
+  '活力': { consumableHealMult: 0.20 },
+  '光る': { consumableCooldownMult: -0.08 },
+  '丈夫': { consumableDurationMult: 0.12 },
+  '軽い': { consumableBuffMult: 0.20, consumableDurationMult: 0.12 },
+  '水溶性': { consumableCooldownMult: -0.10 },
+  '幸運': { consumableCooldownMult: -0.10 },
+  '薬草の香り': { consumableRegenAfter: { amount: 0.3, duration: 5 }, consumableHealMult: 0.10 },
+  '滋養': { consumableHealMult: 0.25, consumableRegenAfter: { amount: 0.2, duration: 5 } },
+  '硬い': { consumableDurationMult: 0.10, consumableCooldownMult: -0.05 },
+  '丹念': { consumableCooldownMult: -0.10 },
+
+  // ── Uncommon ──
+  '攻撃力+': { consumableDamageMult: 0.25 },
+  '防御力+': { consumableBuffMult: 0.35 },
+  'HP回復+': { consumableHealMult: 0.35 },
+  '売値UP': { consumableCooldownMult: -0.15 },
+  '猛毒': { consumableDurationMult: 0.30 },
+  '燃えやすい': { consumableDamageMult: 0.30, consumableBuffMult: 0.25 },
+  '練磨': { consumableCooldownMult: -0.18 },
+  '強運': { consumableCooldownMult: -0.15 },
+  '癒しの力': { consumableRegenAfter: { amount: 0.6, duration: 5 }, consumableHealMult: 0.20 },
+  '命の露': { consumableHealMult: 0.40, consumableRegenAfter: { amount: 0.3, duration: 5 } },
+  '採取量UP': { consumableCooldownMult: -0.15 },
+  '先制': { consumableDurationMult: 0.25, consumableBuffMult: 0.25 },
+  '体力強化': { consumableHealMult: 0.25, consumableBuffMult: 0.25 },
+  '練成': { consumableCooldownMult: -0.18 },
+
+  // ── Rare ──
+  '攻撃力++': { consumableDamageMult: 0.40 },
+  '防御力++': { consumableBuffMult: 0.55 },
+  'HP回復++': { consumableHealMult: 0.55 },
+  '売値UP+': { consumableCooldownMult: -0.22 },
+  '聖なる力': { consumableDurationMult: 0.45, consumableHealMult: 0.20 },
+  '風の加護': { consumableBuffMult: 0.45, consumableDurationMult: 0.30 },
+  '熟練': { consumableCooldownMult: -0.20 },
+  '天運': { consumableCooldownMult: -0.22 },
+  '慈愛': { consumableRegenAfter: { amount: 1.0, duration: 6 }, consumableHealMult: 0.30 },
+  '生命の雫': { consumableHealMult: 0.60, consumableRegenAfter: { amount: 0.4, duration: 5 } },
+  '雷撃': { consumableCooldownMult: -0.35, consumableDamageMult: 0.20 },
+  '吸血': { consumableRegenAfter: { amount: 0.6, duration: 5 }, consumableHealMult: 0.25 },
+  '鉄壁': { consumableBuffMult: 0.50, consumableDurationMult: 0.25 },
+  '疾走': { consumableCooldownMult: -0.32, consumableBuffMult: 0.20 },
+  '達人の業': { consumableCooldownMult: -0.25 },
+
+  // ── Epic ──
+  '攻撃力+++': { consumableDamageMult: 0.60 },
+  '防御力+++': { consumableBuffMult: 0.80 },
+  '生命の泉': { consumableHealMult: 1.00, consumableRegenAfter: { amount: 1.5, duration: 6 } },
+  '黄金の輝き': { consumableCooldownMult: -0.30 },
+  '冒険の極意': { consumableBuffMult: 0.50, consumableDurationMult: 0.40 },
+  '疾風': { consumableBuffMult: 0.55, consumableDurationMult: 0.40 },
+  '名匠の技': { consumableCooldownMult: -0.25 },
+  '運命の導き': { consumableCooldownMult: -0.30 },
+  '聖癒': { consumableRegenAfter: { amount: 1.5, duration: 6 }, consumableHealMult: 0.35 },
+  '生命の奔流': { consumableHealMult: 0.80, consumableRegenAfter: { amount: 0.8, duration: 5 } },
+  '無尽蔵': { consumableCooldownMult: -0.40 },
+  '混沌': { consumableDamageMult: 0.40, consumableDurationMult: 0.20 },
+  '再生': { consumableRegenAfter: { amount: 2.0, duration: 6 }, consumableHealMult: 0.25 },
+
+  // ── Legendary ──
+  '時の祝福': { consumableBuffMult: 0.70, consumableDurationMult: 0.50, consumableCooldownMult: -0.15 },
+  '星の輝き': { consumableCooldownMult: -0.35, consumableHealMult: 0.20, consumableDamageMult: 0.20 },
+  '武神': { consumableDamageMult: 0.50, consumableCooldownMult: -0.25, consumableBuffMult: 0.20 },
+  '不死鳥': { consumableHealMult: 0.60, consumableRegenAfter: { amount: 3.0, duration: 5 }, consumableDurationMult: 0.30 },
+};
+
+// TraitDefs の effects にマージ (破壊的変更なし、consumable* キーを追加するだけ)
+for (const [traitName, mods] of Object.entries(ConsumableTraitMods)) {
+  if (TraitDefs[traitName]) Object.assign(TraitDefs[traitName].effects, mods);
+}
+
+/**
  * トレイト融合テーブル — 同じトレイトの素材2つで1ランク上に昇格
  * 全10系統: Common → Uncommon → Rare → Epic
  */

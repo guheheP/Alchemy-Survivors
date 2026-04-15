@@ -2,8 +2,51 @@
  * ConsumableSystem — ラン中の消耗品スロット（キー1-3で発動）
  */
 
-import { ItemBlueprints } from '../data/items.js';
+import { ItemBlueprints, TraitDefs } from '../data/items.js';
 import { eventBus } from '../core/EventBus.js';
+
+// 消耗品特性効果の倍率 cap (暴走防止)
+const MULT_UPPER_CAP = 2.0;   // +2.0 = 3× 倍率まで
+const MULT_LOWER_CAP = -0.9;  // -0.9 = 10% まで短縮可能
+
+/**
+ * アイテムの traits を集計して消耗品効果倍率を返す。
+ * 同キーの trait が複数あれば足し合わせ、最後に cap する。
+ */
+function collectConsumableMods(item) {
+  const mods = {
+    consumableDamageMult: 0,
+    consumableHealMult: 0,
+    consumableBuffMult: 0,
+    consumableDurationMult: 0,
+    consumableCooldownMult: 0,
+  };
+  const regenAfter = { amount: 0, duration: 0 };
+  if (!item || !Array.isArray(item.traits)) return { mods, regenAfter };
+  for (const traitName of item.traits) {
+    const def = TraitDefs[traitName];
+    if (!def || !def.effects) continue;
+    for (const key of Object.keys(mods)) {
+      if (typeof def.effects[key] === 'number') mods[key] += def.effects[key];
+    }
+    if (def.effects.consumableRegenAfter) {
+      regenAfter.amount += def.effects.consumableRegenAfter.amount || 0;
+      // duration は最大値 (同時に複数 regen を積むと煩雑)
+      regenAfter.duration = Math.max(regenAfter.duration, def.effects.consumableRegenAfter.duration || 0);
+    }
+  }
+  // cap
+  for (const key of Object.keys(mods)) {
+    if (mods[key] > MULT_UPPER_CAP) mods[key] = MULT_UPPER_CAP;
+    if (mods[key] < MULT_LOWER_CAP) mods[key] = MULT_LOWER_CAP;
+  }
+  return { mods, regenAfter };
+}
+
+// 品質倍率: Q1 → 1.0, Q10 → 1.45, Q50 → 3.45
+function qualityMultiplier(quality) {
+  return 1 + Math.max(0, (quality || 1) - 1) * 0.05;
+}
 
 export class ConsumableSystem {
   /**
@@ -25,6 +68,7 @@ export class ConsumableSystem {
     });
 
     this._activeBuffs = []; // { stat, value, remaining }
+    this._regenEffects = []; // { amount: hp/s, remaining: sec }
     // バフ適用前のベース値を保存（バフ終了時の再計算に使用）
     this._basePassives = {
       damageMultiplier: player.passives.damageMultiplier,
@@ -54,6 +98,16 @@ export class ConsumableSystem {
     // クールダウン更新
     for (const slot of this.slots) {
       if (slot.cooldown > 0) slot.cooldown -= dt;
+    }
+
+    // Regen 効果 (特性 consumableRegenAfter) の持続適用
+    if (this._regenEffects.length > 0) {
+      for (let i = this._regenEffects.length - 1; i >= 0; i--) {
+        const r = this._regenEffects[i];
+        this.player.hp = Math.min(this.player.effectiveMaxHp, this.player.hp + r.amount * dt);
+        r.remaining -= dt;
+        if (r.remaining <= 0) this._regenEffects.splice(i, 1);
+      }
     }
 
     // バフタイマー更新
@@ -89,47 +143,69 @@ export class ConsumableSystem {
     if (!slot || slot.usesRemaining <= 0 || slot.cooldown > 0 || !slot.effect) return;
 
     slot.usesRemaining--;
-    slot.cooldown = slot.cooldownMax;
+
+    // 特性 + クォリティ補正を集計
+    const { mods, regenAfter } = collectConsumableMods(slot.item);
+    const qMult = qualityMultiplier(slot.item?.quality);
+    // クールダウンは最低 10% まで短縮可、それ以上は clamp
+    const cdMult = Math.max(0.1, 1 + mods.consumableCooldownMult);
+    slot.cooldown = slot.cooldownMax * cdMult;
 
     const fx = slot.effect;
+    const applyRegenAfter = () => {
+      if (regenAfter.amount > 0 && regenAfter.duration > 0) {
+        this._regenEffects.push({ amount: regenAfter.amount, remaining: regenAfter.duration });
+      }
+    };
+
     switch (fx.type) {
-      case 'heal':
-        this.player.hp = Math.min(this.player.effectiveMaxHp, this.player.hp + fx.value);
-        eventBus.emit('consumable:used', { slot: slotIndex, type: 'heal', value: fx.value });
+      case 'heal': {
+        const healValue = Math.round(fx.value * qMult * (1 + mods.consumableHealMult));
+        this.player.hp = Math.min(this.player.effectiveMaxHp, this.player.hp + healValue);
+        applyRegenAfter();
+        eventBus.emit('consumable:used', { slot: slotIndex, type: 'heal', value: healValue });
         break;
+      }
 
       case 'buff':
         if (fx.stat && fx.amount && fx.duration) {
-          const value = fx.stat === 'atk' ? fx.amount * 0.01 : fx.stat === 'spd' ? fx.amount * 0.01 : fx.amount * 0.1;
+          const boostedAmount = fx.amount * qMult * (1 + mods.consumableBuffMult);
+          const boostedDuration = fx.duration * (1 + mods.consumableDurationMult);
+          const value = fx.stat === 'atk' ? boostedAmount * 0.01
+                      : fx.stat === 'spd' ? boostedAmount * 0.01
+                      : boostedAmount * 0.1;
           if (fx.stat === 'atk') this.player.passives.damageMultiplier += value;
           else if (fx.stat === 'def') this.player.passives.damageReduction += value;
           else if (fx.stat === 'spd') this.player.passives.moveSpeedMultiplier += value;
-          this._activeBuffs.push({ stat: fx.stat, value, remaining: fx.duration });
+          this._activeBuffs.push({ stat: fx.stat, value, remaining: boostedDuration });
         }
         eventBus.emit('consumable:used', { slot: slotIndex, type: 'buff', stat: fx.stat });
         break;
 
       case 'damage': {
-        // プレイヤー周囲にAoEダメージ
-        eventBus.emit('consumable:aoe', { x: this.player.x, y: this.player.y, radius: 100, damage: fx.value });
-        eventBus.emit('consumable:used', { slot: slotIndex, type: 'damage', value: fx.value });
+        const dmg = Math.round(fx.value * qMult * (1 + mods.consumableDamageMult));
+        eventBus.emit('consumable:aoe', { x: this.player.x, y: this.player.y, radius: 100, damage: dmg });
+        eventBus.emit('consumable:used', { slot: slotIndex, type: 'damage', value: dmg });
         break;
       }
 
-      case 'debuff':
-        // 周囲の敵減速（EventBus経由でRunManagerが処理）
-        eventBus.emit('consumable:debuff', { x: this.player.x, y: this.player.y, radius: 120, stat: fx.stat, amount: fx.amount, duration: fx.duration });
+      case 'debuff': {
+        const boostedDuration = fx.duration * (1 + mods.consumableDurationMult);
+        eventBus.emit('consumable:debuff', { x: this.player.x, y: this.player.y, radius: 120, stat: fx.stat, amount: fx.amount, duration: boostedDuration });
         eventBus.emit('consumable:used', { slot: slotIndex, type: 'debuff' });
         break;
+      }
 
-      case 'stun':
-        eventBus.emit('consumable:debuff', { x: this.player.x, y: this.player.y, radius: 100, stat: 'spd', amount: -999, duration: fx.duration });
+      case 'stun': {
+        const boostedDuration = fx.duration * (1 + mods.consumableDurationMult);
+        eventBus.emit('consumable:debuff', { x: this.player.x, y: this.player.y, radius: 100, stat: 'spd', amount: -999, duration: boostedDuration });
         eventBus.emit('consumable:used', { slot: slotIndex, type: 'stun' });
         break;
+      }
 
       case 'healfull':
-        // 全回復
         this.player.hp = this.player.effectiveMaxHp;
+        applyRegenAfter();
         eventBus.emit('consumable:used', { slot: slotIndex, type: 'heal', value: 'MAX' });
         break;
     }

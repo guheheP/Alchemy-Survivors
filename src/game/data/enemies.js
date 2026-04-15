@@ -310,3 +310,28 @@ export const AreaEnemyConfig = {
     ],
   },
 };
+
+// ═══════════════════════════════════════════════
+//  妖精の森以降 攻撃力バフ (2.5× 倍)
+//  plains / cave はそのまま、forest 以降の全敵に適用。
+//  AreaEnemyConfig の wave 定義から該当エリアの敵 ID を抽出して
+//  EnemyDefs[id].damage に倍率を掛ける。
+// ═══════════════════════════════════════════════
+(function applyMidGameDamageBuff() {
+  const BUFFED_AREAS = ['forest', 'volcano', 'deep_sea', 'dragon_nest', 'sky_tower', 'time_corridor'];
+  const MULT = 2.5;
+  const affectedIds = new Set();
+  for (const areaId of BUFFED_AREAS) {
+    const cfg = AreaEnemyConfig[areaId];
+    if (!cfg?.waves) continue;
+    for (const wave of cfg.waves) {
+      for (const entry of wave.enemies) affectedIds.add(entry.id);
+    }
+  }
+  for (const id of affectedIds) {
+    const def = EnemyDefs[id];
+    if (def && typeof def.damage === 'number') {
+      def.damage = Math.round(def.damage * MULT);
+    }
+  }
+})();

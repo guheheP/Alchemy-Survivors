@@ -196,8 +196,7 @@ export class RunManager {
             if (enemy.takeDamage(damage)) {
               eventBus.emit('enemy:killed', { enemy, x: enemy.x, y: enemy.y, isBoss: enemy.isBoss, color: enemy.color });
             } else if (dist > 0.1) {
-              enemy.x += (dx / dist) * knockback;
-              enemy.y += (dy / dist) * knockback;
+              enemy.tryKnockback?.(dx, dy, dist, knockback);
             }
           }
         }
