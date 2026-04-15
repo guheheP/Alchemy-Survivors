@@ -140,9 +140,9 @@ export class Enemy extends Entity {
 
   /** デバフを適用（速度変更 + 持続時間） */
   applyDebuff(speedModifier, duration) {
-    if (this._debuffTimer <= 0) {
-      this._baseSpeed = this.speed;
-    }
+    // erratic 等で speed が動的に変動する敵でも、_baseSpeed は init 時に確定しているので
+    // そこを基準にしてデバフ効果を反映する（旧実装ではデバフ重ね掛け時に _baseSpeed が更新されず
+    // 終了時に不正な値に復元されるバグがあった）
     this.speed = Math.max(1, this._baseSpeed + speedModifier);
     this._debuffTimer = duration;
   }
@@ -172,25 +172,29 @@ export class Enemy extends Entity {
 
     const dx = playerX - this.x;
     const dy = playerY - this.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const distSq = dx * dx + dy * dy;
+    // dist は dasher 以外は使わない。必要になってから計算。
 
     switch (this.behavior) {
       case 'erratic': {
         // 速度を 0.3〜1.8 倍で振動させる
         const factor = 1.05 + Math.sin(this._behaviorTimer * 3.5) * 0.75;
         const s = Math.max(5, this._baseSpeed * factor);
-        if (dist > 1) {
+        if (distSq > 1) {
+          const dist = Math.sqrt(distSq);
           this.x += (dx / dist) * s * dt;
           this.y += (dy / dist) * s * dt;
         }
         break;
       }
       case 'dasher': {
+        const dist = Math.sqrt(distSq);
         this._updateDasher(dt, dx, dy, dist);
         break;
       }
       default: {
-        if (dist > 1) {
+        if (distSq > 1) {
+          const dist = Math.sqrt(distSq);
           this.x += (dx / dist) * this.speed * dt;
           this.y += (dy / dist) * this.speed * dt;
         }

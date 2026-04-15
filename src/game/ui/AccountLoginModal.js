@@ -11,6 +11,9 @@ export class AccountLoginModal {
     this.onDone = onDone || (() => {});
     this.el = document.createElement('div');
     this.el.className = 'modal-overlay account-login-modal';
+    this.el.setAttribute('role', 'dialog');
+    this.el.setAttribute('aria-modal', 'true');
+    this.el.setAttribute('aria-label', '既存アカウントでログイン');
     this.el.innerHTML = `
       <div class="modal-card anim-fade-in">
         <h3>🔑 既存アカウントでログイン</h3>
@@ -54,11 +57,10 @@ export class AccountLoginModal {
       try {
         await PlayFabClient.loginWithEmailAndPassword(email.value, pw.value);
         this._close();
-        // クラウドセーブを反映するためリロード（起動時同期で復元される）
-        this.onDone(true);
-        // ローカルセーブは破棄（クラウドセーブを pull するため）
+        // ローカルセーブを先に破棄してからリロード（クラウドセーブの pull が確実に行われる）
         try { localStorage.removeItem('alchemy_survivors_save_v1'); } catch (e) { /* ignore */ }
-        setTimeout(() => window.location.reload(), 200);
+        this.onDone(true);
+        window.location.reload();
       } catch (e) {
         errorEl.textContent = (e.message || 'ログインに失敗しました').toString();
         okBtn.disabled = false;
@@ -72,10 +74,25 @@ export class AccountLoginModal {
         if (e.key === 'Enter') { e.preventDefault(); submit(); }
       });
     });
-    cancelBtn.addEventListener('click', () => {
+    const cancel = () => {
       this._close();
       this.onDone(false);
+    };
+    cancelBtn.addEventListener('click', cancel);
+
+    // バックドロップクリックで閉じる
+    this.el.addEventListener('click', (e) => {
+      if (e.target === this.el) cancel();
     });
+
+    // Esc で閉じる
+    this._onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancel();
+      }
+    };
+    window.addEventListener('keydown', this._onKeyDown);
 
     forgotLink.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -100,6 +117,10 @@ export class AccountLoginModal {
   }
 
   _close() {
+    if (this._onKeyDown) {
+      window.removeEventListener('keydown', this._onKeyDown);
+      this._onKeyDown = null;
+    }
     if (this.el && this.el.parentNode) this.el.remove();
   }
 }

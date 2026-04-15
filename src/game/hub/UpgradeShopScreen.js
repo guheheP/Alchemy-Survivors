@@ -66,6 +66,16 @@ export class UpgradeShopScreen {
   }
 
   render() {
+    this._renderContent();
+    // 初回のみ DOM ツリーに追加。以降 _renderContent は innerHTML のみ更新し、
+    // 親要素のスクロール位置を保持する。
+    if (this.el.parentNode !== this.container) {
+      this.container.appendChild(this.el);
+    }
+    return this.el;
+  }
+
+  _renderContent() {
     const whLv = Progression.getWarehouseLevel();
     const whMax = GameConfig.warehouseMaxLevel;
     const whPer = GameConfig.warehouseExpansionPerLevel;
@@ -105,7 +115,6 @@ export class UpgradeShopScreen {
         </div>
       </div>
     `;
-    this.container.appendChild(this.el);
 
     const whBtn = this.el.querySelector('[data-upg="warehouse"]');
     if (whBtn && !whBtn.disabled) {
@@ -117,8 +126,6 @@ export class UpgradeShopScreen {
       const stat = btn.dataset.stat;
       btn.addEventListener('click', () => this._purchaseStat(stat));
     }
-
-    return this.el;
   }
 
   _purchaseWarehouse() {
@@ -129,7 +136,7 @@ export class UpgradeShopScreen {
     this.inventory.expandCapacity(GameConfig.warehouseExpansionPerLevel);
     eventBus.emit('gold:changed', { gold: this.inventory.gold });
     eventBus.emit('save:request');
-    this.render();
+    this._renderContent();
   }
 
   _purchaseStat(stat) {
@@ -141,7 +148,7 @@ export class UpgradeShopScreen {
     eventBus.emit('gold:changed', { gold: this.inventory.gold });
     eventBus.emit('save:request');
     eventBus.emit('toast', { message: `🎉 ${stat.toUpperCase()} 強化 Lv.${Progression.getStatLevel(stat)}！`, type: 'success' });
-    this.render();
+    this._renderContent();
   }
 
   destroy() {

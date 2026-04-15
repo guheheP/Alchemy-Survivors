@@ -21,10 +21,17 @@ export class WeaponSystem {
     for (const weapon of weaponSlots) {
       if (!weapon) continue;
       const bp = ItemBlueprints[weapon.blueprintId];
+      if (!bp) continue; // 無効な blueprintId（セーブデータ破損等）はスキップ
       const equipType = bp.equipType || 'sword';
       const StrategyClass = StrategyMap[equipType] || StrategyMap.sword;
       this.strategies.push(new StrategyClass(player, weapon));
     }
+
+    // getSlotInfo の戻り値を使い回す（毎フレーム呼ばれるためアロケーション削減）
+    this._slotInfoCache = this.strategies.map(() => ({
+      name: '', equipType: '', unlocked: false,
+      skillCooldownPct: 0, skillReady: false, skillTier: 0,
+    }));
 
     // 初期は1番目のみ解放
     if (this.strategies.length > 0) {
@@ -59,7 +66,7 @@ export class WeaponSystem {
 
   update(dt, enemies, collisionSystem) {
     for (let i = 0; i < this.unlockedCount; i++) {
-      this.strategies[i].update(dt, enemies);
+      this.strategies[i].update(dt, enemies, collisionSystem);
     }
   }
 
@@ -69,18 +76,20 @@ export class WeaponSystem {
     }
   }
 
-  /** HUD用の武器スロット情報 */
+  /** HUD用の武器スロット情報（キャッシュを書き換えて返す — 毎フレーム呼ばれる） */
   getSlotInfo() {
-    return this.strategies.map((s, i) => ({
-      name: s.weaponName,
-      equipType: s.equipType,
-      unlocked: i < this.unlockedCount,
-      skillCooldownPct: i < this.unlockedCount
-        ? Math.max(0, s.skillCooldown / s.skillCooldownMax)
-        : 1,
-      skillReady: i < this.unlockedCount && s.skillCooldown <= 0,
-      skillTier: s.skillTier,
-    }));
+    for (let i = 0; i < this.strategies.length; i++) {
+      const s = this.strategies[i];
+      const info = this._slotInfoCache[i];
+      const unlocked = i < this.unlockedCount;
+      info.name = s.weaponName;
+      info.equipType = s.equipType;
+      info.unlocked = unlocked;
+      info.skillCooldownPct = unlocked ? Math.max(0, s.skillCooldown / s.skillCooldownMax) : 1;
+      info.skillReady = unlocked && s.skillCooldown <= 0;
+      info.skillTier = s.skillTier;
+    }
+    return this._slotInfoCache;
   }
 
   /** 全武器のエフェクト（後方互換用） */
@@ -90,5 +99,14 @@ export class WeaponSystem {
       all.push(...this.strategies[i].effects);
     }
     return all;
+  }
+
+  /** リソース解放（ストラテジーのイベント/タイマーリーク対策） */
+  destroy() {
+    for (const s of this.strategies) {
+      if (typeof s.destroy === 'function') s.destroy();
+    }
+    this.strategies.length = 0;
+    this.unlockedCount = 0;
   }
 }

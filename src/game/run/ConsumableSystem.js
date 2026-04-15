@@ -72,12 +72,11 @@ export class ConsumableSystem {
 
     this._activeBuffs = []; // { stat, value, remaining }
     this._regenEffects = []; // { amount: hp/s, remaining: sec }
-    // バフ適用前のベース値を保存（バフ終了時の再計算に使用）
-    this._basePassives = {
-      damageMultiplier: player.passives.damageMultiplier,
-      damageReduction: player.passives.damageReduction,
-      moveSpeedMultiplier: player.passives.moveSpeedMultiplier,
-    };
+    // 差分更新: 各バフは player.passives.xxx += value で即加算し、
+    // 期限切れ時に value を減算して戻す。レベルアップで passives が変わっても正しく追従する。
+
+    // スロット情報の前回値キャッシュ（差分があるときだけ emit してDOM churnを防ぐ）
+    this._lastSlotsInfo = null;
 
     this._onKeyDown = (e) => {
       if (e.code === 'Digit1') this._use(0);
@@ -113,31 +112,51 @@ export class ConsumableSystem {
       }
     }
 
-    // バフタイマー更新
+    // バフタイマー更新 — 期限切れバフは差分を player.passives から減算（レベルアップ取得分を破壊しない）
     let buffChanged = false;
     for (let i = this._activeBuffs.length - 1; i >= 0; i--) {
       this._activeBuffs[i].remaining -= dt;
       if (this._activeBuffs[i].remaining <= 0) {
+        const buff = this._activeBuffs[i];
+        if (buff.stat === 'atk') this.player.passives.damageMultiplier -= buff.value;
+        else if (buff.stat === 'def') this.player.passives.damageReduction -= buff.value;
+        else if (buff.stat === 'spd') this.player.passives.moveSpeedMultiplier -= buff.value;
         this._activeBuffs.splice(i, 1);
         buffChanged = true;
       }
     }
-    // バフが変化した場合、ベース値 + アクティブバフから再計算（浮動小数点ドリフト防止）
-    if (buffChanged) {
-      this.player.passives.damageMultiplier = this._basePassives.damageMultiplier;
-      this.player.passives.damageReduction = this._basePassives.damageReduction;
-      this.player.passives.moveSpeedMultiplier = this._basePassives.moveSpeedMultiplier;
-      for (const buff of this._activeBuffs) {
-        if (buff.stat === 'atk') this.player.passives.damageMultiplier += buff.value;
-        else if (buff.stat === 'def') this.player.passives.damageReduction += buff.value;
-        else if (buff.stat === 'spd') this.player.passives.moveSpeedMultiplier += buff.value;
+
+    // スロット/バフ情報に差分があるときのみ emit（HUD DOM churn 削減）
+    if (this.slots.length > 0) {
+      if (this._hasSlotOrBuffChanged(buffChanged)) {
+        eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo(), buffs: this.getActiveBuffs() });
       }
     }
+  }
 
-    // スロット情報を毎tick通知（クールダウン進行表示のため）
-    if (this.slots.length > 0) {
-      eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo(), buffs: this.getActiveBuffs() });
+  /**
+   * 前回emitした状態と現在を比較し、表示に影響する変化があるかを返す。
+   * CD 表示のため CD 値は 0.1s 刻みで量子化して比較（毎tick変わる細かい差分は無視）。
+   */
+  _hasSlotOrBuffChanged(forceBuff) {
+    if (forceBuff) return true;
+    const slots = this.slots;
+    if (!this._lastSlotsInfo || this._lastSlotsInfo.length !== slots.length) {
+      this._lastSlotsInfo = slots.map(() => ({ uses: -1, cdQ: -1 }));
+      return true;
     }
+    let changed = false;
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      const prev = this._lastSlotsInfo[i];
+      const cdQ = Math.round(Math.max(0, s.cooldown) * 10); // 0.1秒刻み
+      if (s.usesRemaining !== prev.uses || cdQ !== prev.cdQ) {
+        prev.uses = s.usesRemaining;
+        prev.cdQ = cdQ;
+        changed = true;
+      }
+    }
+    return changed;
   }
 
   _use(slotIndex) {

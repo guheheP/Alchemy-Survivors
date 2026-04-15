@@ -72,24 +72,26 @@ export class EnemySpawner {
     // 超過分はキャップ（大量スポーン蓄積を防止、急激なリセットを回避）
     if (this.spawnTimer > interval * 3) this.spawnTimer = interval * 3;
 
-    // 全敵を更新 + 遠方敵をリサイクル（逆順: release の swap-pop 対策）
+    // 遠方敵は AI/物理を走らせずリサイクル（update 前に判定することで画面外敵のCPUを節約）
     const despawnDist = Math.max(cameraWidth, cameraHeight) * 1.5;
     const despawnDistSq = despawnDist * despawnDist;
     const list = this.pool.activeList;
     for (let i = list.length - 1; i >= 0; i--) {
       const enemy = list[i];
-      enemy.update(dt, playerX, playerY);
       const edx = enemy.x - playerX;
       const edy = enemy.y - playerY;
       if (edx * edx + edy * edy > despawnDistSq) {
         this.pool.release(enemy);
+        continue;
       }
+      enemy.update(dt, playerX, playerY);
     }
   }
 
   _spawn(playerX, playerY, camW, camH) {
     const wave = this._getCurrentWave();
     const def = this._pickEnemyType(wave);
+    if (!def) return; // 無効な敵ID（データ不整合）でプールから取得する前に中止
     const enemy = this.pool.get();
 
     // カメラ外にスポーン（画面端から少し離れた位置）

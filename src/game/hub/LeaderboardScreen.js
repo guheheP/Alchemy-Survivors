@@ -22,11 +22,18 @@ function formatInt(v) {
   return (Number(v) || 0).toLocaleString();
 }
 
-/** PlayFabId から簡易表示名を作る（Phase 5 で表示名対応時に差し替え） */
+/** HTML 特殊文字をエスケープ（DisplayName は他ユーザー入力なので XSS 対策） */
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])
+  );
+}
+
+/** PlayFabId から簡易表示名を作る（XSS対策としてエスケープ済み文字列を返す） */
 function playerLabel(entry) {
-  if (entry.DisplayName) return entry.DisplayName;
+  if (entry.DisplayName) return escapeHtml(entry.DisplayName);
   const id = entry.PlayFabId || '';
-  return `Player-${id.slice(-6) || '??????'}`;
+  return `Player-${escapeHtml(id.slice(-6) || '??????')}`;
 }
 
 export class LeaderboardScreen {
@@ -36,6 +43,7 @@ export class LeaderboardScreen {
     this.el.className = 'leaderboard-screen';
     this.activeBoard = BOARDS[0].id;
     this._cache = {}; // boardId -> { topList, aroundList, myId, fetchedAt }
+    this._destroyed = false;
   }
 
   render() {
@@ -91,9 +99,22 @@ export class LeaderboardScreen {
         PlayFabClient.getLeaderboardAroundPlayer(boardId, 11).catch(() => null),
       ]);
     } catch (e) {
-      content.innerHTML = `<div class="lb-error">ランキング取得に失敗しました。<br><small>${e.message || e}</small></div>`;
+      // 破棄済み or タブ変更後なら中断（Use-After-Free 防止）
+      if (this._destroyed || this.activeBoard !== boardId) return;
+      const errDiv = document.createElement('div');
+      errDiv.className = 'lb-error';
+      errDiv.textContent = 'ランキング取得に失敗しました。';
+      const small = document.createElement('small');
+      small.textContent = (e && e.message) ? e.message : String(e);
+      errDiv.appendChild(document.createElement('br'));
+      errDiv.appendChild(small);
+      content.innerHTML = '';
+      content.appendChild(errDiv);
       return;
     }
+
+    // 非同期完了後に破棄/タブ切替されていたら書き込まない
+    if (this._destroyed || this.activeBoard !== boardId) return;
 
     const myId = PlayFabClient.getPlayFabId();
     const topList = top?.Leaderboard || [];
@@ -135,12 +156,13 @@ export class LeaderboardScreen {
         </div>
       ` : ''}
       <div class="lb-footer">
-        <small>あなたの ID: ${myId ? `Player-${myId.slice(-6)}` : '未取得'}</small>
+        <small>あなたの ID: ${myId ? `Player-${escapeHtml(myId.slice(-6))}` : '未取得'}</small>
       </div>
     `;
   }
 
   destroy() {
+    this._destroyed = true;
     this.el.remove();
   }
 }

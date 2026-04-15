@@ -171,15 +171,24 @@ export class ParticleSystem {
 
   renderLayer(ctx, camera, layer = 'foreground') {
     ctx.save();
-    for (const p of this.pool.activeList) {
+    const list = this.pool.activeList;
+    let lastColor = null;
+    const cw = camera.width, ch = camera.height;
+    const cx = camera.x, cy = camera.y;
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
       if (p.layer !== layer) continue;
-      const sx = p.x - camera.x;
-      const sy = p.y - camera.y;
-      if (sx < -20 || sx > camera.width + 20 || sy < -20 || sy > camera.height + 20) continue;
+      const sx = p.x - cx;
+      const sy = p.y - cy;
+      if (sx < -20 || sx > cw + 20 || sy < -20 || sy > ch + 20) continue;
 
       const alpha = p.fade ? Math.min(1, p.life / p.maxLife) : 1;
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = p.color;
+      // 同色連続時は fillStyle 書き換えを省略（set コストが地味に大きい）
+      if (p.color !== lastColor) {
+        ctx.fillStyle = p.color;
+        lastColor = p.color;
+      }
 
       switch (p.shape) {
         case 'square':
@@ -193,7 +202,8 @@ export class ParticleSystem {
             ctx.fillRect(sx - p.size, sy - p.size, p.size * 2, p.size * 2);
           }
           break;
-        case 'spark':
+        case 'spark': {
+          // shadowBlur はモバイル GPU で特に重い — save/restore でコストを閉じ込める
           ctx.save();
           ctx.shadowColor = p.color;
           ctx.shadowBlur = 6;
@@ -201,7 +211,9 @@ export class ParticleSystem {
           ctx.arc(sx, sy, p.size, 0, Math.PI * 2);
           ctx.fill();
           ctx.restore();
+          lastColor = null; // restore で fillStyle も戻るので再set必要
           break;
+        }
         case 'triangle':
           ctx.save();
           ctx.translate(sx, sy);

@@ -12,23 +12,26 @@ export class BowStrategy extends WeaponStrategy {
     this.maxProjectiles = 50;
   }
 
-  update(dt, enemies) {
-    // Update existing projectiles
+  update(dt, enemies, collisionSystem) {
+    // Update existing projectiles (swap-pop で splice 回避)
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       const p = this.projectiles[i];
       p.x += Math.cos(p.angle) * this.projectileSpeed * dt;
       p.y += Math.sin(p.angle) * this.projectileSpeed * dt;
       p.life -= dt;
 
-      // Check collision with enemies
+      // Check collision with enemies — 空間ハッシュがあれば近傍だけに限定
       if (!p.hit) {
-        for (const enemy of enemies) {
+        const candidates = collisionSystem
+          ? collisionSystem.query(p.x, p.y, 24)
+          : enemies;
+        for (const enemy of candidates) {
           if (!enemy.active) continue;
           const dx = p.x - enemy.x;
           const dy = p.y - enemy.y;
-          if (dx * dx + dy * dy < (4 + enemy.radius) * (4 + enemy.radius)) {
-            const dmg = this.damage;
-            if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
+          const hitR = 4 + enemy.radius;
+          if (dx * dx + dy * dy < hitR * hitR) {
+            if (enemy.takeDamage(this.damage, this._lastCrit)) this._emitKill(enemy);
             p.hit = true;
             break;
           }
@@ -36,12 +39,13 @@ export class BowStrategy extends WeaponStrategy {
       }
 
       if (p.life <= 0 || p.hit) {
-        this.projectiles.splice(i, 1);
+        const last = this.projectiles.length - 1;
+        if (i !== last) this.projectiles[i] = this.projectiles[last];
+        this.projectiles.pop();
       }
     }
 
-    // Cooldown & fire
-    // Use parent's effect timer for visual, but manage projectiles separately
+    // Cooldown & fire — visual effect は親クラスに委譲
     super.update(dt, enemies);
   }
 

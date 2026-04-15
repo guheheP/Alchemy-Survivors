@@ -118,6 +118,8 @@ export class BossEntity extends Enemy {
   }
 
   _checkPhaseTransition() {
+    // HP 0 以下で死亡確定のフレームに相変化を起こさない（死亡直前の不要なバフ適用を防ぐ）
+    if (this.hp <= 0) return;
     const hpRatio = this.hp / this.maxHp;
     for (let i = this.phases.length - 1; i >= 0; i--) {
       if (i <= this.currentPhaseIndex) continue;
@@ -242,15 +244,18 @@ export class BossEntity extends Enemy {
 
   /** スキルのダメージ範囲（RunManagerでの衝突判定用） */
   getSkillHitArea() {
-    if (!this.activeSkill || this.skillTimer > 0.3) return null;
-
+    if (!this.activeSkill) return null;
+    // attack(突進)は実行中ずっと当たり判定を有効にする（前は skillTimer>0.3 で切れて後半0.3秒が無効だった）
+    // aoe / heavy はテレグラフ位置で着弾する攻撃なので短い着弾ウィンドウを維持（~0.3秒）
     const skill = this.activeSkill;
     switch (skill.type) {
       case 'attack':
         return { type: 'circle', x: this.x, y: this.y, radius: 30 };
       case 'aoe':
+        if (this.skillTimer > 0.3) return null;
         return { type: 'circle', x: this.telegraphPos?.x || this.x, y: this.telegraphPos?.y || this.y, radius: 80 * (skill.damageMult || 1) };
       case 'heavy':
+        if (this.skillTimer > 0.3) return null;
         return { type: 'circle', x: this.telegraphPos?.x || this.x, y: this.telegraphPos?.y || this.y, radius: 50 };
       default:
         return null;

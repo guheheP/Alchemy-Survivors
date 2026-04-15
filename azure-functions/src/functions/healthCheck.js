@@ -9,13 +9,12 @@ app.http('healthCheck', {
   authLevel: 'anonymous',
   handler: async (request, context) => {
     context.log('healthCheck invoked');
+    // 外部公開エンドポイントなので、設定存在の有無など偵察材料になる情報は返さない
     return {
       status: 200,
       jsonBody: {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        titleId: process.env.PLAYFAB_TITLE_ID || null,
-        hasSecret: !!process.env.PLAYFAB_SECRET_KEY,
       },
     };
   },

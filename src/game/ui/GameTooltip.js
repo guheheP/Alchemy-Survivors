@@ -39,13 +39,19 @@ export class GameTooltip {
     const title = target.dataset.tooltipTitle || '';
     const rarity = target.dataset.tooltipRarity || '';
 
-    let html = '';
+    // XSS対策: title / text / rarity は data-* 属性経由で任意の文字列になる可能性があるため、
+    // innerHTML 文字列連結ではなく textContent + class 操作で構築する
+    this.el.innerHTML = '';
     if (title) {
-      html += `<div class="game-tooltip-title ${rarity ? `tooltip-${rarity}` : ''}">${title}</div>`;
+      const titleEl = document.createElement('div');
+      titleEl.className = 'game-tooltip-title' + (rarity ? ` tooltip-${rarity.replace(/[^a-z0-9_-]/gi, '')}` : '');
+      titleEl.textContent = title;
+      this.el.appendChild(titleEl);
     }
-    html += `<div class="game-tooltip-body">${text}</div>`;
-
-    this.el.innerHTML = html;
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'game-tooltip-body';
+    bodyEl.textContent = text;
+    this.el.appendChild(bodyEl);
     this.el.classList.add('game-tooltip-visible');
     this._visible = true;
     this._currentTarget = target;

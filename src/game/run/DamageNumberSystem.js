@@ -31,9 +31,10 @@ export class DamageNumberSystem {
   }
 
   _spawn(x, y, text, color, isCrit) {
+    // 満杯時は末尾と最古(index 0)を入れ替えて末尾を切り捨て(swap-pop) — shift()のO(n)回避
     if (this.numbers.length >= MAX_NUMBERS) {
-      // Remove oldest
-      this.numbers.shift();
+      this.numbers[0] = this.numbers[this.numbers.length - 1];
+      this.numbers.pop();
     }
     this.numbers.push({
       x,
@@ -46,12 +47,15 @@ export class DamageNumberSystem {
   }
 
   update(dt) {
+    // 期限切れは swap-pop で削除（splice のO(n)シフトを避ける）
     for (let i = this.numbers.length - 1; i >= 0; i--) {
       const n = this.numbers[i];
       n.timer -= dt;
       n.y -= FLOAT_SPEED * dt;
       if (n.timer <= 0) {
-        this.numbers.splice(i, 1);
+        const last = this.numbers.length - 1;
+        if (i !== last) this.numbers[i] = this.numbers[last];
+        this.numbers.pop();
       }
     }
   }

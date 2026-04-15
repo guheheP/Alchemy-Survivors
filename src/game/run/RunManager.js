@@ -104,14 +104,17 @@ export class RunManager {
       eventBus.on('player:died', () => this._onPlayerDied()),
       eventBus.on('boss:defeated', () => this._onBossDefeated()),
       eventBus.on('consumable:aoe', ({ x, y, radius, damage }) => {
-        for (const enemy of this.spawner.enemies) {
-          if (!enemy.active) continue;
+        const r2 = radius * radius;
+        const hit = (enemy) => {
+          if (!enemy.active) return;
           const dx = enemy.x - x;
           const dy = enemy.y - y;
-          if (dx * dx + dy * dy < radius * radius) {
+          if (dx * dx + dy * dy < r2) {
             if (enemy.takeDamage(damage)) eventBus.emit('enemy:killed', { enemy, x: enemy.x, y: enemy.y, isBoss: enemy.isBoss, color: enemy.color });
           }
-        }
+        };
+        for (const enemy of this.spawner.enemies) hit(enemy);
+        for (const boss of this.bossSystem.getActiveBosses()) hit(boss);
       }),
       eventBus.on('player:damaged', ({ damage }) => {
         eventBus.emit('damageNumber:playerHit', { x: this.player.x, y: this.player.y, damage });
@@ -176,14 +179,15 @@ export class RunManager {
         }
       }),
       eventBus.on('consumable:debuff', ({ x, y, radius, stat, amount, duration }) => {
-        for (const enemy of this.spawner.enemies) {
-          if (!enemy.active) continue;
+        const r2 = radius * radius;
+        const apply = (enemy) => {
+          if (!enemy.active) return;
           const dx = enemy.x - x;
           const dy = enemy.y - y;
-          if (dx * dx + dy * dy < radius * radius) {
-            enemy.applyDebuff(amount || 0, duration || 5);
-          }
-        }
+          if (dx * dx + dy * dy < r2) enemy.applyDebuff(amount || 0, duration || 5);
+        };
+        for (const enemy of this.spawner.enemies) apply(enemy);
+        for (const boss of this.bossSystem.getActiveBosses()) apply(boss);
       }),
       eventBus.on('shield:retaliate', ({ x, y, range, knockback, damage }) => {
         const allEnemies = [...this.spawner.enemies, ...this.bossSystem.getActiveBosses()];
@@ -418,8 +422,8 @@ export class RunManager {
     if (enemy.isBoss) {
       this.goldEarned += Math.floor(GameConfig.gold.bossBonus * goldMult);
     }
-    // ボス撃破チェック
-    if (enemy.isBoss && this.bossSystem) {
+    // ボス撃破チェック — 死神(reaperEntity)は不正クリア扱いにしないため除外
+    if (enemy.isBoss && this.bossSystem && enemy === this.bossSystem.bossEntity) {
       this.bossSystem.onBossKilled();
     }
     this.drops.spawnDrops(
@@ -490,6 +494,7 @@ export class RunManager {
     this.drops.destroy();
     this.levelUp.destroy();
     this.bossSystem.destroy();
+    if (this.weapon && typeof this.weapon.destroy === 'function') this.weapon.destroy();
     if (this.consumables) this.consumables.destroy();
     this.damageNumbers.destroy();
     this.particles.clear();

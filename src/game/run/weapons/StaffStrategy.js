@@ -12,7 +12,7 @@ export class StaffStrategy extends WeaponStrategy {
     this.orbDamageInterval = 0.5; // damage tick interval per orb
   }
 
-  update(dt, enemies) {
+  update(dt, enemies, collisionSystem) {
     // Update orbs
     for (let i = this.orbs.length - 1; i >= 0; i--) {
       const orb = this.orbs[i];
@@ -24,22 +24,27 @@ export class StaffStrategy extends WeaponStrategy {
       orb.x = this.player.x + Math.cos(orb.angle) * orb.radius;
       orb.y = this.player.y + Math.sin(orb.angle) * orb.radius;
 
-      // Damage enemies on tick
+      // Damage enemies on tick — 空間ハッシュで近傍のみ走査
       if (orb.damageTick <= 0) {
         orb.damageTick = this.orbDamageInterval;
-        for (const enemy of enemies) {
+        const candidates = collisionSystem
+          ? collisionSystem.query(orb.x, orb.y, 32)
+          : enemies;
+        for (const enemy of candidates) {
           if (!enemy.active) continue;
           const dx = orb.x - enemy.x;
           const dy = orb.y - enemy.y;
-          if (dx * dx + dy * dy < (8 + enemy.radius) * (8 + enemy.radius)) {
-            const dmg = this.damage * 0.4;
-            if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
+          const hitR = 8 + enemy.radius;
+          if (dx * dx + dy * dy < hitR * hitR) {
+            if (enemy.takeDamage(this.damage * 0.4, this._lastCrit)) this._emitKill(enemy);
           }
         }
       }
 
       if (orb.life <= 0) {
-        this.orbs.splice(i, 1);
+        const last = this.orbs.length - 1;
+        if (i !== last) this.orbs[i] = this.orbs[last];
+        this.orbs.pop();
       }
     }
 

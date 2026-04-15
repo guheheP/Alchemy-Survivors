@@ -263,31 +263,43 @@ export class RunHUD {
     this._hpFill.style.width = hpPct + '%';
     this._hpFill.style.backgroundColor = hpPct > 50 ? '#4c4' : hpPct > 25 ? '#cc4' : '#c44';
     this._hpText.textContent = `${Math.ceil(hp)} / ${Math.ceil(maxHp)}`;
-    // HP遅延バー: 減少時は lag が遅れて追従（赤い差分が一瞬見える）、回復時は即追従
+    // HP遅延バー: 減少時は lag が遅れて追従（赤い差分）、回復/横ばい時は即追従
+    // 横ばい時に rAF を積み続けるとコールバックが蓄積するため、
+    // 実際に変化があった時だけ処理する
     if (this._hpLag) {
       const prev = this._lastHpPct == null ? hpPct : this._lastHpPct;
-      if (hpPct >= prev) {
-        // 回復または横ばい: 遅延なしで即追従（赤い残像を残さない）
-        this._hpLag.classList.add('no-delay');
-        this._hpLag.style.width = hpPct + '%';
-        // 次フレームで遅延クラスを戻す
-        requestAnimationFrame(() => this._hpLag && this._hpLag.classList.remove('no-delay'));
-      } else {
-        // 被ダメージ: lag は遅れて追従（CSS transition-delay）
-        this._hpLag.style.width = hpPct + '%';
+      if (hpPct !== prev) {
+        if (hpPct >= prev) {
+          this._hpLag.classList.add('no-delay');
+          this._hpLag.style.width = hpPct + '%';
+          requestAnimationFrame(() => this._hpLag && this._hpLag.classList.remove('no-delay'));
+        } else {
+          this._hpLag.style.width = hpPct + '%';
+        }
+        this._lastHpPct = hpPct;
       }
-      this._lastHpPct = hpPct;
     }
 
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
     this._timer.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
 
-    this._kills.textContent = `${killCount} kills`;
+    // kills は頻繁に変化するが同値も多い。前回値と比較して差分更新。
+    if (killCount !== this._lastKillCount) {
+      this._kills.textContent = `${killCount} kills`;
+      this._lastKillCount = killCount;
+    }
 
-    this._resourcesEl.innerHTML =
-      `<span class="hud-gold">\uD83D\uDCB0 ${goldEarned || 0}</span>` +
-      `<span class="hud-mats">\uD83D\uDCE6 ${materialCount || 0}</span>`;
+    // resources は goldEarned / materialCount が変化した時だけDOM更新
+    const g = goldEarned || 0;
+    const m = materialCount || 0;
+    if (g !== this._lastGold || m !== this._lastMaterialCount) {
+      this._resourcesEl.innerHTML =
+        `<span class="hud-gold">\uD83D\uDCB0 ${g}</span>` +
+        `<span class="hud-mats">\uD83D\uDCE6 ${m}</span>`;
+      this._lastGold = g;
+      this._lastMaterialCount = m;
+    }
 
     if (weaponSlots) this._updateWeapons(weaponSlots);
     if (elapsed !== undefined && bossSpawnTimes) this._updateWave(elapsed, bossSpawnTimes);
@@ -315,35 +327,63 @@ export class RunHUD {
 
   _onExpChanged({ exp, expToNext, level }) {
     this._level.textContent = `Lv.${level}`;
-    this._expFill.style.width = (exp / expToNext * 100) + '%';
+    // expToNext が 0（最大レベル到達等）の場合 Infinity% になるのを防ぐ
+    const pct = expToNext > 0 ? Math.min(100, (exp / expToNext) * 100) : 100;
+    this._expFill.style.width = pct + '%';
   }
 
   // --- Weapon Slots (with images) ---
+  // 毎フレーム innerHTML 書き換えは重い(DOM churn + GC)ので、構造変化がない限り
+  // 既存DOM要素のCDバー width/class のみ更新する差分方式。
   _updateWeapons(slots) {
-    this._weaponsEl.innerHTML = slots.map((s, i) => {
-      if (!s.unlocked) {
-        return `<div class="hud-weapon-slot locked">
-          <div class="hud-wpn-img-wrap"><span class="hud-wpn-lock">\uD83D\uDD12</span></div>
+    // 構造変化(unlocked状態または個数の変化)を検出
+    const structureKey = slots.map(s => s.unlocked ? `${s.name}|${s.equipType}` : 'L').join('/');
+    if (structureKey !== this._lastWeaponStructKey) {
+      this._lastWeaponStructKey = structureKey;
+      this._weaponsEl.innerHTML = slots.map((s) => {
+        if (!s.unlocked) {
+          return `<div class="hud-weapon-slot locked">
+            <div class="hud-wpn-img-wrap"><span class="hud-wpn-lock">\uD83D\uDD12</span></div>
+          </div>`;
+        }
+        const imgUrl = getItemImage(s.blueprintId);
+        const imgHtml = imgUrl
+          ? `<img class="hud-wpn-img" src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : '';
+        const fallbackIcon = WEAPON_ICONS[s.equipType] || '\u2694\uFE0F';
+        return `<div class="hud-weapon-slot">
+          <div class="hud-wpn-img-wrap">
+            ${imgHtml}
+            <span class="hud-wpn-fallback" ${imgUrl ? 'style="display:none"' : ''}>${fallbackIcon}</span>
+          </div>
+          <div class="hud-wpn-skill-bar">
+            <div class="hud-wpn-skill-fill"></div>
+          </div>
+          <span class="hud-wpn-name">${s.name}</span>
         </div>`;
+      }).join('');
+      // 描画した要素を参照キャッシュ
+      this._weaponSlotEls = Array.from(this._weaponsEl.querySelectorAll('.hud-weapon-slot'));
+      this._weaponSkillFills = this._weaponSlotEls.map(el => el.querySelector('.hud-wpn-skill-fill'));
+    }
+
+    // スキルCDとready状態のみ毎フレーム更新（軽量）
+    if (!this._weaponSlotEls) return;
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      const el = this._weaponSlotEls[i];
+      const fill = this._weaponSkillFills[i];
+      if (!el || !fill) continue;
+      if (!s.unlocked) continue;
+      const pct = Math.max(0, (1 - (s.skillCooldownPct || 0)) * 100);
+      fill.style.width = pct + '%';
+      const ready = !!s.skillReady;
+      if (ready !== el._ready) {
+        el.classList.toggle('skill-ready', ready);
+        fill.classList.toggle('ready', ready);
+        el._ready = ready;
       }
-      const imgUrl = getItemImage(s.blueprintId);
-      const skillPct = Math.max(0, (1 - (s.skillCooldownPct || 0)) * 100);
-      const skillReady = s.skillReady;
-      const imgHtml = imgUrl
-        ? `<img class="hud-wpn-img" src="${imgUrl}" alt="${s.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-        : '';
-      const fallbackIcon = WEAPON_ICONS[s.equipType] || '\u2694\uFE0F';
-      return `<div class="hud-weapon-slot ${skillReady ? 'skill-ready' : ''}">
-        <div class="hud-wpn-img-wrap">
-          ${imgHtml}
-          <span class="hud-wpn-fallback" ${imgUrl ? 'style="display:none"' : ''}>${fallbackIcon}</span>
-        </div>
-        <div class="hud-wpn-skill-bar">
-          <div class="hud-wpn-skill-fill ${skillReady ? 'ready' : ''}" style="width:${skillPct}%"></div>
-        </div>
-        <span class="hud-wpn-name">${s.name}</span>
-      </div>`;
-    }).join('');
+    }
   }
 
   // --- Passive Badges ---
@@ -429,26 +469,42 @@ export class RunHUD {
   }
 
   // --- Stats ---
+  // 毎フレーム呼ばれるが値はレベルアップ/バフ時にしか変わらない。
+  // ダイジェスト文字列で前回値と比較し、変化があるときだけDOM更新。
   _updateStats(player) {
     const p = player.passives;
     const atk = Math.floor((1 + p.damageMultiplier) * 100);
     const def = p.damageReduction.toFixed(1);
     const spd = Math.floor((1 + p.moveSpeedMultiplier) * 100);
-
-    this._statsMini.innerHTML =
-      `<span class="stat-atk">\u2694 ATK ${atk}%</span>` +
-      `<span class="stat-def">\uD83D\uDEE1 DEF ${def}</span>` +
-      `<span class="stat-spd">\u26A1 SPD ${spd}%</span>`;
+    const miniKey = `${atk}|${def}|${spd}`;
+    if (miniKey !== this._lastStatsMiniKey) {
+      this._statsMini.innerHTML =
+        `<span class="stat-atk">\u2694 ATK ${atk}%</span>` +
+        `<span class="stat-def">\uD83D\uDEE1 DEF ${def}</span>` +
+        `<span class="stat-spd">\u26A1 SPD ${spd}%</span>`;
+      this._lastStatsMiniKey = miniKey;
+    }
 
     if (this._statsExpanded) {
-      this._statsDetail.innerHTML =
-        `<div>CRIT: ${(p.critChance * 100).toFixed(0)}%</div>` +
-        `<div>DODGE: ${(p.dodge * 100).toFixed(0)}%</div>` +
-        `<div>REGEN: ${p.regenPerSec.toFixed(1)}/s</div>` +
-        `<div>RANGE: +${(p.rangeMultiplier * 100).toFixed(0)}%</div>` +
-        `<div>CD: -${(p.cooldownReduction * 100).toFixed(0)}%</div>` +
-        `<div>DROP: +${(p.dropRateBonus * 100).toFixed(0)}%</div>` +
-        `<div>MAGNET: +${(p.magnetMultiplier * 100).toFixed(0)}%</div>`;
+      const crit = (p.critChance * 100).toFixed(0);
+      const dodge = (p.dodge * 100).toFixed(0);
+      const regen = p.regenPerSec.toFixed(1);
+      const range = (p.rangeMultiplier * 100).toFixed(0);
+      const cd = (p.cooldownReduction * 100).toFixed(0);
+      const drop = (p.dropRateBonus * 100).toFixed(0);
+      const magnet = (p.magnetMultiplier * 100).toFixed(0);
+      const detailKey = `${crit}|${dodge}|${regen}|${range}|${cd}|${drop}|${magnet}`;
+      if (detailKey !== this._lastStatsDetailKey) {
+        this._statsDetail.innerHTML =
+          `<div>CRIT: ${crit}%</div>` +
+          `<div>DODGE: ${dodge}%</div>` +
+          `<div>REGEN: ${regen}/s</div>` +
+          `<div>RANGE: +${range}%</div>` +
+          `<div>CD: -${cd}%</div>` +
+          `<div>DROP: +${drop}%</div>` +
+          `<div>MAGNET: +${magnet}%</div>`;
+        this._lastStatsDetailKey = detailKey;
+      }
     }
   }
 

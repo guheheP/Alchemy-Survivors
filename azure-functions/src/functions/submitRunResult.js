@@ -65,10 +65,11 @@ app.http('submitRunResult', {
       await updatePlayerStatistics(playFabId, statistics);
       context.log(`Statistics updated for ${playFabId}: ${JSON.stringify(sanitized)}`);
     } catch (e) {
+      // 実装詳細（PlayFab 内部エラー・環境変数名など）はクライアントに返さずログのみに残す
       context.error(`PlayFab update failed: ${e.message}`);
       return {
         status: 200,
-        jsonBody: { accepted: false, reason: 'server_error', detail: e.message },
+        jsonBody: { accepted: false, reason: 'server_error' },
       };
     }
 

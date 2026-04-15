@@ -59,6 +59,9 @@ function validateRunResult(result) {
     return { ok: false, reason: `unknown reason: ${reason}` };
   }
 
+  // hardMode / bossDefeated はクライアント申告値なのでサーバが信頼できるセッション記録と
+  // 突き合わせるまで sanitized に含めない（将来ハードモードクリアボーナスなどを実装する際は
+  // ここではなく、サーバが保持するランセッションと照合してから有効化すること）
   return {
     ok: true,
     sanitized: {
@@ -66,8 +69,6 @@ function validateRunResult(result) {
       killCount: clampInt(killCount, 0, LIMITS.maxKillsAbsolute),
       highestDamage: clampInt(highestDamage, 0, LIMITS.maxDamagePerHit),
       level: clampInt(level, 0, LIMITS.maxLevel),
-      hardMode,
-      bossDefeated,
       reason,
     },
   };

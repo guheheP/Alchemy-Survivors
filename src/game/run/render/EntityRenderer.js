@@ -7,6 +7,41 @@
  * - フォールバック幾何描画（目付き円）
  */
 
+// グロー画像キャッシュ — 敵ごとに createRadialGradient を呼ぶとGCが激しくなるので、
+// (radius, color) をキーにオフスクリーンcanvasへ焼き込み、drawImage で描画する。
+const _glowCache = new Map();
+const _GLOW_MAX_ENTRIES = 64;
+
+function _getGlowSprite(radius, color) {
+  // radius は 2px 単位でキャッシュ（外れ値を減らす）
+  const rKey = Math.max(2, Math.round(radius / 2) * 2);
+  const key = `${rKey}|${color}`;
+  let sprite = _glowCache.get(key);
+  if (sprite) return sprite;
+
+  // キャッシュ上限：超えたら最古を退去（簡易 LRU: Map 挿入順に依存）
+  if (_glowCache.size >= _GLOW_MAX_ENTRIES) {
+    const firstKey = _glowCache.keys().next().value;
+    _glowCache.delete(firstKey);
+  }
+
+  const size = rKey * 2;
+  const cv = document.createElement('canvas');
+  cv.width = size;
+  cv.height = size;
+  const gctx = cv.getContext('2d');
+  const g = gctx.createRadialGradient(rKey, rKey, 0, rKey, rKey, rKey);
+  g.addColorStop(0, color);
+  g.addColorStop(0.4, color);
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  gctx.fillStyle = g;
+  gctx.beginPath();
+  gctx.arc(rKey, rKey, rKey, 0, Math.PI * 2);
+  gctx.fill();
+  _glowCache.set(key, cv);
+  return cv;
+}
+
 export const EntityRenderer = {
   /** エンティティ足元に落ちる楕円影 */
   drawShadow(ctx, x, y, radius, alpha = 0.35) {
@@ -19,18 +54,13 @@ export const EntityRenderer = {
     ctx.restore();
   },
 
-  /** radialGradient による柔らかい発光 */
+  /** グロー描画 — キャッシュ済みスプライトを drawImage（毎フレーム gradient 生成しない） */
   drawGlow(ctx, x, y, radius, color = '#4af', alpha = 0.6) {
+    const sprite = _getGlowSprite(radius, color);
+    const half = sprite.width / 2;
     ctx.save();
     ctx.globalAlpha = alpha;
-    const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-    gradient.addColorStop(0, color);
-    gradient.addColorStop(0.4, color);
-    gradient.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.drawImage(sprite, x - half, y - half);
     ctx.restore();
   },
 

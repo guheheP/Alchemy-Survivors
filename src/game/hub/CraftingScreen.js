@@ -322,6 +322,9 @@ export class CraftingScreen {
     // 簡易ピッカーモーダル
     const picker = document.createElement('div');
     picker.className = 'material-picker-overlay';
+    picker.setAttribute('role', 'dialog');
+    picker.setAttribute('aria-modal', 'true');
+    picker.setAttribute('aria-label', '素材を選択');
     picker.innerHTML = `
       <div class="material-picker">
         <h4>素材を選択（品質順）</h4>
@@ -346,14 +349,26 @@ export class CraftingScreen {
     `;
     this.el.appendChild(picker);
 
-    picker.querySelector('.picker-cancel').addEventListener('click', () => picker.remove());
+    const closePicker = () => {
+      if (onKeyDown) window.removeEventListener('keydown', onKeyDown);
+      picker.remove();
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); closePicker(); }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    // バックドロップクリックで閉じる
+    picker.addEventListener('click', (e) => {
+      if (e.target === picker) closePicker();
+    });
+    picker.querySelector('.picker-cancel').addEventListener('click', closePicker);
     picker.querySelectorAll('.picker-item').forEach(el => {
       el.addEventListener('click', () => {
         const uid = el.dataset.uid;
         const item = this.inventory.getItemByUid(uid);
         if (item) {
           this.assignedMaterials[slotIndex] = item;
-          picker.remove();
+          closePicker();
           this._renderWorkspace();
           // 全スロットが埋まったらモバイルで末尾(調合ボタン)までスクロール
           const allFilled = this.assignedMaterials.length > 0
@@ -635,7 +650,7 @@ export class CraftingScreen {
       this.assignedMaterials = [];
       this.selectedTraits = [];
       this._renderWorkspace();
-      this._renderRecipeList(this.el.querySelector('.filter-btn.active')?.dataset.filter || 'all');
+      this._renderRecipeList();
     } catch (err) {
       eventBus.emit('toast', { message: `調合失敗: ${err.message}`, type: 'error' });
     }

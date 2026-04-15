@@ -5,6 +5,8 @@
 export class CollisionSystem {
   constructor(cellSize = 64) {
     this.cellSize = cellSize;
+    // キーは (cx + OFFSET) * STRIDE + (cy + OFFSET) の整数
+    // 200敵×4セル/frameで48k文字列生成 → GC 負荷を排除
     this._grid = new Map();
   }
 
@@ -12,8 +14,10 @@ export class CollisionSystem {
     this._grid.clear();
   }
 
+  /** cx, cy は Int32 相当を想定（±32767 範囲で衝突しない整数キー化） */
   _key(cx, cy) {
-    return `${cx},${cy}`;
+    // 32bit 範囲に収めるため 16bit ずつ詰める（±32768 セル = ±2M px で cellSize=64 なら十分）
+    return ((cx + 32768) << 16) | ((cy + 32768) & 0xffff);
   }
 
   /** エンティティをグリッドに挿入 */

@@ -10,6 +10,9 @@ export class AccountLinkModal {
     this.onDone = onDone || (() => {});
     this.el = document.createElement('div');
     this.el.className = 'modal-overlay account-link-modal';
+    this.el.setAttribute('role', 'dialog');
+    this.el.setAttribute('aria-modal', 'true');
+    this.el.setAttribute('aria-label', 'アカウント連携');
     this.el.innerHTML = `
       <div class="modal-card anim-fade-in">
         <h3>🔗 アカウント連携</h3>
@@ -75,13 +78,32 @@ export class AccountLinkModal {
         if (e.key === 'Enter') { e.preventDefault(); submit(); }
       });
     });
-    cancelBtn.addEventListener('click', () => {
+    const cancel = () => {
       this._close();
       this.onDone(null);
+    };
+    cancelBtn.addEventListener('click', cancel);
+
+    // バックドロップクリックで閉じる
+    this.el.addEventListener('click', (e) => {
+      if (e.target === this.el) cancel();
     });
+
+    // Esc で閉じる
+    this._onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancel();
+      }
+    };
+    window.addEventListener('keydown', this._onKeyDown);
   }
 
   _close() {
+    if (this._onKeyDown) {
+      window.removeEventListener('keydown', this._onKeyDown);
+      this._onKeyDown = null;
+    }
     if (this.el && this.el.parentNode) this.el.remove();
   }
 }

@@ -11,13 +11,17 @@ export class ShieldStrategy extends WeaponStrategy {
   constructor(player, weaponItem) {
     super(player, weaponItem);
     this._retaliateReady = true;
+    this._retaliateTimer = null;
 
     // 被ダメ時に自動反撃波（小規模）
     this._unsubDamaged = eventBus.on('player:damaged', () => {
       if (this._retaliateReady) {
         this._retaliateReady = false;
         this._retaliateWave();
-        setTimeout(() => { this._retaliateReady = true; }, 2000);
+        this._retaliateTimer = setTimeout(() => {
+          this._retaliateReady = true;
+          this._retaliateTimer = null;
+        }, 2000);
       }
     });
   }
@@ -73,5 +77,10 @@ export class ShieldStrategy extends WeaponStrategy {
 
   destroy() {
     if (this._unsubDamaged) this._unsubDamaged();
+    if (this._retaliateTimer) {
+      clearTimeout(this._retaliateTimer);
+      this._retaliateTimer = null;
+    }
+    if (typeof super.destroy === 'function') super.destroy();
   }
 }

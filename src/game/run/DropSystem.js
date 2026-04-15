@@ -116,23 +116,26 @@ export class DropSystem {
    */
   update(dt, playerX, playerY, magnetRange) {
     const list = this.pool.activeList;
+    const magnetRangeSq = magnetRange * magnetRange;
+    const COLLECT_DIST_SQ = 400; // 20*20
     for (let i = list.length - 1; i >= 0; i--) {
       const drop = list[i];
       drop.savePrev();
 
       const dx = playerX - drop.x;
       const dy = playerY - drop.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      const distSq = dx * dx + dy * dy;
 
-      // マグネット吸引
-      if (dist < magnetRange && dist > 1) {
+      // マグネット吸引 — 範囲外は sqrt を省略
+      if (distSq < magnetRangeSq && distSq > 1) {
+        const dist = Math.sqrt(distSq);
         const pullSpeed = 300;
         drop.x += (dx / dist) * pullSpeed * dt;
         drop.y += (dy / dist) * pullSpeed * dt;
       }
 
       // 収集判定
-      if (dist < 20) {
+      if (distSq < COLLECT_DIST_SQ) {
         if (drop.dropType === 'exp') {
           eventBus.emit('exp:collected', { value: drop.value, x: drop.x, y: drop.y });
         } else if (drop.dropType === 'material') {
