@@ -2736,10 +2736,11 @@ a:focus-visible,
    モバイル専用タッチボタン (ポーズ / 詳細トグル)
    デスクトップでは非表示、タッチ端末のみ表示
    =============================================================== */
-.hud-pause-btn,
-.hud-detail-btn {
+.hud-pause-btn {
   display: none;
   position: absolute;
+  top: calc(8px + var(--safe-top));
+  left: calc(8px + var(--safe-left));
   width: 44px; height: 44px;
   align-items: center; justify-content: center;
   background: rgba(18, 14, 28, 0.78);
@@ -2749,14 +2750,15 @@ a:focus-visible,
   line-height: 1;
   cursor: pointer;
   pointer-events: auto;
+  /* タッチ操作時のブラウザ既定動作を抑止 (長押し選択など) */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   z-index: 12;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  -webkit-tap-highlight-color: transparent;
   user-select: none;
   padding: 0;
 }
-.hud-pause-btn:active,
-.hud-detail-btn:active {
+.hud-pause-btn:active {
   background: rgba(240, 192, 96, 0.35);
   transform: scale(0.96);
 }
@@ -2765,24 +2767,15 @@ a:focus-visible,
   height: 22px;
   display: block;
   fill: currentColor;
+  /* SVG内側を透過させて click ターゲットを button に固定 */
   pointer-events: none;
-}
-.hud-pause-btn {
-  top: calc(8px + var(--safe-top));
-  left: calc(8px + var(--safe-left));
-}
-.hud-detail-btn {
-  /* ポーズボタンの右横に配置（右下はダッシュボタン用に確保） */
-  top: calc(8px + var(--safe-top));
-  left: calc(60px + var(--safe-left));
 }
 
 /* タッチ端末のみ表示 */
 @media (hover: none) and (pointer: coarse) {
-  .hud-pause-btn,
-  .hud-detail-btn { display: flex; }
+  .hud-pause-btn { display: flex; }
 
-  /* モバイル: 左上のポーズ/詳細ボタンと被らないようパッシブフロートを下げる */
+  /* モバイル: 左上のポーズボタンと被らないようパッシブフロートを下げる */
   .hud-passives-float {
     top: calc(60px + var(--safe-top));
   }
@@ -2952,6 +2945,17 @@ a:focus-visible,
   .prep-consumable-slots { flex-wrap: wrap; }
   .prep-cons-slot { flex: 1 1 calc(50% - 0.4rem); min-height: 52px; }
   .prep-start-btn { padding: 0.9rem; font-size: 1.1rem; }
+
+  /* モバイル: ステージ情報 (難易度/ドロップ品質/ボス) は省略して画面を節約。
+     ハードモード切替は残す */
+  .prep-stage-info > h4,
+  .prep-stage-info > .prep-row { display: none; }
+  .prep-stage-info {
+    padding: 0;
+    background: transparent;
+    margin-top: 0.6rem;
+  }
+  .prep-stage-info:empty { display: none; }
 
   /* --- Warehouse: 操作バーの折返し / 選択バーの縦積み --- */
   .warehouse-controls {

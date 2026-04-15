@@ -112,6 +112,21 @@ export class CraftingScreen {
     if (cards[idx]) cards[idx].classList.add('selected');
 
     this._renderWorkspace();
+
+    // モバイル: レシピリストの下に workspace が現れるので末尾まで自動スクロール
+    if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+      requestAnimationFrame(() => {
+        const workspace = this.el.querySelector('.craft-workspace');
+        if (workspace && typeof workspace.scrollIntoView === 'function') {
+          workspace.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+        // フォールバック: 内側スクロールコンテナ (.hub-content) を末尾へ
+        const hubContent = document.querySelector('.hub-content');
+        if (hubContent) {
+          hubContent.scrollTo({ top: hubContent.scrollHeight, behavior: 'smooth' });
+        }
+      });
+    }
   }
 
   _renderWorkspace() {
