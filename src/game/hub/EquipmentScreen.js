@@ -2,8 +2,7 @@
  * EquipmentScreen — 装備変更UI（4武器 + 防具 + アクセサリ）
  */
 
-import { ItemBlueprints, TraitDefs } from '../data/items.js';
-import { getEquipSlot } from '../data/items.js';
+import { ItemBlueprints, TraitDefs, getEquipSlot } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
 import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { eventBus } from '../core/EventBus.js';
@@ -70,15 +69,9 @@ export class EquipmentScreen {
     const allEquipment = this.inventory.getItemsByType('equipment');
     const allAccessories = this.inventory.getItemsByType('accessory');
 
-    const weapons = allEquipment.filter(item => {
-      const bp = ItemBlueprints[item.blueprintId];
-      return bp && bp.equipType;
-    });
+    const weapons = allEquipment.filter(item => getEquipSlot(item) === 'weapon');
 
-    const armors = allEquipment.filter(item => {
-      const bp = ItemBlueprints[item.blueprintId];
-      return bp && (bp.equipType === 'armor' || bp.equipType === 'robe' || bp.equipType === 'shield');
-    });
+    const armors = allEquipment.filter(item => getEquipSlot(item) === 'armor');
 
     const equippedUids = new Set([
       ...this.weaponSlots.filter(w => w).map(w => w.uid),
@@ -286,13 +279,17 @@ export class EquipmentScreen {
         const item = this.inventory.getItemByUid(uid);
         if (!item) return;
 
-        if (this._currentFilter === 'weapon') {
+        // アイテムの実際の装備スロットを検証し、フィルタタブと不一致なら装備不可
+        const slot = getEquipSlot(item);
+        if (slot !== this._currentFilter) return;
+
+        if (slot === 'weapon') {
           const emptyIdx = this.weaponSlots.indexOf(null);
           if (emptyIdx === -1) return;
           this.weaponSlots[emptyIdx] = item;
-        } else if (this._currentFilter === 'armor') {
+        } else if (slot === 'armor') {
           this.armorSlot = item;
-        } else if (this._currentFilter === 'accessory') {
+        } else if (slot === 'accessory') {
           this.accessorySlot = item;
         }
 
