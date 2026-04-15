@@ -847,17 +847,21 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
   border: 1px solid #333;
   border-radius: 6px;
   cursor: pointer;
-  height: 58px; flex-shrink: 0;
+  min-height: 58px; flex-shrink: 0;
 }
 .equip-weapon-card:hover { border-color: #f0c060; }
 .equip-weapon-card.equipped { border-color: #4af; background: rgba(68,170,255,0.1); }
 .equip-card-icon { width: 28px; height: 28px; image-rendering: pixelated; flex-shrink: 0; }
-.equip-card-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 0.15rem; }
+.equip-card-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 0.2rem; }
 .equip-card-name { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.equip-card-quality { font-size: 0.75rem; color: #4af; }
+.equip-card-quality { font-size: 0.75rem; color: #4af; flex-shrink: 0; }
+.equip-card-meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem;
+  min-width: 0;
+}
 .equip-card-traits {
-  display: flex; flex-wrap: wrap; gap: 0.25rem;
-  font-size: 0.7rem; color: #aaa; margin-top: 0.15rem;
+  display: inline-flex; flex-wrap: wrap; gap: 0.25rem;
+  font-size: 0.7rem; color: #aaa;
 }
 .equip-trait-wrap { position: relative; display: inline-block; }
 .equip-trait-wrap .trait-tooltip { display: none; }

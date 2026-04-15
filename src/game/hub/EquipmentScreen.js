@@ -232,8 +232,10 @@ export class EquipmentScreen {
         <img src="${bp?.image ? assetPath(bp.image) : ''}" class="equip-card-icon" onerror="this.style.display='none'" alt="">
         <div class="equip-card-info">
           <span class="equip-card-name">${w.name}</span>
-          <span class="equip-card-quality">Q${w.quality}</span>
-          ${renderTraitBadges(w.traits)}
+          <div class="equip-card-meta">
+            <span class="equip-card-quality">Q${w.quality}</span>
+            ${renderTraitBadges(w.traits)}
+          </div>
         </div>
         ${isEquipped ? '<span class="equip-badge">装備中</span>' : ''}
       </div>`;
