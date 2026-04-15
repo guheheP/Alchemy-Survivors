@@ -2467,11 +2467,21 @@ a:focus-visible,
   .warehouse-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.4rem; }
   .coll-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
 
-  .levelup-choices { gap: 0.6rem; }
-  .levelup-card { flex: 1 1 140px; min-width: 120px; max-width: 180px; }
-  .levelup-card-inner { padding: 1.2rem 0.8rem; }
-  .levelup-title { font-size: 1.5rem; }
-  .levelup-subtitle { font-size: 0.85rem; margin-bottom: 1rem; }
+  .levelup-choices { gap: 0.4rem; }
+  .levelup-card {
+    flex: 1 1 100px; min-width: 92px; max-width: 140px;
+    height: 200px;
+  }
+  .levelup-card-inner { padding: 0.7rem 0.5rem; gap: 0.3rem; }
+  .levelup-icon-wrap { width: 44px; height: 44px; margin-bottom: 0.1rem; }
+  .levelup-icon { font-size: 1.7rem; }
+  .levelup-name { font-size: 0.88rem; }
+  .levelup-desc { font-size: 0.7rem; line-height: 1.25; -webkit-line-clamp: 4; }
+  .levelup-card-ribbon { font-size: 0.6rem; padding: 1px 8px; }
+  .levelup-card-shortcut { font-size: 0.75rem; }
+  .levelup-title { font-size: 1.3rem; }
+  .levelup-subtitle { font-size: 0.8rem; margin-bottom: 0.6rem; }
+  .levelup-hint { font-size: 0.7rem; margin-top: 0.4rem; }
 
   .result-stats { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
   .result-title { font-size: 1.5rem; }
@@ -2807,8 +2817,12 @@ a:focus-visible,
     right: calc(8px + var(--safe-right));
   }
   .hud-passives-float {
-    top: calc(8px + var(--safe-top));
+    /* ポーズボタン (44px + 8px) の下に配置し、デスクトップの right/bottom は解除 */
+    top: calc(60px + var(--safe-top));
     left: calc(8px + var(--safe-left));
+    right: auto; bottom: auto;
+    max-width: calc(100vw - 20px - var(--safe-left) - var(--safe-right));
+    justify-content: flex-start;
   }
   .hud-console {
     bottom: calc(6px + var(--safe-bottom));

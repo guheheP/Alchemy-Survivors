@@ -60,7 +60,8 @@ export class LevelUpModal {
       const tid = setTimeout(() => {
         this._pendingTimeouts.delete(tid);
         this._hide();
-        eventBus.emit('levelup:selected', { passiveId, isWeaponUnlock: passiveId === '__unlock_weapon__' });
+        // `levelup:selected` は LevelUpSystem.selectPassive 側で発火するのでここでは出さない
+        // (二重発火するとパッシブアイコンが 1 取得あたり +2 表示されてしまう)
         eventBus.emit('levelup:choose', { passiveId });
       }, 200);
       this._pendingTimeouts.add(tid);
