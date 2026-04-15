@@ -141,7 +141,13 @@ export class DropSystem {
             quality: drop.quality,
             traits: [...drop.traits],
           });
-          eventBus.emit('material:collected', { blueprintId: drop.blueprintId, x: drop.x, y: drop.y });
+          eventBus.emit('material:collected', {
+            blueprintId: drop.blueprintId,
+            quality: drop.quality,
+            traits: [...drop.traits],
+            x: drop.x,
+            y: drop.y,
+          });
         }
         this.pool.release(drop);
       }

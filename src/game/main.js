@@ -21,6 +21,7 @@ import { RunResultScreen } from './ui/RunResultScreen.js';
 import { AchievementSystem } from './AchievementSystem.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import { initTraitTooltipTap } from './ui/UIHelpers.js';
+import { RunPickupToasts } from './ui/RunPickupToasts.js';
 
 class Game {
   constructor() {
@@ -224,6 +225,7 @@ class Game {
     this.runHUD = new RunHUD(this.uiRoot);
     this.levelUpModal = new LevelUpModal(this.uiRoot);
     this.pauseMenu = new PauseMenu(this.uiRoot, this.runManager);
+    this.runPickupToasts = new RunPickupToasts();
 
     // ラン開始
     this.runManager.start();
@@ -238,6 +240,7 @@ class Game {
     if (this.runHUD) { this.runHUD.destroy(); this.runHUD = null; }
     if (this.levelUpModal) { this.levelUpModal.destroy(); this.levelUpModal = null; }
     if (this.pauseMenu) { this.pauseMenu.destroy(); this.pauseMenu = null; }
+    if (this.runPickupToasts) { this.runPickupToasts.destroy(); this.runPickupToasts = null; }
     if (this.runManager) { this.runManager.destroy(); this.runManager = null; }
 
     this.canvas.style.display = 'none';
@@ -338,6 +341,7 @@ class Game {
     if (this.runHUD) { this.runHUD.destroy(); this.runHUD = null; }
     if (this.levelUpModal) { this.levelUpModal.destroy(); this.levelUpModal = null; }
     if (this.pauseMenu) { this.pauseMenu.destroy(); this.pauseMenu = null; }
+    if (this.runPickupToasts) { this.runPickupToasts.destroy(); this.runPickupToasts = null; }
     if (this.resultScreen) { this.resultScreen.destroy(); this.resultScreen = null; }
     this.uiRoot.innerHTML = '';
   }
