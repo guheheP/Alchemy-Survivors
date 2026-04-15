@@ -3121,3 +3121,238 @@ a:focus-visible,
   .hub-tabs { padding: 0; }
   .hub-content { padding: 0.4rem; }
 }
+
+/* ===============================================================
+   Run Pickup Toasts — ラン中の素材獲得通知 (画面右上スタック)
+   品質ティア / 特性で見た目と音が変化
+   =============================================================== */
+.run-pickup-toasts {
+  position: fixed;
+  /* hud-top-right (kills+resources) の下に重ならないよう少し離して配置 */
+  top: calc(70px + var(--safe-top));
+  right: calc(12px + var(--safe-right));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 14;
+  pointer-events: none;
+  max-width: min(320px, 70vw);
+}
+
+.pickup-toast {
+  --tier-color: #bbb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px 5px 5px;
+  background: linear-gradient(180deg, rgba(20, 18, 32, 0.92) 0%, rgba(12, 10, 22, 0.95) 100%);
+  border: 1px solid var(--tier-color);
+  border-left-width: 3px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  color: #e0e0e0;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  opacity: 0;
+  transform: translateX(28px) scale(0.95);
+  transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  overflow: hidden;
+}
+.pickup-toast.show {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+.pickup-toast.hide {
+  opacity: 0;
+  transform: translateX(28px) scale(0.95);
+}
+
+.pickup-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+  color: var(--tier-color);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.pickup-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.pickup-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.pickup-name-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.pickup-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
+}
+.pickup-quality {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-shadow: 0 0 4px currentColor;
+  letter-spacing: 0.3px;
+}
+.pickup-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 1px;
+}
+.pickup-trait-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.4);
+  color: #aff;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.pickup-count {
+  position: absolute;
+  top: 3px;
+  right: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #ffd766;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
+}
+.pickup-count.hidden { display: none; }
+.pickup-count.pop { animation: pickupCountPop 0.3s ease-out; }
+@keyframes pickupCountPop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 1; }
+}
+
+/* --- 品質ティアごとの色味補強 (--tier-color は JS から代入) --- */
+.pickup-toast.pickup-tier-q-fine,
+.pickup-toast.pickup-tier-q-excellent {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5),
+              0 0 8px var(--tier-color);
+}
+.pickup-toast.pickup-tier-q-legendary {
+  background: linear-gradient(180deg, rgba(40, 30, 10, 0.92) 0%, rgba(22, 16, 6, 0.96) 100%);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.55),
+              0 0 14px rgba(240, 192, 96, 0.45);
+}
+.pickup-toast.pickup-tier-q-mythic {
+  background: linear-gradient(180deg, rgba(50, 18, 60, 0.94) 0%, rgba(20, 10, 30, 0.96) 100%);
+  border-color: #c779ff;
+  border-left-width: 4px;
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.6),
+              0 0 18px rgba(199, 121, 255, 0.55);
+}
+
+/* --- 特性付き: 上部に小さなキラキラのライン --- */
+.pickup-toast.has-trait::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(120deg,
+    transparent 30%, rgba(180, 240, 255, 0.18) 50%, transparent 70%);
+  pointer-events: none;
+  animation: pickupSheen 1.6s ease-in-out infinite;
+}
+@keyframes pickupSheen {
+  0%   { transform: translateX(-100%); }
+  60%  { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* --- 極上 (special) / 伝説 (legendary): キラッと光るパルス --- */
+.pickup-toast.is-special.show {
+  animation: pickupSpecialIn 0.5s ease-out;
+}
+.pickup-toast.is-legendary.show {
+  animation: pickupLegendaryIn 0.7s ease-out;
+}
+@keyframes pickupSpecialIn {
+  0%   { transform: translateX(28px) scale(0.9); filter: brightness(1.0); }
+  50%  { transform: translateX(-2px) scale(1.05); filter: brightness(1.6); }
+  100% { transform: translateX(0) scale(1); filter: brightness(1.0); }
+}
+@keyframes pickupLegendaryIn {
+  0%   { transform: translateX(36px) scale(0.85); filter: brightness(1.0) saturate(1.0); }
+  35%  { transform: translateX(-6px) scale(1.10); filter: brightness(2.0) saturate(1.4); }
+  70%  { transform: translateX(2px)  scale(1.02); filter: brightness(1.3) saturate(1.2); }
+  100% { transform: translateX(0)    scale(1.00); filter: brightness(1.0) saturate(1.0); }
+}
+
+/* レアリティタイプ別の特性バッジ色 */
+.pickup-trait-badge.trait-rarity-uncommon {
+  background: rgba(120, 220, 120, 0.15);
+  border-color: rgba(120, 220, 120, 0.5);
+  color: #afa;
+}
+.pickup-trait-badge.trait-rarity-rare {
+  background: rgba(120, 170, 255, 0.15);
+  border-color: rgba(120, 170, 255, 0.5);
+  color: #adf;
+}
+.pickup-trait-badge.trait-rarity-epic {
+  background: rgba(200, 140, 255, 0.18);
+  border-color: rgba(200, 140, 255, 0.55);
+  color: #dcf;
+}
+.pickup-trait-badge.trait-rarity-legendary {
+  background: rgba(255, 200, 80, 0.18);
+  border-color: rgba(255, 200, 80, 0.55);
+  color: #fc6;
+}
+
+/* --- モバイル: コンパクト化 + HUD top-right と被らないよう位置調整 --- */
+@media (max-width: 768px) {
+  .run-pickup-toasts {
+    /* hud-top-right (kills+gold+mats 横並び ~24px) の下に少し空けて */
+    top: calc(46px + var(--safe-top));
+    right: calc(8px + var(--safe-right));
+    max-width: min(60vw, 240px);
+    gap: 4px;
+  }
+  .pickup-toast {
+    font-size: 0.7rem;
+    padding: 4px 7px 4px 4px;
+    gap: 6px;
+  }
+  .pickup-icon { width: 24px; height: 24px; }
+  .pickup-quality { font-size: 0.65rem; }
+  .pickup-trait-badge { font-size: 0.6rem; padding: 1px 4px; }
+}
+@media (max-width: 480px) {
+  .run-pickup-toasts {
+    max-width: min(64vw, 220px);
+  }
+}

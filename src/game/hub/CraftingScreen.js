@@ -114,19 +114,23 @@ export class CraftingScreen {
     this._renderWorkspace();
 
     // モバイル: レシピリストの下に workspace が現れるので末尾まで自動スクロール
-    if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
-      requestAnimationFrame(() => {
-        const workspace = this.el.querySelector('.craft-workspace');
-        if (workspace && typeof workspace.scrollIntoView === 'function') {
-          workspace.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
-        // フォールバック: 内側スクロールコンテナ (.hub-content) を末尾へ
-        const hubContent = document.querySelector('.hub-content');
-        if (hubContent) {
-          hubContent.scrollTo({ top: hubContent.scrollHeight, behavior: 'smooth' });
-        }
-      });
-    }
+    this._scrollWorkspaceToBottomMobile();
+  }
+
+  /** モバイル時に .craft-workspace の末尾までスクロール (デスクトップは無効) */
+  _scrollWorkspaceToBottomMobile() {
+    if (!(window.matchMedia && window.matchMedia('(max-width: 768px)').matches)) return;
+    requestAnimationFrame(() => {
+      const workspace = this.el.querySelector('.craft-workspace');
+      if (workspace && typeof workspace.scrollIntoView === 'function') {
+        workspace.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+      // フォールバック: 内側スクロールコンテナ (.hub-content) を末尾へ
+      const hubContent = document.querySelector('.hub-content');
+      if (hubContent) {
+        hubContent.scrollTo({ top: hubContent.scrollHeight, behavior: 'smooth' });
+      }
+    });
   }
 
   _renderWorkspace() {
@@ -236,6 +240,10 @@ export class CraftingScreen {
           this.assignedMaterials[slotIndex] = item;
           picker.remove();
           this._renderWorkspace();
+          // 全スロットが埋まったらモバイルで末尾(調合ボタン)までスクロール
+          const allFilled = this.assignedMaterials.length > 0
+            && this.assignedMaterials.every(m => m != null);
+          if (allFilled) this._scrollWorkspaceToBottomMobile();
         }
       });
     });

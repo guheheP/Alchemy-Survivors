@@ -727,6 +727,50 @@ class SoundManagerClass {
     this._playSENote(1760, now + 0.12, 0.1, 'sine', 0.04);
   }
 
+  /** 素材ピックアップ (通常品質) — 軽い "ピッ" */
+  playMaterialPickup() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(820, now, 0.05, 'sine', 0.05);
+    this._playSENote(1100, now + 0.02, 0.04, 'sine', 0.035);
+  }
+
+  /** 素材ピックアップ (高品質 / 良品〜優品) — 二音上昇の "チロン" */
+  playMaterialPickupRare() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(880, now, 0.08, 'sine', 0.06);
+    this._playSENote(1320, now + 0.04, 0.10, 'sine', 0.05);
+    this._playSENote(1760, now + 0.10, 0.12, 'triangle', 0.04);
+  }
+
+  /** 素材ピックアップ (極上 / 特性付き) — 三音上昇 + キラキラ */
+  playMaterialPickupSpecial() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    // 上昇アルペジオ
+    this._playSENote(659, now, 0.08, 'triangle', 0.06);
+    this._playSENote(880, now + 0.05, 0.10, 'triangle', 0.06);
+    this._playSENote(1175, now + 0.10, 0.12, 'triangle', 0.06);
+    this._playSENote(1568, now + 0.16, 0.18, 'sine', 0.07);
+    // キラッ (高音アクセント)
+    this._playSENote(2637, now + 0.22, 0.10, 'sine', 0.04);
+    this._playSENote(3136, now + 0.28, 0.12, 'sine', 0.03);
+  }
+
+  /** 素材ピックアップ (伝説以上) — 短いファンファーレ + 倍音 */
+  playMaterialPickupLegendary() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    // メインのアルペジオ (Cmaj9 風)
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+    notes.forEach((f, i) => this._playSENote(f, now + i * 0.05, 0.25, 'triangle', 0.07));
+    // ベル系の倍音
+    this._playSENote(2093, now + 0.20, 0.30, 'sine', 0.05);
+    this._playSENote(2637, now + 0.26, 0.30, 'sine', 0.04);
+    this._playSENote(3136, now + 0.32, 0.30, 'sine', 0.03);
+  }
+
   /** エラー — ブブッ */
   playError() {
     if (!this.ctx) return;
