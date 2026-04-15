@@ -24,6 +24,7 @@ import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import { initTraitTooltipTap } from './ui/UIHelpers.js';
 import { RunPickupToasts } from './ui/RunPickupToasts.js';
 import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNamePrompt.js';
+import { initPwaRuntime } from './core/pwaRuntime.js';
 
 class Game {
   constructor() {
@@ -144,6 +145,9 @@ class Game {
   async start() {
     // タッチ端末用: 特性ツールチップのタップ開閉
     initTraitTooltipTap();
+
+    // PWA ランタイム初期化 (インストールプロンプト / online 復帰時再送)
+    initPwaRuntime({ getSaveSystem: () => this.saveSystem });
 
     // PlayFab 初期化（Title ID 未設定ならスキップされる）
     const pfReady = PlayFabClient.initialize();

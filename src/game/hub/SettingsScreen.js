@@ -6,6 +6,8 @@ import { SoundManager } from '../core/SoundManager.js';
 import { PlayFabClient } from '../core/PlayFabClient.js';
 import { AccountLinkModal } from '../ui/AccountLinkModal.js';
 import { AccountLoginModal } from '../ui/AccountLoginModal.js';
+import { canPromptInstall, promptInstall, isIOSStandaloneCapable, isRunningStandalone } from '../core/pwaRuntime.js';
+import { eventBus } from '../core/EventBus.js';
 
 export class SettingsScreen {
   constructor(container) {
@@ -73,6 +75,8 @@ export class SettingsScreen {
       </div>
       ` : ''}
 
+      ${this._renderInstallSection()}
+
       <div class="settings-section">
         <h4>操作</h4>
         <div class="settings-info">
@@ -112,6 +116,61 @@ export class SettingsScreen {
 
     // アカウント連携
     this._bindAccount();
+
+    // PWA インストール
+    this._bindInstall();
+  }
+
+  _renderInstallSection() {
+    if (isRunningStandalone()) return ''; // 既にアプリとして起動中なら非表示
+    const showChrome = canPromptInstall();
+    const showIOS = isIOSStandaloneCapable();
+    if (!showChrome && !showIOS) {
+      // プロンプトは来ていないが、後で来る可能性があるので事前描画 (beforeinstallprompt イベントで再描画)
+      return `
+        <div class="settings-section" id="settings-install-section" style="display:none">
+          <h4>アプリとして追加</h4>
+          <button id="settings-install-btn" class="settings-account-btn">📱 ホーム画面に追加</button>
+          <small>ホーム画面から全画面で起動できます。</small>
+        </div>
+      `;
+    }
+    if (showIOS) {
+      return `
+        <div class="settings-section" id="settings-install-section">
+          <h4>アプリとして追加</h4>
+          <p><small>iOS Safari で共有ボタン
+            <span aria-hidden="true">⬆️</span>
+            →「ホーム画面に追加」でアプリのように全画面プレイできます。</small></p>
+        </div>
+      `;
+    }
+    return `
+      <div class="settings-section" id="settings-install-section">
+        <h4>アプリとして追加</h4>
+        <button id="settings-install-btn" class="settings-account-btn">📱 ホーム画面に追加</button>
+        <small>ホーム画面から全画面で起動できます。</small>
+      </div>
+    `;
+  }
+
+  _bindInstall() {
+    const section = this.el.querySelector('#settings-install-section');
+    if (!section) return;
+    const btn = section.querySelector('#settings-install-btn');
+    if (btn) {
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        const outcome = await promptInstall();
+        if (outcome !== 'accepted') btn.disabled = false;
+      });
+    }
+    // beforeinstallprompt が遅れて届いた場合はここで表示を有効化
+    if (!this._installUnsub) {
+      this._installUnsub = eventBus.on('pwa:installAvailable', () => {
+        if (section && section.style.display === 'none') section.style.display = '';
+      });
+    }
   }
 
   _renderAccountSection() {
@@ -216,6 +275,7 @@ export class SettingsScreen {
   }
 
   destroy() {
+    if (this._installUnsub) { this._installUnsub(); this._installUnsub = null; }
     this.el.remove();
   }
 }

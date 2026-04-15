@@ -5,6 +5,7 @@
 
 import { GameLoop } from '../core/GameLoop.js';
 import { isMobileDevice } from '../core/isMobileDevice.js';
+import { requestWakeLock, releaseWakeLock } from '../core/pwaRuntime.js';
 import { PlayerController } from './PlayerController.js';
 import { EnemySpawner } from './EnemySpawner.js';
 import { WeaponSystem } from './WeaponSystem.js';
@@ -276,6 +277,15 @@ export class RunManager {
     this.gameLoop.start();
     // 背景のアンビエント粒子を初期配置
     this.background.seedAmbientParticles(this.camera);
+    // スマホのスリープ抑止 (失敗しても体験に影響させない)
+    requestWakeLock().catch(() => {});
+    // visibility 復帰時に wakeLock を再取得 (タブ非アクティブ中に自動解放されるため)
+    this._onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && this.state === 'running') {
+        requestWakeLock().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   _update(dt) {
@@ -471,6 +481,8 @@ export class RunManager {
 
   destroy() {
     this.gameLoop.stop();
+    releaseWakeLock();
+    if (this._onVisibilityChange) document.removeEventListener('visibilitychange', this._onVisibilityChange);
     if (this._onKeyDown) window.removeEventListener('keydown', this._onKeyDown);
     if (this._unsubPauseToggle) this._unsubPauseToggle();
     for (const unsub of this._unsubs) unsub();
