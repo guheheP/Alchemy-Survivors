@@ -319,7 +319,7 @@ export const AreaEnemyConfig = {
 // ═══════════════════════════════════════════════
 (function applyMidGameDamageBuff() {
   const BUFFED_AREAS = ['forest', 'volcano', 'deep_sea', 'dragon_nest', 'sky_tower', 'time_corridor'];
-  const MULT = 2.5;
+  const MULT = 2;
   const affectedIds = new Set();
   for (const areaId of BUFFED_AREAS) {
     const cfg = AreaEnemyConfig[areaId];
