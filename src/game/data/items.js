@@ -23,6 +23,20 @@ export function getEquipSlot(item) {
   return null;
 }
 
+/**
+ * アイテムが指定スロットに装備可能かを返す。
+ * 盾は武器効果（ShieldStrategy）も持つため、武器・防具スロットどちらにも装備可能。
+ */
+export function canEquipInSlot(item, slot) {
+  if (!item || !slot) return false;
+  const bp = item.blueprintId ? (ItemBlueprints[item.blueprintId] || item) : item;
+  if (slot === 'accessory') return bp.type === 'accessory';
+  if (bp.type !== 'equipment' || !bp.equipType) return false;
+  if (slot === 'weapon') return WEAPON_TYPES.has(bp.equipType) || bp.equipType === 'shield';
+  if (slot === 'armor') return ARMOR_TYPES.has(bp.equipType);
+  return false;
+}
+
 // =====================================================================
 //  素材カテゴリ定義
 // =====================================================================
