@@ -89,6 +89,15 @@ export function initPwaRuntime({ getSaveSystem } = {}) {
         eventBus.emit('pwa:updateAvailable');
       },
       onOfflineReady() {
+        // vite-plugin-pwa の onOfflineReady は新しい SW が activate されるたびに発火するため、
+        // 初回インストール時のみトーストを出す (更新毎の再表示を抑制)
+        const KEY = 'pwa.offlineReady.notified';
+        try {
+          if (localStorage.getItem(KEY)) return;
+          localStorage.setItem(KEY, '1');
+        } catch (e) {
+          // storage 不可 (プライベートモード等) でも一応表示はする
+        }
         eventBus.emit('toast', { message: '📦 オフラインでも遊べるようになりました', type: 'success' });
       },
       onRegistered(reg) {
