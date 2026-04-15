@@ -2,7 +2,7 @@
  * EquipmentScreen — 装備変更UI（4武器 + 防具 + アクセサリ）
  */
 
-import { ItemBlueprints, TraitDefs, getEquipSlot } from '../data/items.js';
+import { ItemBlueprints, TraitDefs, canEquipInSlot } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
 import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { eventBus } from '../core/EventBus.js';
@@ -69,9 +69,10 @@ export class EquipmentScreen {
     const allEquipment = this.inventory.getItemsByType('equipment');
     const allAccessories = this.inventory.getItemsByType('accessory');
 
-    const weapons = allEquipment.filter(item => getEquipSlot(item) === 'weapon');
+    // 盾は武器スロットにも装備可能（ShieldStrategyで武器効果を持つ）
+    const weapons = allEquipment.filter(item => canEquipInSlot(item, 'weapon'));
 
-    const armors = allEquipment.filter(item => getEquipSlot(item) === 'armor');
+    const armors = allEquipment.filter(item => canEquipInSlot(item, 'armor'));
 
     const equippedUids = new Set([
       ...this.weaponSlots.filter(w => w).map(w => w.uid),
@@ -279,17 +280,16 @@ export class EquipmentScreen {
         const item = this.inventory.getItemByUid(uid);
         if (!item) return;
 
-        // アイテムの実際の装備スロットを検証し、フィルタタブと不一致なら装備不可
-        const slot = getEquipSlot(item);
-        if (slot !== this._currentFilter) return;
+        // 現在タブのスロットに装備可能かを検証（盾は武器・防具どちらも可）
+        if (!canEquipInSlot(item, this._currentFilter)) return;
 
-        if (slot === 'weapon') {
+        if (this._currentFilter === 'weapon') {
           const emptyIdx = this.weaponSlots.indexOf(null);
           if (emptyIdx === -1) return;
           this.weaponSlots[emptyIdx] = item;
-        } else if (slot === 'armor') {
+        } else if (this._currentFilter === 'armor') {
           this.armorSlot = item;
-        } else if (slot === 'accessory') {
+        } else if (this._currentFilter === 'accessory') {
           this.accessorySlot = item;
         }
 
