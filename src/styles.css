@@ -2742,11 +2742,10 @@ a:focus-visible,
   position: absolute;
   width: 44px; height: 44px;
   align-items: center; justify-content: center;
-  background: rgba(18, 14, 28, 0.72);
+  background: rgba(18, 14, 28, 0.78);
   border: 1px solid rgba(240, 192, 96, 0.55);
   border-radius: 50%;
   color: var(--color-gold);
-  font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
   pointer-events: auto;
@@ -2761,14 +2760,21 @@ a:focus-visible,
   background: rgba(240, 192, 96, 0.35);
   transform: scale(0.96);
 }
+.hud-btn-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  fill: currentColor;
+  pointer-events: none;
+}
 .hud-pause-btn {
   top: calc(8px + var(--safe-top));
   left: calc(8px + var(--safe-left));
 }
 .hud-detail-btn {
-  /* コンソール右上寄りに配置（モバイルで stats-mini を非表示にしたスペース） */
-  right: calc(8px + var(--safe-right));
-  bottom: calc(90px + var(--safe-bottom));
+  /* ポーズボタンの右横に配置（右下はダッシュボタン用に確保） */
+  top: calc(8px + var(--safe-top));
+  left: calc(60px + var(--safe-left));
 }
 
 /* タッチ端末のみ表示 */
@@ -2776,7 +2782,7 @@ a:focus-visible,
   .hud-pause-btn,
   .hud-detail-btn { display: flex; }
 
-  /* モバイル: 左上を空けたのでパッシブフロートは少し下へ */
+  /* モバイル: 左上のポーズ/詳細ボタンと被らないようパッシブフロートを下げる */
   .hud-passives-float {
     top: calc(60px + var(--safe-top));
   }
