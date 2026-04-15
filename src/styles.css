@@ -86,6 +86,11 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ブラウザのネイティブUI（select ドロップダウン、スクロールバー等）をダークテーマに */
+:root {
+  color-scheme: dark;
+}
+
 body {
   font-family: 'M PLUS Rounded 1c', sans-serif;
   background: var(--color-bg);
@@ -99,6 +104,84 @@ body {
   overscroll-behavior: contain;
   /* ダブルタップズーム無効化（ゲームUIはタップ駆動のため） */
   touch-action: manipulation;
+}
+
+/* ===== Custom Scrollbar (全域統一デザイン) ===== */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gold-dim) rgba(0, 0, 0, 0.3);
+}
+/* WebKit / Chromium */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-gold-dim) 0%, #8a6630 100%);
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--color-gold) 0%, var(--color-gold-dim) 100%);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--color-gold-bright);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ===== Custom Select (全 <select> をゲームテーマに統一) ===== */
+/* カスタム矢印: SVG data URI で金色の下三角を右端に */
+select {
+  /* ネイティブ UI の解除 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  /* ダーク系配色 */
+  background-color: var(--color-surface-raised);
+  color: var(--color-text);
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 0.3rem 1.8rem 0.3rem 0.6rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  /* カスタム下矢印 (金色 SVG) を右端に表示 */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1 L6 6 L11 1' stroke='%23f0c060' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+select:hover {
+  border-color: var(--color-gold);
+  background-color: var(--color-surface-elevated);
+}
+select:focus-visible {
+  border-color: var(--color-gold);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* ドロップダウン展開後の <option> — OS/ブラウザ依存だが色指定は可能 */
+select option {
+  background-color: var(--color-surface-raised);
+  color: var(--color-text);
+  padding: 4px;
+}
+select option:checked,
+select option:hover {
+  background-color: rgba(240, 192, 96, 0.2);
+  color: var(--color-gold-bright);
 }
 
 /* ===== Focus Ring (Accessibility) ===== */
@@ -1639,8 +1722,7 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
 .warehouse-subfilters { display: flex; gap: 16px; padding: 4px 0 8px; flex-wrap: wrap; align-items: center; }
 .wh-sub-label { color: #aaa; font-size: 0.8rem; margin-right: 4px; }
 .wh-sub-sep { color: #888; margin: 0 2px; }
-.wh-qsel { background: rgba(255,255,255,0.05); border: 1px solid #555; color: #ccc; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
-.wh-qsel:hover { border-color: #4af; }
+.wh-qsel { font-size: 0.8rem; padding: 3px 1.8rem 3px 8px; }
 .wh-tf { background: rgba(255,255,255,0.05); border: 1px solid #555; color: #ccc; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; margin-right: 4px; }
 .wh-tf.active { background: rgba(240,192,96,0.2); border-color: #f0c060; color: #f0c060; }
 
