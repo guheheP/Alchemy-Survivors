@@ -15,6 +15,7 @@
 const CUSTOM_ID_KEY = 'alchemy_survivors_playfab_customid';
 const SESSION_TICKET_KEY = 'alchemy_survivors_playfab_session_ticket'; // メモリのみで十分だが、リロード耐性のため保存
 const PLAYFAB_ID_KEY = 'alchemy_survivors_playfab_id';
+const DISPLAY_NAME_KEY = 'alchemy_survivors_display_name'; // ローカルキャッシュ
 
 /** ブラウザ組み込みの UUID v4 生成（古い環境は Math.random フォールバック） */
 function generateUuid() {
@@ -169,6 +170,73 @@ export const PlayFabClient = {
     await this.ensureLoggedIn();
     const body = statisticNames ? { StatisticNames: statisticNames } : {};
     return (await this._rawPost('/Client/GetPlayerStatistics', body)).data;
+  },
+
+  /** ローカルキャッシュされた表示名を取得（即時参照用） */
+  getDisplayName() {
+    try {
+      return localStorage.getItem(DISPLAY_NAME_KEY) || null;
+    } catch (e) { return null; }
+  },
+
+  /**
+   * 表示名を更新する（3〜25 文字、PlayFab の制約に従う）
+   * @param {string} displayName
+   * @returns {Promise<string>} サーバが受理した最終的な表示名
+   */
+  async updateDisplayName(displayName) {
+    await this.ensureLoggedIn();
+    const trimmed = String(displayName || '').trim();
+    if (trimmed.length < 3 || trimmed.length > 25) {
+      throw new Error('表示名は 3〜25 文字で入力してください');
+    }
+    const res = await this._rawPost('/Client/UpdateUserTitleDisplayName', {
+      DisplayName: trimmed,
+    });
+    const accepted = res.data?.DisplayName || trimmed;
+    try { localStorage.setItem(DISPLAY_NAME_KEY, accepted); } catch (e) { /* ignore */ }
+    return accepted;
+  },
+
+  /**
+   * ログイン済みプレイヤーの現在の表示名をサーバから取得
+   */
+  async fetchDisplayName() {
+    await this.ensureLoggedIn();
+    const res = await this._rawPost('/Client/GetAccountInfo', {});
+    const name = res.data?.AccountInfo?.TitleInfo?.DisplayName || null;
+    if (name) {
+      try { localStorage.setItem(DISPLAY_NAME_KEY, name); } catch (e) { /* ignore */ }
+    }
+    return name;
+  },
+
+  /**
+   * リーダーボード上位 N 件を取得
+   * @param {string} statisticName
+   * @param {number} [maxResultsCount=100]
+   * @param {number} [startPosition=0]
+   */
+  async getLeaderboard(statisticName, maxResultsCount = 100, startPosition = 0) {
+    await this.ensureLoggedIn();
+    return (await this._rawPost('/Client/GetLeaderboard', {
+      StatisticName: statisticName,
+      StartPosition: startPosition,
+      MaxResultsCount: maxResultsCount,
+    })).data;
+  },
+
+  /**
+   * 自分の順位を中心にした近傍を取得
+   * @param {string} statisticName
+   * @param {number} [maxResultsCount=11]
+   */
+  async getLeaderboardAroundPlayer(statisticName, maxResultsCount = 11) {
+    await this.ensureLoggedIn();
+    return (await this._rawPost('/Client/GetLeaderboardAroundPlayer', {
+      StatisticName: statisticName,
+      MaxResultsCount: maxResultsCount,
+    })).data;
   },
 
   /**

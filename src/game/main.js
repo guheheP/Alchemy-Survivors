@@ -23,6 +23,7 @@ import { AchievementSystem } from './AchievementSystem.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import { initTraitTooltipTap } from './ui/UIHelpers.js';
 import { RunPickupToasts } from './ui/RunPickupToasts.js';
+import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNamePrompt.js';
 
 class Game {
   constructor() {
@@ -173,6 +174,8 @@ class Game {
           console.info('[Game] Cloud save adopted over local (newer timestamp). Local backed up.');
         }
       }
+      // 表示名をサーバから取得しておく（他デバイスで設定済みの場合に備える）
+      try { await PlayFabClient.fetchDisplayName(); } catch (e) { /* ignore */ }
     } catch (e) {
       console.warn('[Game] Boot cloud sync skipped:', e.message || e);
     }
@@ -254,6 +257,15 @@ class Game {
     // 自動セーブ
     this._autoSave();
     SoundManager.startGameBGM();
+
+    // 初回ハブ到達時に表示名入力を促す（1 回だけ、スキップ可）
+    if (!this._displayNamePrompted && shouldPromptDisplayName()) {
+      this._displayNamePrompted = true;
+      // 少し遅延して他の UI 初期化を待つ
+      setTimeout(() => {
+        new DisplayNamePrompt(this.uiRoot, () => { /* モーダル閉じたら何もしない */ });
+      }, 500);
+    }
   }
 
   _startRun({ weaponSlots, areaId, consumables, hardMode }) {

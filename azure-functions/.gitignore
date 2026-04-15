@@ -24,4 +24,4 @@ local.settings.json
 
 node_modules
 dist
-azure-functions/test-body.json
+test-body.json

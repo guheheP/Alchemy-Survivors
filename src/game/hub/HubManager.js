@@ -11,6 +11,7 @@ import { UpgradeShopScreen } from './UpgradeShopScreen.js';
 import { CollectionScreen } from './CollectionScreen.js';
 import { StatsScreen } from './StatsScreen.js';
 import { AchievementScreen } from './AchievementScreen.js';
+import { LeaderboardScreen } from './LeaderboardScreen.js';
 import { SettingsScreen } from './SettingsScreen.js';
 import { eventBus } from '../core/EventBus.js';
 
@@ -56,6 +57,7 @@ export class HubManager {
       { id: 'collection',   icon: '📖', label: '図鑑',     short: '図鑑' },
       { id: 'stats',        icon: '📊', label: '統計',     short: '統計' },
       { id: 'achievements', icon: '🏅', label: '実績',     short: '実績' },
+      { id: 'ranking',      icon: '🏆', label: 'ランキング', short: '順位' },
       { id: 'settings',     icon: '⚙',  label: '設定',     short: '設定' },
     ];
     const tabButtons = tabs.map(t => `
@@ -174,6 +176,12 @@ export class HubManager {
           screen.render();
           this.screens.achievements = screen;
         }
+        break;
+      }
+      case 'ranking': {
+        const screen = new LeaderboardScreen(content);
+        screen.render();
+        this.screens.ranking = screen;
         break;
       }
       case 'settings': {

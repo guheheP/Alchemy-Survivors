@@ -3,6 +3,7 @@
  */
 
 import { SoundManager } from '../core/SoundManager.js';
+import { PlayFabClient } from '../core/PlayFabClient.js';
 
 export class SettingsScreen {
   constructor(container) {
@@ -49,6 +50,22 @@ export class SettingsScreen {
         </div>
       </div>
 
+      ${PlayFabClient.isAvailable() ? `
+      <div class="settings-section">
+        <h4>プレイヤー名</h4>
+        <div class="settings-name-row">
+          <input type="text" id="settings-display-name" class="settings-name-input"
+                 maxlength="25"
+                 placeholder="例: Alchemist"
+                 value="${(PlayFabClient.getDisplayName() || '').replace(/"/g, '&quot;')}">
+          <button id="settings-display-name-save" class="settings-name-save">変更</button>
+        </div>
+        <div class="settings-name-status" id="settings-name-status">
+          <small>3〜25 文字。ランキング表示に使われます。</small>
+        </div>
+      </div>
+      ` : ''}
+
       <div class="settings-section">
         <h4>操作</h4>
         <div class="settings-info">
@@ -81,6 +98,40 @@ export class SettingsScreen {
     // SE音量
     this._bindSlider('settings-se', 'settings-se-val', (v) => {
       SoundManager.setSeVolume(v / 100);
+    });
+
+    // 表示名
+    this._bindDisplayName();
+  }
+
+  _bindDisplayName() {
+    const input = this.el.querySelector('#settings-display-name');
+    const saveBtn = this.el.querySelector('#settings-display-name-save');
+    const status = this.el.querySelector('#settings-name-status');
+    if (!input || !saveBtn || !status) return;
+
+    const submit = async () => {
+      const name = input.value.trim();
+      if (name.length < 3 || name.length > 25) {
+        status.innerHTML = '<small class="settings-name-error">3〜25 文字で入力してください</small>';
+        return;
+      }
+      saveBtn.disabled = true;
+      status.innerHTML = '<small>更新中…</small>';
+      try {
+        const accepted = await PlayFabClient.updateDisplayName(name);
+        input.value = accepted;
+        status.innerHTML = '<small class="settings-name-ok">✓ 更新しました</small>';
+      } catch (e) {
+        status.innerHTML = `<small class="settings-name-error">${e.message || '更新失敗'}</small>`;
+      } finally {
+        saveBtn.disabled = false;
+      }
+    };
+
+    saveBtn.addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); submit(); }
     });
   }
 
