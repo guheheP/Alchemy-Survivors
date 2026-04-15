@@ -183,6 +183,9 @@ export class RunHUD {
     }
 
     // Consumable slots — クリック/タップで発動（キー 1-3 と同等）
+    // 注意: _updateConsumables が毎tick innerHTML を書き換えるため、
+    // mousedown→mouseup 間にスロット要素が置換されて click が成立しない。
+    // pointerdown を使って press 検知で即発火する。
     const consEl = this.el.querySelector('#hud-consumables');
     if (consEl) {
       let lastConsTriggerAt = 0;
@@ -191,13 +194,15 @@ export class RunHUD {
         if (!slotEl || !consEl.contains(slotEl)) return;
         e.preventDefault();
         e.stopPropagation();
-        // touchstart→click の二重発火を抑止
+        // 多重発火抑止（pointerdown / touchstart / click 重複対策）
         const now = Date.now();
         if (now - lastConsTriggerAt < 350) return;
         lastConsTriggerAt = now;
         const idx = parseInt(slotEl.dataset.slot, 10);
         if (Number.isInteger(idx)) eventBus.emit('consumable:requestUse', { slot: idx });
       };
+      consEl.addEventListener('pointerdown', triggerCons);
+      // フォールバック（pointer event 未対応ブラウザ向け）
       consEl.addEventListener('click', triggerCons);
       consEl.addEventListener('touchstart', triggerCons, { passive: false });
     }
