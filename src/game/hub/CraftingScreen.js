@@ -241,13 +241,18 @@ export class CraftingScreen {
           const slotLabel = isCategorySlot(slot)
             ? (MaterialCategories[getCategoryId(slot)]?.name || slot)
             : (ItemBlueprints[slot]?.name || slot);
+          const traitBadges = assigned ? (assigned.traits || []).map(t => {
+            const r = TraitDefs[t]?.rarity || 'common';
+            return `<span class="slot-trait-badge rarity-${r}" title="${t}">${t}</span>`;
+          }).join('') : '';
           return `<div class="craft-slot" data-slot="${i}">
             <span class="slot-label">${slotLabel}</span>
             ${assigned
-              ? `<div class="slot-assigned">
-                  <span>${assigned.name} (Q${assigned.quality})</span>
-                  <button class="slot-clear" data-slot="${i}">✕</button>
-                </div>`
+              ? `<button class="slot-assigned slot-select" data-slot="${i}" title="クリックで変更">
+                  <span class="slot-assigned-name">${assigned.name} (Q${assigned.quality})</span>
+                  ${traitBadges ? `<span class="slot-assigned-traits">${traitBadges}</span>` : ''}
+                  <span class="slot-clear" data-slot="${i}" role="button">✕</span>
+                </button>`
               : `<button class="slot-select" data-slot="${i}">素材を選択</button>`
             }
           </div>`;
@@ -260,14 +265,19 @@ export class CraftingScreen {
       </button>
     `;
 
-    // 素材選択ボタン
+    // 素材選択ボタン (未選択スロット / 選択済スロットの本体どちらも再選択可)
     detail.querySelectorAll('.slot-select').forEach(btn => {
-      btn.addEventListener('click', () => this._openMaterialPicker(parseInt(btn.dataset.slot)));
+      btn.addEventListener('click', (e) => {
+        // クリア (✕) クリックは伝播させて別ハンドラで処理
+        if (e.target.closest('.slot-clear')) return;
+        this._openMaterialPicker(parseInt(btn.dataset.slot));
+      });
     });
 
-    // 素材クリアボタン
+    // 素材クリア (✕) — 親の .slot-select への伝播を止める
     detail.querySelectorAll('.slot-clear').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.assignedMaterials[parseInt(btn.dataset.slot)] = null;
         this._renderWorkspace();
       });
@@ -284,7 +294,12 @@ export class CraftingScreen {
   _openMaterialPicker(slotIndex) {
     const recipe = Recipes[this.selectedRecipeId];
     const slot = recipe.materials[slotIndex];
-    const usedUids = new Set(this.assignedMaterials.filter(m => m).map(m => m.uid));
+    // 現在のスロットに入っている素材は「使用中」から除外（入れ替えを許可）
+    const usedUids = new Set(
+      this.assignedMaterials
+        .filter((m, idx) => m && idx !== slotIndex)
+        .map(m => m.uid)
+    );
 
     // 対象素材を絞り込み + 品質降順ソート + 特性レアリティ降順
     const rarityScore = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
