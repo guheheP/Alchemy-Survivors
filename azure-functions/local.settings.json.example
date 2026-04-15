@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+    "PLAYFAB_TITLE_ID": "YOUR_PLAYFAB_TITLE_ID",
+    "PLAYFAB_SECRET_KEY": "YOUR_PLAYFAB_SECRET_KEY_FROM_GAME_MANAGER"
+  }
+}
