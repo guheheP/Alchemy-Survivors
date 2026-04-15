@@ -28,8 +28,10 @@ export class MobileControls {
     this.dashTouchId = null;
     this.dashPressed = false;
 
-    // タッチデバイス検出
-    this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // タッチデバイス検出 — CSS の `(hover: none) and (pointer: coarse)` と揃える
+    // ( `ontouchstart` だと タッチスクリーン付きデスクトップ で true になり、
+    //   デスクトップ でも ダッシュボタン が表示されてしまうため )
+    this.isMobile = !!(window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches);
 
     // ボタン位置（resize時に更新）
     this._updateLayout();

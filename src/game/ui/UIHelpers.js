@@ -56,13 +56,39 @@ function traitColorClass(traitName) {
   return def ? `trait-rarity-${def.rarity || 'common'}` : '';
 }
 
+/**
+ * 特性の効果カテゴリを判定
+ *  - equip: 装備中に発動する `run*` 効果を持つ
+ *  - craft: 素材として調合に使った時に発動する効果 (craftQualityBonus) を持つ
+ */
+export function getTraitCategory(traitName) {
+  const def = TraitDefs[traitName];
+  if (!def?.effects) return { equip: false, craft: false };
+  let equip = false, craft = false;
+  for (const key of Object.keys(def.effects)) {
+    if (key.startsWith('run')) equip = true;
+    else if (key === 'craftQualityBonus') craft = true;
+  }
+  return { equip, craft };
+}
+
+/** 特性バッジ用のカテゴリピル HTML (装/素) */
+function renderTraitCategoryPills(traitName) {
+  const cat = getTraitCategory(traitName);
+  let html = '';
+  if (cat.equip) html += `<span class="trait-cat-pill trait-cat-equip" title="装備中に発動">装</span>`;
+  if (cat.craft) html += `<span class="trait-cat-pill trait-cat-craft" title="素材として調合時に発動">素</span>`;
+  return html;
+}
+
 /** 特性バッジHTMLを生成（GameTooltip対応） */
 export function createTraitBadgeHTML(traitName, extra = '') {
   const def = TraitDefs[traitName];
   const colorCls = traitColorClass(traitName);
   const desc = def?.description ?? '';
   const rarity = def?.rarity ?? '';
-  return `<span class="trait-badge ${colorCls} ${extra}" data-tooltip="${desc}" data-tooltip-title="${traitName}" data-tooltip-rarity="${rarity}">${traitName}</span>`;
+  const pills = renderTraitCategoryPills(traitName);
+  return `<span class="trait-badge ${colorCls} ${extra}" data-tooltip="${desc}" data-tooltip-title="${traitName}" data-tooltip-rarity="${rarity}">${pills}${traitName}</span>`;
 }
 
 // アイテムの画像URL（将来のカスタム画像パス対応）
@@ -193,7 +219,15 @@ function buildTraitEffectsHTML(traitName) {
     .filter(([, v]) => v !== 0)
     .map(([k, v]) => {
       const fn = labels[k];
-      return fn ? `<span class="trait-effect-line">${fn(v)}</span>` : '';
+      if (!fn) return '';
+      const isEquip = k.startsWith('run');
+      const isCraft = k === 'craftQualityBonus';
+      const tagCls = isEquip ? 'trait-cat-equip' : (isCraft ? 'trait-cat-craft' : '');
+      const tagText = isEquip ? '装備' : (isCraft ? '素材' : '');
+      const tagHtml = tagText
+        ? `<span class="trait-effect-tag ${tagCls}">${tagText}</span>`
+        : '';
+      return `<span class="trait-effect-line">${tagHtml}${fn(v)}</span>`;
     })
     .filter(Boolean)
     .join('');

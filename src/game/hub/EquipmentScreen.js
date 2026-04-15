@@ -8,6 +8,7 @@ import { GameConfig } from '../data/config.js';
 import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
+import { getTraitCategory } from '../ui/UIHelpers.js';
 
 /** 特性のラン中効果を簡潔な日本語表記に変換 */
 function formatTraitRunEffect(def) {
@@ -37,13 +38,16 @@ function renderTraitBadges(traits) {
     const rarity = def?.rarity || 'common';
     const desc = def?.description || '';
     const runFx = formatTraitRunEffect(def);
+    const cat = getTraitCategory(t);
+    const pills = (cat.equip ? `<span class="trait-cat-pill trait-cat-equip" title="装備中に発動">装</span>` : '')
+      + (cat.craft ? `<span class="trait-cat-pill trait-cat-craft" title="素材として調合時に発動">素</span>` : '');
     return `<span class="equip-trait-wrap">
-      <span class="wh-trait rarity-${rarity}">${t}</span>
+      <span class="wh-trait rarity-${rarity}">${pills}${t}</span>
       <span class="trait-tooltip">
         <span class="trait-tt-name rarity-${rarity}">${t}</span>
         <span class="trait-tt-rarity">${rarity}</span>
         ${desc ? `<p class="trait-tt-desc">${desc}</p>` : ''}
-        ${runFx ? `<p class="trait-tt-run">ラン効果: ${runFx}</p>` : ''}
+        ${runFx ? `<p class="trait-tt-run">装備効果: ${runFx}</p>` : ''}
       </span>
     </span>`;
   }).join('')}</div>`;

@@ -3356,3 +3356,52 @@ a:focus-visible,
     max-width: min(64vw, 220px);
   }
 }
+
+/* ===============================================================
+   特性カテゴリ表示
+   - 装: 装備中に発動する効果 (run*)
+   - 素: 素材として調合に使うと発動する効果 (craftQualityBonus)
+   =============================================================== */
+.trait-cat-pill {
+  display: inline-block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 3px;
+  margin-right: 3px;
+  border-radius: 3px;
+  vertical-align: middle;
+  border: 1px solid transparent;
+  letter-spacing: 0;
+}
+.trait-cat-pill.trait-cat-equip {
+  background: rgba(120, 170, 255, 0.22);
+  color: #9cc4ff;
+  border-color: rgba(120, 170, 255, 0.5);
+}
+.trait-cat-pill.trait-cat-craft {
+  background: rgba(240, 192, 96, 0.22);
+  color: #f0c060;
+  border-color: rgba(240, 192, 96, 0.5);
+}
+/* 効果説明行の左に付ける小タグ */
+.trait-effect-tag {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0 4px;
+  margin-right: 4px;
+  border-radius: 3px;
+  vertical-align: middle;
+  border: 1px solid transparent;
+}
+.trait-effect-tag.trait-cat-equip {
+  background: rgba(120, 170, 255, 0.18);
+  color: #9cc4ff;
+  border-color: rgba(120, 170, 255, 0.45);
+}
+.trait-effect-tag.trait-cat-craft {
+  background: rgba(240, 192, 96, 0.18);
+  color: #f0c060;
+  border-color: rgba(240, 192, 96, 0.45);
+}
