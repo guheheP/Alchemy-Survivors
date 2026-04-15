@@ -1,0 +1,16 @@
+{
+  "name": "alchemy-survivors-azure-functions",
+  "version": "1.0.0",
+  "description": "Azure Functions server-side validation for Alchemy Survivors",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

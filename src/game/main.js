@@ -7,6 +7,7 @@ import { eventBus } from './core/EventBus.js';
 import { SoundManager } from './core/SoundManager.js';
 import { InventorySystem } from './InventorySystem.js';
 import { SaveSystem } from './core/SaveSystem.js';
+import { PlayFabClient } from './core/PlayFabClient.js';
 import { Recipes } from './data/items.js';
 import { AreaDefs } from './data/areas.js';
 import { GameConfig } from './data/config.js';
@@ -114,8 +115,17 @@ class Game {
       SoundManager.stopBattleBGM();
       // ラン中のクラッシュで解放が失われないように即時チェックポイントセーブ
       if (this.saveSystem) {
-        try { this._autoSave(); } catch (e) { /* save 失敗は致命的でないので握りつぶす */ }
+        try {
+          this._autoSave();
+          // ボス撃破は重要な進行なのでクラウドへも即時プッシュ
+          this.saveSystem.flushCloudSaveNow().catch(() => {});
+        } catch (e) { /* save 失敗は致命的でないので握りつぶす */ }
       }
+    });
+
+    // ページ離脱時: 保留中のクラウドプッシュを試行
+    window.addEventListener('pagehide', () => {
+      if (this.saveSystem) this.saveSystem.flushCloudSaveNow().catch(() => {});
     });
     eventBus.on('boss:intro', ({ name }) => {
       // 死神以外はエリア毎のボスBGMに切替
@@ -130,11 +140,42 @@ class Game {
     });
   }
 
-  start() {
+  async start() {
     // タッチ端末用: 特性ツールチップのタップ開閉
     initTraitTooltipTap();
+
+    // PlayFab 初期化（Title ID 未設定ならスキップされる）
+    const pfReady = PlayFabClient.initialize();
+    if (pfReady) {
+      // 起動時にクラウド側のセーブを取りに行き、より新しければ localStorage に反映
+      // TitleScreen は localStorage を読むので、事前に反映することでコンティニュー表示が正しくなる
+      await this._bootCloudSync();
+    }
+
     // タイトル画面表示
     this._showTitle();
+  }
+
+  /** 起動時のクラウド同期: タイムアウト付きで試行し、失敗しても続行 */
+  async _bootCloudSync() {
+    const SYNC_TIMEOUT_MS = 4000;
+    // 一時 SaveSystem で同期だけ実行（inventory は不要）
+    const tempSave = new SaveSystem({ items: [], gold: 0, maxCapacity: 0 });
+    try {
+      const result = await Promise.race([
+        tempSave.syncOnBoot(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), SYNC_TIMEOUT_MS)),
+      ]);
+      if (result.source === 'cloud' && result.data) {
+        // クラウドデータが採用された → localStorage に書き戻し
+        localStorage.setItem('alchemy_survivors_save_v1', JSON.stringify(result.data));
+        if (result.conflict) {
+          console.info('[Game] Cloud save adopted over local (newer timestamp). Local backed up.');
+        }
+      }
+    } catch (e) {
+      console.warn('[Game] Boot cloud sync skipped:', e.message || e);
+    }
   }
 
   _showTitle() {
@@ -151,6 +192,12 @@ class Game {
   _initGame(mode) {
     this.inventory = new InventorySystem();
     this.saveSystem = new SaveSystem(this.inventory);
+    // クラウド同期ステータスをトーストで通知
+    this.saveSystem.setCloudSyncListener((event, detail) => {
+      if (event === 'error' && detail?.phase === 'push') {
+        this._showToast('☁ クラウド保存に失敗しました（次回再試行）', 'warning');
+      }
+    });
 
     if (mode === 'continue') {
       const data = this.saveSystem.load();
@@ -298,9 +345,40 @@ class Game {
     // 実績チェック
     if (this.achievements) this.achievements.check();
 
+    // サーバ検証経由で統計送信（失敗しても体験に影響させない）
+    this._submitRunResultToServer(resultData);
+
     // リザルト画面表示
     this.resultScreen = new RunResultScreen(this.uiRoot);
     this.resultScreen.show(resultData);
+  }
+
+  /**
+   * Azure Functions 経由で統計を送信。
+   * サーバ側で妥当性検証 → 合格時のみ PlayFab Statistics を更新する。
+   */
+  _submitRunResultToServer(resultData) {
+    if (!PlayFabClient.isAvailable()) return;
+    const payload = {
+      survivalTime: Math.floor(resultData.elapsed || 0),
+      killCount: resultData.killCount || 0,
+      highestDamage: resultData.highestDamage || 0,
+      level: resultData.level || 0,
+      hardMode: !!resultData.hardMode,
+      bossDefeated: !!resultData.bossDefeated,
+      reason: resultData.reason || 'death',
+      areaId: resultData.areaId || null,
+    };
+    PlayFabClient.executeFunction('submitRunResult', payload)
+      .then((data) => {
+        const body = data?.FunctionResult;
+        if (body && body.accepted === false) {
+          console.warn('[Game] Run result rejected by server:', body.reason);
+        }
+      })
+      .catch((e) => {
+        console.warn('[Game] submitRunResult failed:', e.message || e);
+      });
   }
 
   _returnToHub(resultData) {
