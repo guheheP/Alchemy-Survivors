@@ -15,7 +15,8 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // 'auto' だとコールバックを挟めないので手動登録に切り替え（pwaRuntime.js で registerSW を呼ぶ）
+      injectRegister: null,
       // base に合わせて SW スコープを調整
       base: BASE,
       scope: BASE,

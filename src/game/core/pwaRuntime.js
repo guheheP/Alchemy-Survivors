@@ -3,12 +3,16 @@
  *  - インストールプロンプトの捕捉 (beforeinstallprompt)
  *  - オンライン復帰時にクラウドセーブを再送
  *  - ランプレイ中のスクリーンロック抑止 (wakeLock)
- *  - Service Worker 更新通知トースト
+ *  - Service Worker 更新通知 + 手動 / 自動リロード
  */
 
 import { eventBus } from './EventBus.js';
+// vite-plugin-pwa が提供する仮想モジュール。ビルド時に自動で差し替えられる。
+import { registerSW } from 'virtual:pwa-register';
 
 let deferredInstallPrompt = null;
+let _updateSW = null;         // registerSW の戻り値。updateSW(true) で即適用してリロード
+let _updateAvailable = false; // 新バージョンを検出済みかどうか
 
 /** インストールプロンプトが利用可能かどうか (Android/Desktop Chrome) */
 export function canPromptInstall() {
@@ -74,6 +78,56 @@ export function initPwaRuntime({ getSaveSystem } = {}) {
   window.addEventListener('offline', () => {
     eventBus.emit('toast', { message: '📴 オフラインモード（進捗はローカル保存）', type: 'warning' });
   });
+
+  // 3. Service Worker 登録 + 更新検知
+  try {
+    _updateSW = registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        // 新バージョンが waiting 状態になった
+        _updateAvailable = true;
+        eventBus.emit('pwa:updateAvailable');
+      },
+      onOfflineReady() {
+        eventBus.emit('toast', { message: '📦 オフラインでも遊べるようになりました', type: 'success' });
+      },
+      onRegistered(reg) {
+        if (!reg) return;
+        // 起動直後に一度明示チェック（ホーム画面から起動した直後のチェック）
+        reg.update().catch(() => {});
+        // 30分ごとにバックグラウンドでチェック
+        setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+        // ウィンドウが前面に戻ったときもチェック（デスクトップPWAで長時間開きっぱなし対策）
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            reg.update().catch(() => {});
+          }
+        });
+      },
+      onRegisterError(err) {
+        // 開発環境やブラウザ非対応で失敗しても致命的ではない
+        if (typeof console !== 'undefined') console.warn('[PWA] SW register failed', err);
+      },
+    });
+  } catch (e) {
+    // SSR / virtual module 解決失敗などで例外 → 無視
+  }
+}
+
+/** 新バージョンが利用可能か (UI側でバナー表示判定に使用) */
+export function isPwaUpdateAvailable() {
+  return _updateAvailable;
+}
+
+/**
+ * 新バージョンを即適用してリロード。ユーザー操作で呼ぶ（ランプレイ中は呼ばない）。
+ */
+export function applyPwaUpdate() {
+  if (typeof _updateSW === 'function') {
+    _updateSW(true); // true = reload 付きで skipWaiting
+  } else {
+    window.location.reload();
+  }
 }
 
 // ---------- WakeLock (プレイ中のみスクリーン点灯維持) ----------

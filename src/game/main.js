@@ -24,7 +24,7 @@ import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import { initTraitTooltipTap } from './ui/UIHelpers.js';
 import { RunPickupToasts } from './ui/RunPickupToasts.js';
 import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNamePrompt.js';
-import { initPwaRuntime } from './core/pwaRuntime.js';
+import { initPwaRuntime, applyPwaUpdate } from './core/pwaRuntime.js';
 
 class Game {
   constructor() {
@@ -172,8 +172,20 @@ class Game {
     // タッチ端末用: 特性ツールチップのタップ開閉
     initTraitTooltipTap();
 
-    // PWA ランタイム初期化 (インストールプロンプト / online 復帰時再送)
+    // PWA ランタイム初期化 (インストールプロンプト / online 復帰時再送 / SW更新検知)
     initPwaRuntime({ getSaveSystem: () => this.saveSystem });
+
+    // 新バージョン検知 → プレイ中でなければ即適用、プレイ中は通知のみ
+    eventBus.on('pwa:updateAvailable', () => {
+      const inRun = !!this.runManager;
+      if (inRun) {
+        // プレイ中断はしない。次回起動時に新バージョンで起動するよう案内のみ。
+        this._showToast('🆕 新しいバージョンがあります（次回起動時に反映）', 'default');
+      } else {
+        // ハブ画面等ならボタン付きトーストで即リロード選択可能
+        this._showUpdateToast();
+      }
+    });
 
     // PlayFab 初期化（Title ID 未設定ならスキップされる）
     const pfReady = PlayFabClient.initialize();
@@ -454,6 +466,30 @@ class Game {
       toast.classList.remove('visible');
       setTimeout(() => toast.remove(), 300);
     }, 3000);
+  }
+
+  /** PWA 更新通知: 再読込ボタン付き、ユーザー操作で消えるまで表示 */
+  _showUpdateToast() {
+    // 多重表示を防止
+    if (document.querySelector('.game-toast.pwa-update-toast')) return;
+    const toast = document.createElement('div');
+    toast.className = 'game-toast toast-success pwa-update-toast';
+    toast.innerHTML = `
+      <span class="pwa-update-text">🆕 新しいバージョンがあります</span>
+      <button class="pwa-update-btn" type="button">再読込</button>
+      <button class="pwa-update-close" type="button" aria-label="閉じる">✕</button>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('visible'), 10);
+
+    const close = () => {
+      toast.classList.remove('visible');
+      setTimeout(() => toast.remove(), 300);
+    };
+    toast.querySelector('.pwa-update-btn').addEventListener('click', () => {
+      applyPwaUpdate();
+    });
+    toast.querySelector('.pwa-update-close').addEventListener('click', close);
   }
 
   _clearUI() {
