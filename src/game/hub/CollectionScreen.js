@@ -188,9 +188,11 @@ export class CollectionScreen {
         <div class="coll-trait-list">
           ${traits.map(({ name, def }) => {
             const runEffects = [];
+            let hasEquip = false, hasCraft = false;
             if (def.effects) {
               for (const [key, val] of Object.entries(def.effects)) {
                 if (key.startsWith('run')) {
+                  hasEquip = true;
                   const label = {
                     runDamageFlat: 'ダメージ', runDamageReduction: '軽減', runMaxHpFlat: 'HP',
                     runMoveSpeed: '速度', runRegenPerSec: '回復/秒', runDodge: '回避',
@@ -198,11 +200,15 @@ export class CollectionScreen {
                     runStartInvincible: '開始無敵',
                   }[key] || key;
                   runEffects.push(`${label}+${typeof val === 'number' && val < 1 ? (val * 100).toFixed(0) + '%' : val}`);
+                } else if (key === 'craftQualityBonus') {
+                  hasCraft = true;
                 }
               }
             }
+            const pills = (hasEquip ? `<span class="trait-cat-pill trait-cat-equip" title="装備中に発動">装</span>` : '')
+              + (hasCraft ? `<span class="trait-cat-pill trait-cat-craft" title="素材として調合時に発動">素</span>` : '');
             return `<div class="coll-trait-item rarity-${rarity}">
-              <span class="coll-trait-name">${name}</span>
+              <span class="coll-trait-name">${pills}${name}</span>
               <span class="coll-trait-desc">${def.description}</span>
               ${runEffects.length > 0 ? `<span class="coll-trait-run">${runEffects.join(' / ')}</span>` : ''}
             </div>`;

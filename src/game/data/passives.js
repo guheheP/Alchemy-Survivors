@@ -53,11 +53,11 @@ export const PassiveDefs = [
   },
   {
     id: 'regen',
-    name: 'リジェネ+1/秒',
-    description: '毎秒HPを1回復',
+    name: 'リジェネ+0.25/秒',
+    description: '毎秒HPを0.25回復',
     icon: '💚',
     maxStacks: 5,
-    effect: { stat: 'regenPerSec', value: 1 },
+    effect: { stat: 'regenPerSec', value: 0.25 },
   },
   {
     id: 'extra_drop',
