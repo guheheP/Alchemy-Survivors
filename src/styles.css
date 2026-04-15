@@ -613,7 +613,7 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
 .trait-item-wrap { position: relative; display: inline-block; }
 .trait-tooltip {
   display: none;
-  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  position: absolute; bottom: 100%; left: 0;
   width: min(220px, 85vw); padding: 0.5rem;
   background: #1a1a2e; border: 1px solid #555; border-radius: 6px;
   z-index: 20; pointer-events: none;
