@@ -2,10 +2,10 @@
  * CraftingScreen — 簡易クラフトUI（パズルなし）
  */
 
-import { ItemBlueprints, Recipes, TraitDefs, MaterialCategories } from '../data/items.js';
+import { ItemBlueprints, Recipes, TraitDefs, TraitFusionTable, MaterialCategories } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
 import { WeaponSkillDefs } from '../data/weaponSkills.js';
-import { craftItem, isCategorySlot, getCategoryId, materialMatchesSlot } from '../ItemSystem.js';
+import { craftItem, isCategorySlot, getCategoryId, materialMatchesSlot, getCurrentQualityCap } from '../ItemSystem.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 
@@ -413,6 +413,8 @@ export class CraftingScreen {
       }
     }
 
+    const fusionMap = this._computeFusionMap();
+
     traitsEl.innerHTML = `
       <h4>引き継ぎ特性（${GameConfig.maxTraitSlots}枠まで）</h4>
       <div class="trait-list">
@@ -420,16 +422,20 @@ export class CraftingScreen {
           const def = TraitDefs[t];
           const selected = this.selectedTraits.includes(t);
           const runFx = this._getTraitRunEffects(def);
+          const fusedTo = fusionMap[t];
+          const fusedDef = fusedTo ? TraitDefs[fusedTo] : null;
           return `<div class="trait-item-wrap">
-            <button class="trait-toggle ${selected ? 'selected' : ''} rarity-${def?.rarity || 'common'}"
+            <button class="trait-toggle ${selected ? 'selected' : ''} ${fusedTo ? 'will-fuse' : ''} rarity-${def?.rarity || 'common'}"
                     data-trait="${t}" ${this.selectedTraits.length >= GameConfig.maxTraitSlots && !selected ? 'disabled' : ''}>
-              ${t}
+              <span class="trait-name">${t}</span>
+              ${fusedTo ? `<span class="trait-fuse-arrow" title="融合で${fusedTo}へ昇格">✨→<span class="rarity-${fusedDef?.rarity || 'common'}">${fusedTo}</span></span>` : ''}
             </button>
             <div class="trait-tooltip">
               <span class="trait-tt-name rarity-${def?.rarity || 'common'}">${t}</span>
               <span class="trait-tt-rarity">${def?.rarity || ''}</span>
               <p class="trait-tt-desc">${def?.description || ''}</p>
               ${runFx ? `<p class="trait-tt-run">${runFx}</p>` : ''}
+              ${fusedTo && fusedDef ? `<p class="trait-tt-fuse">✨ 融合: <span class="rarity-${fusedDef.rarity}">${fusedTo}</span> — ${fusedDef.description || ''}</p>` : ''}
             </div>
           </div>`;
         }).join('')}
@@ -459,47 +465,78 @@ export class CraftingScreen {
 
     const recipe = Recipes[this.selectedRecipeId];
     const bp = ItemBlueprints[recipe.targetId];
-
-    // 品質予測
-    const totalQ = this.assignedMaterials.reduce((sum, m) => sum + (m?.quality || 0), 0);
-    const avgQ = this.assignedMaterials.length > 0 ? Math.floor(totalQ / this.assignedMaterials.length) : 0;
+    const pr = this._computePreviewResult();
+    if (!pr) { preview.innerHTML = ''; return; }
+    const { finalQ, fusionMap, finalTraits, capped } = pr;
 
     let html = `<h4>完成品プレビュー</h4>`;
     html += `<div class="preview-stats">`;
-    html += `<div class="preview-row"><span>予測品質:</span><span class="preview-val">Q${avgQ}</span></div>`;
+    html += `<div class="preview-row"><span>予測品質:</span><span class="preview-val">Q${finalQ}${capped ? ' <span class="preview-cap-badge">上限</span>' : ''}</span></div>`;
 
-    if (bp.type === 'equipment' && bp.equipType) {
+    if (bp.type === 'equipment' && this._isWeaponType(bp.equipType)) {
       const wc = GameConfig.weapon;
-      const dmg = bp.baseValue / wc.damageBaseDivisor + avgQ / wc.damageQualityDivisor;
-      const spd = wc.speedBase + avgQ / wc.speedQualityDivisor;
+      const dmg = bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor;
+      const spd = wc.speedBase + finalQ / wc.speedQualityDivisor;
       const typeConfig = GameConfig.weaponTypes[bp.equipType];
       if (typeConfig) {
-        const range = typeConfig.baseRange * (1 + avgQ / wc.rangeQualityDivisor);
+        const range = typeConfig.baseRange * (1 + finalQ / wc.rangeQualityDivisor);
         const cmp = this._compareWithEquipped(bp, { dmg, spd, range });
         html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${dmg.toFixed(1)}${cmp.dmg}</span></div>`;
         html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd.toFixed(2)}x${cmp.spd}</span></div>`;
         html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range.toFixed(0)}px${cmp.range}</span></div>`;
         html += `<div class="preview-row"><span>パターン:</span><span class="preview-val">${this._getPatternName(bp.equipType)}</span></div>`;
-        if (cmp.label) {
-          html += `<div class="preview-compare">${cmp.label}</div>`;
-        }
+        if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
         const skillInfo = this._getSkillInfo(bp.equipType, bp.baseValue, recipe.targetId);
         if (skillInfo) {
           html += `<div class="preview-row preview-skill"><span>スキル:</span><span class="preview-val">${skillInfo.name}</span></div>`;
           html += `<div class="preview-row"><span></span><span class="preview-skill-desc">${skillInfo.desc}（CD ${skillInfo.cd}秒）</span></div>`;
         }
       }
+    } else if (bp.type === 'equipment' && this._isArmorType(bp.equipType)) {
+      const defVal = bp.baseValue / 12 + finalQ / 8;
+      const hpBonus = finalQ * 0.5;
+      const cmp = this._compareArmor({ def: defVal, hp: hpBonus });
+      html += `<div class="preview-row"><span>防御値:</span><span class="preview-val">+${defVal.toFixed(1)}${cmp.def}</span></div>`;
+      html += `<div class="preview-row"><span>最大HP:</span><span class="preview-val">+${hpBonus.toFixed(0)}${cmp.hp}</span></div>`;
+      html += `<div class="preview-row"><span>種別:</span><span class="preview-val">${this._getArmorTypeName(bp.equipType)}</span></div>`;
+      if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
+      const skillInfo = this._getSkillInfo(bp.equipType, bp.baseValue, recipe.targetId);
+      if (skillInfo) {
+        html += `<div class="preview-row preview-skill"><span>スキル:</span><span class="preview-val">${skillInfo.name}</span></div>`;
+        html += `<div class="preview-row"><span></span><span class="preview-skill-desc">${skillInfo.desc}（CD ${skillInfo.cd}秒）</span></div>`;
+      }
     } else if (bp.type === 'accessory') {
-      const spdBonus = (bp.baseValue / 500 + avgQ / 1000);
+      const spdBonus = (bp.baseValue / 500 + finalQ / 1000);
       const cmp = this._compareAccessory(spdBonus);
       html += `<div class="preview-row"><span>移動速度:</span><span class="preview-val">+${(spdBonus * 100).toFixed(1)}%${cmp.spd}</span></div>`;
       if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
+    } else if (bp.type === 'consumable' && bp.battleEffect) {
+      html += this._renderConsumablePreview(bp, finalQ, finalTraits);
     }
 
-    // 選択中特性のラン効果
-    if (this.selectedTraits.length > 0) {
-      html += `<div class="preview-traits-section"><h5>特性のラン効果</h5>`;
-      for (const t of this.selectedTraits) {
+    // 特性融合プレビュー
+    const fusionEntries = Object.entries(fusionMap);
+    if (fusionEntries.length > 0) {
+      html += `<div class="preview-fusion-section"><h5>✨ 特性融合</h5>`;
+      for (const [from, to] of fusionEntries) {
+        const defFrom = TraitDefs[from];
+        const defTo = TraitDefs[to];
+        const fromDesc = defFrom?.description || '';
+        const toDesc = defTo?.description || '';
+        html += `<div class="preview-fusion-row">
+          <span class="fusion-from rarity-${defFrom?.rarity || 'common'}">${from}</span>
+          <span class="fusion-arrow">×2 →</span>
+          <span class="fusion-to rarity-${defTo?.rarity || 'common'}">${to}</span>
+        </div>
+        <div class="preview-fusion-desc">${fromDesc} → <span class="rarity-${defTo?.rarity || 'common'}">${toDesc}</span></div>`;
+      }
+      html += `</div>`;
+    }
+
+    // 完成品の最終特性（融合適用後）
+    if (finalTraits.length > 0) {
+      html += `<div class="preview-traits-section"><h5>完成品の特性 (${finalTraits.length}/${GameConfig.maxTraitSlots})</h5>`;
+      for (const t of finalTraits) {
         const def = TraitDefs[t];
         if (!def?.effects) continue;
         const runEffects = [];
@@ -511,11 +548,13 @@ export class CraftingScreen {
               runDodge: '回避', runDropRate: 'ドロップ率', runAttackSpeed: '攻速',
               runExpBonus: '経験値', runStartInvincible: '開始無敵',
             }[key] || key;
-            runEffects.push(`${label}+${typeof val === 'number' && val < 1 ? (val * 100).toFixed(0) + '%' : val}`);
+            runEffects.push(`${label}+${typeof val === 'number' && val < 1 && val > 0 ? (val * 100).toFixed(0) + '%' : val}`);
           }
         }
         if (runEffects.length > 0) {
           html += `<div class="preview-trait-fx"><span class="rarity-${def.rarity}">${t}</span>: ${runEffects.join(', ')}</div>`;
+        } else if (def.description) {
+          html += `<div class="preview-trait-fx"><span class="rarity-${def.rarity}">${t}</span>: ${def.description}</div>`;
         }
       }
       html += `</div>`;
@@ -523,6 +562,211 @@ export class CraftingScreen {
 
     html += `</div>`;
     preview.innerHTML = html;
+  }
+
+  _isWeaponType(equipType) {
+    return ['sword', 'spear', 'bow', 'staff', 'dagger'].includes(equipType);
+  }
+
+  _isArmorType(equipType) {
+    return ['armor', 'robe', 'shield'].includes(equipType);
+  }
+
+  _getArmorTypeName(equipType) {
+    return { armor: '重装鎧', robe: 'ローブ', shield: '盾' }[equipType] || equipType;
+  }
+
+  /** 素材の特性出現回数から融合マップを計算 (craftItem と同一ロジック) */
+  _computeFusionMap() {
+    const traitCounts = {};
+    for (const mat of this.assignedMaterials) {
+      if (!mat || !mat.traits) continue;
+      const seen = new Set();
+      for (const t of mat.traits) {
+        if (!seen.has(t)) {
+          traitCounts[t] = (traitCounts[t] || 0) + 1;
+          seen.add(t);
+        }
+      }
+    }
+    const fusionMap = {};
+    for (const [trait, count] of Object.entries(traitCounts)) {
+      if (count >= 2 && TraitFusionTable[trait] && TraitDefs[TraitFusionTable[trait]]) {
+        fusionMap[trait] = TraitFusionTable[trait];
+      }
+    }
+    return fusionMap;
+  }
+
+  /** プレビュー用: craftItem と同じロジックで最終品質・最終特性を算出 */
+  _computePreviewResult() {
+    const recipe = Recipes[this.selectedRecipeId];
+    if (!recipe) return null;
+
+    const totalQ = this.assignedMaterials.reduce((sum, m) => sum + (m?.quality || 0), 0);
+    const avgQ = this.assignedMaterials.length > 0 ? (totalQ / this.assignedMaterials.length) : 0;
+
+    let craftBonus = 0;
+    for (const mat of this.assignedMaterials) {
+      if (!mat?.traits) continue;
+      for (const t of mat.traits) {
+        const def = TraitDefs[t];
+        if (def?.effects?.craftQualityBonus) craftBonus += def.effects.craftQualityBonus;
+      }
+    }
+    const cap = getCurrentQualityCap();
+    const rawQ = Math.max(0, avgQ + craftBonus);
+    const finalQ = Math.floor(Math.min(cap, rawQ));
+    const capped = rawQ > cap;
+
+    const fusionMap = this._computeFusionMap();
+    const allAvailableTraits = new Set();
+    for (const mat of this.assignedMaterials) {
+      if (mat?.traits) mat.traits.forEach(t => allAvailableTraits.add(t));
+    }
+    for (const upgraded of Object.values(fusionMap)) allAvailableTraits.add(upgraded);
+
+    let effectiveSelected = [...this.selectedTraits];
+    if (effectiveSelected.length === 0) {
+      const baseTraits = new Set();
+      for (const mat of this.assignedMaterials) {
+        if (mat?.traits) mat.traits.forEach(t => baseTraits.add(t));
+      }
+      effectiveSelected = [...baseTraits];
+    }
+
+    const finalTraits = [];
+    const usedFusions = new Set();
+    for (const t of effectiveSelected) {
+      if (fusionMap[t] && !usedFusions.has(t)) {
+        finalTraits.push(fusionMap[t]);
+        usedFusions.add(t);
+      } else if (allAvailableTraits.has(t) && !usedFusions.has(t)) {
+        finalTraits.push(t);
+      }
+    }
+    const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
+    finalTraits.sort((a, b) => {
+      const ra = rarityOrder[TraitDefs[a]?.rarity] ?? 5;
+      const rb = rarityOrder[TraitDefs[b]?.rarity] ?? 5;
+      return ra - rb;
+    });
+    finalTraits.length = Math.min(finalTraits.length, GameConfig.maxTraitSlots);
+
+    return { finalQ, avgQ, craftBonus, capped, fusionMap, finalTraits };
+  }
+
+  /** 消耗品プレビュー — 品質と最終特性による補正を適用 */
+  _renderConsumablePreview(bp, finalQ, finalTraits) {
+    const MULT_UPPER = 2.0;
+    const MULT_LOWER = -0.9;
+    const mods = {
+      consumableDamageMult: 0,
+      consumableHealMult: 0,
+      consumableBuffMult: 0,
+      consumableDurationMult: 0,
+      consumableCooldownMult: 0,
+    };
+    let regenAmount = 0;
+    let regenDuration = 0;
+    for (const t of finalTraits) {
+      const def = TraitDefs[t];
+      if (!def?.effects) continue;
+      for (const key of Object.keys(mods)) {
+        if (typeof def.effects[key] === 'number') mods[key] += def.effects[key];
+      }
+      if (def.effects.consumableRegenAfter) {
+        regenAmount += def.effects.consumableRegenAfter.amount || 0;
+        regenDuration = Math.max(regenDuration, def.effects.consumableRegenAfter.duration || 0);
+      }
+    }
+    for (const k of Object.keys(mods)) {
+      if (mods[k] > MULT_UPPER) mods[k] = MULT_UPPER;
+      if (mods[k] < MULT_LOWER) mods[k] = MULT_LOWER;
+    }
+    const qMult = 1 + Math.max(0, (finalQ || 1) - 1) * 0.01;
+
+    const fx = bp.battleEffect;
+    const statNames = { atk: '攻撃力', def: '防御力', spd: '速度' };
+    const target = fx.target === 'all' ? '味方全体' : (fx.target === 'ally' ? '自己' : '敵');
+
+    let html = '';
+    html += `<div class="preview-row"><span>対象:</span><span class="preview-val">${target}</span></div>`;
+
+    switch (fx.type) {
+      case 'heal': {
+        const v = Math.round(fx.value * qMult * (1 + mods.consumableHealMult));
+        html += `<div class="preview-row"><span>💚 回復量:</span><span class="preview-val">+${v} HP${this._effectBadge(mods.consumableHealMult, false)}</span></div>`;
+        break;
+      }
+      case 'healfull':
+        html += `<div class="preview-row"><span>💚 効果:</span><span class="preview-val">HP全回復</span></div>`;
+        break;
+      case 'buff': {
+        const amt = fx.amount * qMult * (1 + mods.consumableBuffMult);
+        const dur = fx.duration * (1 + mods.consumableDurationMult);
+        let label;
+        let display;
+        if (fx.stat === 'atk') { label = '⬆️ 攻撃力:'; display = `+${amt.toFixed(0)}%`; }
+        else if (fx.stat === 'spd') { label = '⬆️ 移動速度:'; display = `+${amt.toFixed(0)}%`; }
+        else if (fx.stat === 'def') { label = '⬆️ 防御値:'; display = `+${amt.toFixed(1)}`; }
+        else { label = `⬆️ ${statNames[fx.stat] || fx.stat}:`; display = `+${amt.toFixed(1)}`; }
+        html += `<div class="preview-row"><span>${label}</span><span class="preview-val">${display}${this._effectBadge(mods.consumableBuffMult, false)}</span></div>`;
+        html += `<div class="preview-row"><span>⏱️ 継続:</span><span class="preview-val">${dur.toFixed(1)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
+        break;
+      }
+      case 'debuff': {
+        const dur = fx.duration * (1 + mods.consumableDurationMult);
+        html += `<div class="preview-row"><span>⬇️ 敵${statNames[fx.stat] || fx.stat}:</span><span class="preview-val">${fx.amount}</span></div>`;
+        html += `<div class="preview-row"><span>⏱️ 継続:</span><span class="preview-val">${dur.toFixed(1)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
+        html += `<div class="preview-row"><span>📏 範囲:</span><span class="preview-val">半径120px</span></div>`;
+        break;
+      }
+      case 'damage': {
+        const v = Math.round(fx.value * qMult * (1 + mods.consumableDamageMult));
+        html += `<div class="preview-row"><span>💥 ダメージ:</span><span class="preview-val">${v}${this._effectBadge(mods.consumableDamageMult, false)}</span></div>`;
+        html += `<div class="preview-row"><span>📏 範囲:</span><span class="preview-val">半径100px</span></div>`;
+        break;
+      }
+      case 'stun': {
+        const dur = fx.duration * (1 + mods.consumableDurationMult);
+        html += `<div class="preview-row"><span>⚡ スタン:</span><span class="preview-val">${dur.toFixed(1)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
+        html += `<div class="preview-row"><span>📏 範囲:</span><span class="preview-val">半径100px</span></div>`;
+        break;
+      }
+      default:
+        html += `<div class="preview-row"><span>効果:</span><span class="preview-val">使用効果あり</span></div>`;
+    }
+
+    const cdMult = Math.max(0.1, 1 + mods.consumableCooldownMult);
+    const cd = 3.0 * cdMult;
+    html += `<div class="preview-row"><span>🔄 クールダウン:</span><span class="preview-val">${cd.toFixed(2)}秒${this._effectBadge(mods.consumableCooldownMult, true)}</span></div>`;
+
+    const uses = fx.uses || 3;
+    html += `<div class="preview-row"><span>🔢 使用回数:</span><span class="preview-val">${uses}回</span></div>`;
+
+    if (regenAmount > 0 && regenDuration > 0) {
+      html += `<div class="preview-row"><span>🌿 効果後再生:</span><span class="preview-val">+${regenAmount.toFixed(1)}HP/秒 (${regenDuration}秒)</span></div>`;
+    }
+
+    // 装備中の同名消耗品と比較（簡易）
+    const cmp = this._compareConsumable(bp);
+    if (cmp) html += `<div class="preview-compare">${cmp}</div>`;
+
+    return html;
+  }
+
+  /**
+   * 効果倍率バッジ — 値が0なら非表示。invert=true はクールダウン等「負が良い」系。
+   */
+  _effectBadge(mult, invert) {
+    if (!mult || Math.abs(mult) < 0.001) return '';
+    const pct = Math.round(mult * 100);
+    const isGood = invert ? pct < 0 : pct > 0;
+    const cls = isGood ? 'up' : 'down';
+    const arrow = isGood ? '▲' : '▼';
+    const sign = pct > 0 ? '+' : '';
+    return ` <span class="preview-diff ${cls}">${arrow}${sign}${pct}%</span>`;
   }
 
   /**
@@ -565,6 +809,32 @@ export class CraftingScreen {
       spd: this._diffBadge(newSpdBonus * 100, curSpdBonus * 100, 1, '%'),
       label: `現在装備: ${eq.accessory.name} (Q${eq.accessory.quality})`,
     };
+  }
+
+  /** 装備中防具と数値比較 */
+  _compareArmor(newStats) {
+    const empty = { def: '', hp: '', label: '' };
+    const eq = this.getEquipment();
+    if (!eq?.armor) return { ...empty, label: '現在 防具 未装備' };
+    const bp = ItemBlueprints[eq.armor.blueprintId];
+    if (!bp) return empty;
+    const curDef = bp.baseValue / 12 + eq.armor.quality / 8;
+    const curHp = eq.armor.quality * 0.5;
+    return {
+      def: this._diffBadge(newStats.def, curDef, 1),
+      hp: this._diffBadge(newStats.hp, curHp, 0),
+      label: `現在装備: ${eq.armor.name} (Q${eq.armor.quality})`,
+    };
+  }
+
+  /** 持ち込み中の同名消耗品と比較 (簡易) */
+  _compareConsumable(newBp) {
+    const eq = this.getEquipment();
+    const consumables = eq?.consumables || [];
+    if (consumables.length === 0) return '';
+    const same = consumables.find(c => c.blueprintId === newBp.id);
+    if (!same) return '';
+    return `持ち込み中: ${same.name} (Q${same.quality})`;
   }
 
   _diffBadge(next, cur, digits, unit = '') {
