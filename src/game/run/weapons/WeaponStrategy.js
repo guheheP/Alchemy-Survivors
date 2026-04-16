@@ -775,7 +775,74 @@ export class WeaponStrategy {
       }
     }
 
-    eventBus.emit('skill:activated', { name: def.name, color });
+    // Tier別の追加演出（上位武器ほど派手に）
+    this._emitSkillFlourish(px, py, color);
+
+    eventBus.emit('skill:activated', { name: def.name, color, tier: this.skillTier });
+  }
+
+  /**
+   * スキルTierに応じた追加演出を重ねる
+   * T1: なし / T2: リング+輝き / T3: 光柱+放射光 / T4: 魔法陣+画面フラッシュ
+   */
+  _emitSkillFlourish(px, py, color) {
+    const tier = this.skillTier;
+    if (tier <= 1) return;
+
+    // --- T2以上: 拡大リング ---
+    const ringCount = Math.min(tier, 3);
+    for (let i = 0; i < ringCount; i++) {
+      this.effects.push({
+        type: 'tier_ring',
+        x: px, y: py,
+        range: 90 + i * 70,
+        timer: 0.65 + i * 0.1,
+        maxTimer: 0.65 + i * 0.1,
+        color,
+        width: 3 + tier * 0.8,
+      });
+    }
+    // 中心のきらめき
+    this.effects.push({
+      type: 'sparkle_burst', x: px, y: py,
+      range: 30 + tier * 10,
+      timer: 0.4, maxTimer: 0.4, color,
+    });
+
+    // --- T3以上: 光の柱 + 放射光 ---
+    if (tier >= 3) {
+      this.effects.push({
+        type: 'light_column', x: px, y: py,
+        timer: 0.55, maxTimer: 0.55, color,
+      });
+      this.effects.push({
+        type: 'radial_rays', x: px, y: py,
+        rayCount: 8,
+        range: 180,
+        timer: 0.5, maxTimer: 0.5, color,
+      });
+      this._emitBurst(px, py, 20, { speed: 220, life: 0.65, size: 3, color, shape: 'spark' });
+      this._shake(6, 0.25);
+    }
+
+    // --- T4: 魔法陣 + 画面全体フラッシュ + 爆発パーティクル ---
+    if (tier >= 4) {
+      this.effects.push({
+        type: 'magic_circle', x: px, y: py,
+        range: 140,
+        timer: 1.0, maxTimer: 1.0, color,
+      });
+      this.effects.push({
+        type: 'radial_rays', x: px, y: py,
+        rayCount: 14,
+        range: 280,
+        timer: 0.6, maxTimer: 0.6, color: '#fff',
+      });
+      this._emitBurst(px, py, 40, { speed: 320, life: 0.85, size: 3, color, shape: 'spark' });
+      this._emitBurst(px, py, 16, { speed: 140, life: 1.1, size: 4, color: '#fff', shape: 'circle' });
+      this._flash(color, 0.4);
+      this._shake(12, 0.4);
+    }
   }
 
   // ===== 演出ヘルパー =====
@@ -814,6 +881,11 @@ export class WeaponStrategy {
         case 'barrier_orbit': this._renderBarrierOrbit(ctx, camera, fx); break;
         case 'spin_blades': this._renderSpinBlades(ctx, camera, fx); break;
         case 'pierce_beam': this._renderPierceBeam(ctx, camera, fx); break;
+        case 'tier_ring': this._renderTierRing(ctx, camera, fx); break;
+        case 'sparkle_burst': this._renderSparkleBurst(ctx, camera, fx); break;
+        case 'light_column': this._renderLightColumn(ctx, camera, fx); break;
+        case 'radial_rays': this._renderRadialRays(ctx, camera, fx); break;
+        case 'magic_circle': this._renderMagicCircle(ctx, camera, fx); break;
       }
     }
   }
@@ -1176,6 +1248,189 @@ export class WeaponStrategy {
     // 内側白コア
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, -fx.width * 0.35, fx.range, fx.width * 0.7);
+    ctx.restore();
+  }
+
+  /** Tier別リング: 広がる二重光のリング (加算合成で光る) */
+  _renderTierRing(ctx, camera, fx) {
+    const sx = camera.worldToScreenX(fx.x);
+    const sy = camera.worldToScreenY(fx.y);
+    const progress = 1 - fx.timer / fx.maxTimer;
+    const r = fx.range * progress;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    // 外側光のリング
+    ctx.globalAlpha = (1 - progress) * 0.85;
+    ctx.strokeStyle = fx.color;
+    ctx.lineWidth = fx.width || 3;
+    ctx.shadowColor = fx.color;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    // 内側白コアライン
+    ctx.globalAlpha = (1 - progress) * 0.65;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = Math.max(1, (fx.width || 3) * 0.4);
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** 中心のきらめき爆発 */
+  _renderSparkleBurst(ctx, camera, fx) {
+    const sx = camera.worldToScreenX(fx.x);
+    const sy = camera.worldToScreenY(fx.y);
+    const progress = 1 - fx.timer / fx.maxTimer;
+    const size = fx.range * (0.4 + progress * 1.2);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = (1 - progress) * 0.95;
+    ctx.shadowColor = fx.color;
+    ctx.shadowBlur = 16;
+    // 十字の光
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(sx - size, sy); ctx.lineTo(sx + size, sy);
+    ctx.moveTo(sx, sy - size); ctx.lineTo(sx, sy + size);
+    ctx.stroke();
+    // 斜めの光（45度）
+    ctx.strokeStyle = fx.color;
+    ctx.lineWidth = 2;
+    const d = size * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(sx - d, sy - d); ctx.lineTo(sx + d, sy + d);
+    ctx.moveTo(sx - d, sy + d); ctx.lineTo(sx + d, sy - d);
+    ctx.stroke();
+    // 中心の白い点
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(sx, sy, Math.max(2, 6 * (1 - progress)), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /** 光の柱: 上空から降る縦長の光 */
+  _renderLightColumn(ctx, camera, fx) {
+    const sx = camera.worldToScreenX(fx.x);
+    const sy = camera.worldToScreenY(fx.y);
+    const progress = 1 - fx.timer / fx.maxTimer;
+    const h = 400;
+    const w = 36 * (1 + progress * 0.5);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = (1 - progress) * 0.75;
+    // 光柱グラデーション (上透明→下フル)
+    const grad = ctx.createLinearGradient(sx, sy - h, sx, sy + 10);
+    grad.addColorStop(0, this._hexA(fx.color, 0));
+    grad.addColorStop(0.5, this._hexA(fx.color, 0.7));
+    grad.addColorStop(1, this._hexA('#fff', 0.9));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(sx - w, sy - h);
+    ctx.lineTo(sx + w, sy - h);
+    ctx.lineTo(sx + w * 0.4, sy + 6);
+    ctx.lineTo(sx - w * 0.4, sy + 6);
+    ctx.closePath();
+    ctx.fill();
+    // 中央のコア光線
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 4;
+    ctx.shadowColor = fx.color;
+    ctx.shadowBlur = 12;
+    ctx.globalAlpha = (1 - progress) * 0.95;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - h);
+    ctx.lineTo(sx, sy);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /** 放射光線: 中心から外側に広がる光の線 */
+  _renderRadialRays(ctx, camera, fx) {
+    const sx = camera.worldToScreenX(fx.x);
+    const sy = camera.worldToScreenY(fx.y);
+    const progress = 1 - fx.timer / fx.maxTimer;
+    const reach = fx.range * (0.3 + progress * 0.7);
+    const count = fx.rayCount || 8;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = (1 - progress) * 0.9;
+    ctx.strokeStyle = fx.color;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = fx.color;
+    ctx.shadowBlur = 10;
+    for (let i = 0; i < count; i++) {
+      const a = (Math.PI * 2 / count) * i + progress * 0.3;
+      const x1 = sx + Math.cos(a) * 12;
+      const y1 = sy + Math.sin(a) * 12;
+      const x2 = sx + Math.cos(a) * reach;
+      const y2 = sy + Math.sin(a) * reach;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** 魔法陣: 回転する六芒星+外周輪 */
+  _renderMagicCircle(ctx, camera, fx) {
+    const sx = camera.worldToScreenX(fx.x);
+    const sy = camera.worldToScreenY(fx.y);
+    const progress = 1 - fx.timer / fx.maxTimer;
+    const r = fx.range * (0.5 + progress * 0.5);
+    const rot = progress * Math.PI * 1.5;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = (1 - progress) * 0.9;
+    ctx.strokeStyle = fx.color;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = fx.color;
+    ctx.shadowBlur = 14;
+
+    // 外周2重リング
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.88, 0, Math.PI * 2); ctx.stroke();
+
+    // 六芒星 (2つの三角形を重ねる)
+    ctx.save();
+    ctx.rotate(rot);
+    const hexR = r * 0.82;
+    ctx.beginPath();
+    for (let k = 0; k < 3; k++) {
+      const a = (Math.PI * 2 / 3) * k - Math.PI / 2;
+      const x = Math.cos(a) * hexR;
+      const y = Math.sin(a) * hexR;
+      if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.rotate(Math.PI);
+    ctx.beginPath();
+    for (let k = 0; k < 3; k++) {
+      const a = (Math.PI * 2 / 3) * k - Math.PI / 2;
+      const x = Math.cos(a) * hexR;
+      const y = Math.sin(a) * hexR;
+      if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+
+    // 外周のルーン点（8つ）
+    ctx.fillStyle = '#fff';
+    for (let i = 0; i < 8; i++) {
+      const a = (Math.PI * 2 / 8) * i - rot * 0.5;
+      const x = Math.cos(a) * r * 0.94;
+      const y = Math.sin(a) * r * 0.94;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
