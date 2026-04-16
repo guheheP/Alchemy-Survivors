@@ -13,9 +13,9 @@ import { eventBus } from '../../core/EventBus.js';
  *           しか出なかった。新実装は hitDamage 基準で強化に追従する。
  */
 const STATUS_EFFECT_CONFIG = {
-  fire:      { type: 'burn',       procChance: 0.20, duration: 3.0, dpsRatio: 0.10 },
+  fire:      { type: 'burn',       procChance: 0.20, duration: 3.0, dpsRatio: 0.25 },
   ice:       { type: 'freeze',     procChance: 0.15, duration: 2.0, speedMod: -40 },
-  poison:    { type: 'poison',     procChance: 0.25, duration: 3.0, dpsRatio: 0.05 },
+  poison:    { type: 'poison',     procChance: 0.25, duration: 4.0, dpsRatio: 0.12 },
   lightning: { type: 'shock',      procChance: 0.12, duration: 0.4 },
   water:     { type: 'vulnerable', procChance: 0.18, duration: 10.0, damageMultiplier: 0.15 },
   // wind は拡散専用、直接の状態異常なし
@@ -1941,11 +1941,11 @@ export class WeaponStrategy {
     enemy.applyStatusEffect(cfg.type, params);
   }
 
-  /** 風属性: 敵が状態異常を持っていれば周囲に半減拡散 */
+  /** 風属性: 敵が状態異常を持っていれば周囲に75%減衰で拡散 */
   _tryWindSpread(enemy, procBonus = 0, powerMult = 1) {
     const effects = [];
-    // 拡散強度 (基礎40%) に属性効果量ボーナスを乗算
-    const spread = 0.4 * powerMult;
+    // 拡散強度 (基礎75%) に属性効果量ボーナスを乗算
+    const spread = 0.75 * powerMult;
     if (enemy._burnTimer > 0) {
       effects.push({ type: 'burn', params: { duration: enemy._burnTimer * spread, dps: enemy._burnDps * spread } });
     }
@@ -1966,7 +1966,7 @@ export class WeaponStrategy {
     }
     if (effects.length > 0) {
       // 拡散半径も属性発動率ボーナスに応じて微増
-      const radius = 80 * (1 + procBonus);
+      const radius = 140 * (1 + procBonus);
       eventBus.emit('statusEffect:windSpread', {
         x: enemy.x, y: enemy.y, radius, source: enemy, effects,
       });

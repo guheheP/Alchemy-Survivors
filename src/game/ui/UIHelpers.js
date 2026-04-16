@@ -118,7 +118,7 @@ const ELEMENT_BADGE_DEFS = {
   fire: {
     label: '炎',
     icon: '🔥',
-    tooltip: '命中時に燃焼を付与。3秒間、毎秒そのヒットダメージの10%を継続ダメージ。',
+    tooltip: '命中時に燃焼を付与。3秒間、毎秒そのヒットダメージの25%を継続ダメージ。',
   },
   ice: {
     label: '氷',
@@ -128,7 +128,7 @@ const ELEMENT_BADGE_DEFS = {
   poison: {
     label: '毒',
     icon: '☠',
-    tooltip: '命中時に毒を付与。3秒間、毎秒そのヒットダメージの5%継続。周囲の敵に感染拡大。',
+    tooltip: '命中時に毒を付与。4秒間、毎秒そのヒットダメージの12%継続。周囲の敵に感染拡大。',
   },
   lightning: {
     label: '雷',

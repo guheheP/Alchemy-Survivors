@@ -325,13 +325,14 @@ export class Enemy extends Entity {
 
   /** 状態異常のティック処理 */
   updateStatusEffects(dt) {
-    // 燃焼 DoT
+    // 燃焼 DoT (1ティック最低2ダメ保証)
     if (this._burnTimer > 0) {
       this._burnTimer -= dt;
       this._burnAccum += dt;
       if (this._burnAccum >= 0.5) {
         this._burnAccum -= 0.5;
-        const dmg = this._burnDps * 0.5 * this._incomingDamageMult();
+        const raw = this._burnDps * 0.5 * this._incomingDamageMult();
+        const dmg = raw > 0 ? Math.max(2, raw) : 0;
         if (dmg > 0 && this.active) {
           this.hp -= dmg;
           eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: dmg, isCrit: false, dotColor: '#f62' });
@@ -343,13 +344,14 @@ export class Enemy extends Entity {
       if (this._burnTimer <= 0) { this._burnDps = 0; this._burnAccum = 0; }
     }
 
-    // 毒 DoT + 感染拡散
+    // 毒 DoT + 感染拡散 (1ティック最低2ダメ保証)
     if (this._poisonTimer > 0) {
       this._poisonTimer -= dt;
       this._poisonAccum += dt;
       if (this._poisonAccum >= 0.5) {
         this._poisonAccum -= 0.5;
-        const dmg = this._poisonDps * 0.5 * this._incomingDamageMult();
+        const raw = this._poisonDps * 0.5 * this._incomingDamageMult();
+        const dmg = raw > 0 ? Math.max(2, raw) : 0;
         if (dmg > 0 && this.active) {
           this.hp -= dmg;
           eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: dmg, isCrit: false, dotColor: '#6a4' });
