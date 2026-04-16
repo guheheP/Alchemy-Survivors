@@ -90,18 +90,19 @@ export class BossEntity extends Enemy {
     // 感電スタン中は行動不能
     if (this.isStunned) return;
 
-    // スキル実行中
-    if (this.activeSkill) {
-      this._executeSkill(dt, playerX, playerY);
-      return;
-    }
-
-    // テレグラフ中
+    // テレグラフ中を先にチェック（_prepareSkill が activeSkill もセットするため、
+    // 実行フェーズより先にテレグラフを進める必要がある）
     if (this.telegraphTimer > 0) {
       this.telegraphTimer -= dt;
       if (this.telegraphTimer <= 0) {
         this._startSkillExecution(playerX, playerY);
       }
+      return;
+    }
+
+    // スキル実行中（テレグラフが終わり skillTimer が立った後）
+    if (this.activeSkill) {
+      this._executeSkill(dt, playerX, playerY);
       return;
     }
 
@@ -224,6 +225,92 @@ export class BossEntity extends Enemy {
   _startSkillExecution(playerX, playerY) {
     // テレグラフ終了、実際のスキル発動
     this.skillTimer = 0.5; // スキル実行時間
+    // 発動エフェクト: スキルタイプ別に「今発動した！」を視覚化
+    this._emitSkillFireFx();
+  }
+
+  /** スキル発動時のFXをイベントバス経由で発行する */
+  _emitSkillFireFx() {
+    const skill = this.activeSkill;
+    if (!skill) return;
+    const tx = this.telegraphPos?.x ?? this.x;
+    const ty = this.telegraphPos?.y ?? this.y;
+    const sx = this.telegraphStartX ?? this.x;
+    const sy = this.telegraphStartY ?? this.y;
+
+    switch (skill.type) {
+      case 'attack': {
+        // 突進開始: ボス位置から前方に短い爆煙 + 小シェイク
+        eventBus.emit('particles:burst', { x: this.x, y: this.y, count: 10, config: { speed: 140, life: 0.35, size: 3, color: '#fa6', shape: 'square', gravity: 20 } });
+        eventBus.emit('camera:shake', { power: 4, duration: 0.15 });
+        break;
+      }
+      case 'heavy': {
+        // 重叩きつけ: 着弾点に強い衝撃波 + 破片 + 大シェイク
+        eventBus.emit('fx:shockwave', { x: tx, y: ty, color: '#faa', maxRadius: 110, duration: 0.45 });
+        eventBus.emit('particles:burst', { x: tx, y: ty, count: 20, config: { speed: 200, life: 0.5, size: 4, color: '#f84', shape: 'square', gravity: 80 } });
+        eventBus.emit('camera:shake', { power: 8, duration: 0.3 });
+        break;
+      }
+      case 'aoe': {
+        // 円形爆発: 中リング + パーティクル + フラッシュ
+        eventBus.emit('fx:shockwave', { x: tx, y: ty, color: '#f66', maxRadius: 140, duration: 0.5 });
+        eventBus.emit('particles:burst', { x: tx, y: ty, count: 18, config: { speed: 150, life: 0.45, size: 3, color: '#f66', shape: 'circle' } });
+        eventBus.emit('ui:flash', { duration: 0.1, color: 'rgba(255,80,80,0.22)' });
+        eventBus.emit('camera:shake', { power: 5, duration: 0.2 });
+        break;
+      }
+      case 'line': {
+        // 直線攻撃: 発動位置〜着弾方向に沿ってパーティクル点列 + 鋭いシェイク
+        const range = skill.range || 320;
+        const cos = Math.cos(this.telegraphAngle);
+        const sin = Math.sin(this.telegraphAngle);
+        const segments = 6;
+        for (let i = 1; i <= segments; i++) {
+          const px = sx + cos * (range * i / segments);
+          const py = sy + sin * (range * i / segments);
+          eventBus.emit('particles:burst', { x: px, y: py, count: 6, config: { speed: 120, life: 0.35, size: 3, color: '#fa6', shape: 'spark' } });
+        }
+        eventBus.emit('fx:shockwave', { x: sx, y: sy, color: '#fa6', maxRadius: 60, duration: 0.35 });
+        eventBus.emit('camera:shake', { power: 6, duration: 0.25 });
+        break;
+      }
+      case 'wide_aoe': {
+        // 広範囲: 巨大衝撃波 + 強フラッシュ + 大量パーティクル + 大シェイク
+        const radius = skill.radius || 170;
+        eventBus.emit('fx:shockwave', { x: tx, y: ty, color: '#f44', maxRadius: radius * 1.2, duration: 0.7 });
+        eventBus.emit('fx:shockwave', { x: tx, y: ty, color: '#fff', maxRadius: radius * 0.6, duration: 0.45 });
+        eventBus.emit('particles:burst', { x: tx, y: ty, count: 30, config: { speed: 240, life: 0.6, size: 4, color: '#f66', shape: 'square', gravity: 60 } });
+        eventBus.emit('ui:flash', { duration: 0.15, color: 'rgba(255,60,60,0.35)' });
+        eventBus.emit('camera:shake', { power: 10, duration: 0.4 });
+        break;
+      }
+      case 'radial_burst': {
+        // 放射多段: 各レイ方向にパーティクル列
+        const rayCount = skill.rayCount || 6;
+        const rayRange = skill.rayRange || 260;
+        for (let i = 0; i < rayCount; i++) {
+          const ang = this.telegraphAngle + (Math.PI * 2 / rayCount) * i;
+          const c = Math.cos(ang), s = Math.sin(ang);
+          for (let k = 1; k <= 4; k++) {
+            eventBus.emit('particles:burst', {
+              x: sx + c * (rayRange * k / 4),
+              y: sy + s * (rayRange * k / 4),
+              count: 4,
+              config: { speed: 120, life: 0.35, size: 3, color: '#fc6', shape: 'spark' },
+            });
+          }
+        }
+        eventBus.emit('fx:shockwave', { x: sx, y: sy, color: '#fc6', maxRadius: 90, duration: 0.45 });
+        eventBus.emit('camera:shake', { power: 7, duration: 0.3 });
+        break;
+      }
+      case 'heal': {
+        // 回復: 緑のキラキラ
+        eventBus.emit('particles:burst', { x: this.x, y: this.y, count: 16, config: { speed: 80, life: 0.9, size: 3, color: '#6f8', shape: 'spark', gravity: -40 } });
+        break;
+      }
+    }
   }
 
   _executeSkill(dt, playerX, playerY) {

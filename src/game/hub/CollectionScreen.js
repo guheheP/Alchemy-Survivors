@@ -17,6 +17,33 @@ export class CollectionScreen {
     this.el = document.createElement('div');
     this.el.className = 'collection-screen';
     this.activeTab = 'items';
+    // 事前にアイテム → 産出エリア の逆引きインデックスを構築
+    this._materialToAreas = this._buildMaterialAreaIndex();
+  }
+
+  /** 全エリアのドロップテーブルを走査し、blueprintId → 産出エリア情報 を構築 */
+  _buildMaterialAreaIndex() {
+    const idx = {};
+    for (const area of Object.values(AreaDefs)) {
+      if (!Array.isArray(area.dropTable)) continue;
+      const totalWeight = area.dropTable.reduce((s, d) => s + (d.weight || 0), 0) || 1;
+      for (const drop of area.dropTable) {
+        const id = drop.blueprintId;
+        if (!id) continue;
+        if (!idx[id]) idx[id] = [];
+        idx[id].push({
+          areaId: area.id,
+          areaName: area.name,
+          areaIcon: area.icon,
+          areaUnlocked: !!area.unlocked,
+          weight: drop.weight || 0,
+          percent: ((drop.weight || 0) / totalWeight) * 100,
+        });
+      }
+    }
+    // 各エリアの重み順で降順ソート
+    for (const id in idx) idx[id].sort((a, b) => b.percent - a.percent);
+    return idx;
   }
 
   render() {
@@ -103,20 +130,58 @@ export class CollectionScreen {
       html += `<div class="coll-category">
         <h4>${cat.label} (${discoveredCount}/${cat.items.length})</h4>
         <div class="coll-grid">
-          ${cat.items.map(({ id, bp, discovered }) => `
-            <div class="coll-item ${discovered ? 'discovered' : 'undiscovered'}">
+          ${cat.items.map(({ id, bp, discovered }) => {
+            // 素材: 産出エリア情報を data-tooltip に埋め込む
+            let tooltipAttrs = '';
+            if (discovered && bp.type === 'material') {
+              const areas = this._materialToAreas[id] || [];
+              if (areas.length > 0) {
+                const lines = areas.map(a => {
+                  const lockIcon = a.areaUnlocked ? '' : '🔒 ';
+                  return `${lockIcon}${a.areaIcon} ${a.areaName} (${a.percent.toFixed(0)}%)`;
+                }).join(' / ');
+                const title = `${bp.name} の産出地`;
+                tooltipAttrs = ` tabindex="0" role="button" data-tooltip="${this._escapeAttr(lines)}" data-tooltip-title="${this._escapeAttr(title)}"`;
+              } else {
+                tooltipAttrs = ` data-tooltip="調合または中間素材" data-tooltip-title="${this._escapeAttr(bp.name)}"`;
+              }
+            } else if (discovered) {
+              tooltipAttrs = ` data-tooltip="${this._escapeAttr(bp.name)}" data-tooltip-title="${this._escapeAttr(bp.name)}"`;
+            }
+            return `
+            <div class="coll-item ${discovered ? 'discovered' : 'undiscovered'}"${tooltipAttrs}>
               ${discovered
                 ? `<img src="${bp.image ? assetPath(bp.image) : ''}" class="coll-item-icon" onerror="this.style.display='none'" alt="">
-                   <span class="coll-item-name">${bp.name}</span>`
+                   <span class="coll-item-name">${bp.name}</span>
+                   ${bp.type === 'material' ? this._renderMaterialAreaHint(id) : ''}`
                 : `<span class="coll-item-unknown">???</span>`
               }
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       </div>`;
     }
 
     container.innerHTML = html;
+  }
+
+  /** 素材カードの下に表示する短い産出エリアヒント */
+  _renderMaterialAreaHint(blueprintId) {
+    const areas = this._materialToAreas[blueprintId];
+    if (!areas || areas.length === 0) return '<span class="coll-item-source">調合/中間</span>';
+    // アイコンのみ (スペース節約)
+    const icons = areas.slice(0, 4).map(a => {
+      const cls = a.areaUnlocked ? '' : 'coll-area-locked';
+      return `<span class="coll-source-area ${cls}" title="${a.areaName} ${a.percent.toFixed(0)}%">${a.areaIcon}</span>`;
+    }).join('');
+    const more = areas.length > 4 ? `<span class="coll-source-more">+${areas.length - 4}</span>` : '';
+    return `<span class="coll-item-source">${icons}${more}</span>`;
+  }
+
+  /** 文字列をHTML属性用にエスケープ */
+  _escapeAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   _renderBosses(container, defeatedBosses) {
@@ -153,19 +218,47 @@ export class CollectionScreen {
   _renderAreas(container) {
     container.innerHTML = `
       <div class="coll-area-grid">
-        ${Object.values(AreaDefs).map(area => `
-          <div class="coll-area-card ${area.unlocked ? 'unlocked' : 'locked'}">
-            <div class="coll-area-icon">${area.icon}</div>
-            <div class="coll-area-info">
-              <span class="coll-area-name">${area.unlocked ? area.name : '???'}</span>
-              ${area.unlocked ? `
-                <span class="coll-area-desc">${area.description}</span>
-                <span class="coll-area-diff">難易度: ${'★'.repeat(area.difficulty + 1)}</span>
-                <span class="coll-area-quality">品質: Q${area.qualityMin}〜Q${area.qualityMax}</span>
-              ` : '<span class="coll-area-hint">未解放</span>'}
+        ${Object.values(AreaDefs).map(area => {
+          const unlocked = area.unlocked;
+          const drops = Array.isArray(area.dropTable) ? area.dropTable : [];
+          const totalWeight = drops.reduce((s, d) => s + (d.weight || 0), 0) || 1;
+          const dropListHtml = drops.length > 0
+            ? `<div class="coll-area-drops">
+                <h5>産出素材 (${drops.length}種)</h5>
+                <div class="coll-drop-list">
+                  ${drops.map(d => {
+                    const bp = ItemBlueprints[d.blueprintId];
+                    if (!bp) return '';
+                    const percent = ((d.weight || 0) / totalWeight) * 100;
+                    const imgSrc = bp.image ? assetPath(bp.image) : '';
+                    return `<div class="coll-drop-row" data-tooltip="${this._escapeAttr(bp.name)} (重み ${d.weight})" data-tooltip-title="${this._escapeAttr(bp.name)}">
+                      <img src="${imgSrc}" class="coll-drop-icon" onerror="this.style.display='none'" alt="">
+                      <span class="coll-drop-name">${bp.name}</span>
+                      <span class="coll-drop-tier">T${bp.tier || '-'}</span>
+                      <span class="coll-drop-bar"><span class="coll-drop-bar-fill" style="width:${Math.min(100, percent * 2)}%"></span></span>
+                      <span class="coll-drop-pct">${percent.toFixed(0)}%</span>
+                    </div>`;
+                  }).join('')}
+                </div>
+              </div>`
+            : '';
+          return `
+          <div class="coll-area-card ${unlocked ? 'unlocked' : 'locked'}">
+            <div class="coll-area-card-head">
+              <div class="coll-area-icon">${area.icon}</div>
+              <div class="coll-area-info">
+                <span class="coll-area-name">${unlocked ? area.name : '???'}</span>
+                ${unlocked ? `
+                  <span class="coll-area-desc">${area.description}</span>
+                  <span class="coll-area-diff">難易度: ${'★'.repeat(area.difficulty + 1)}</span>
+                  <span class="coll-area-quality">品質: Q${area.qualityMin}〜Q${area.qualityMax}</span>
+                ` : '<span class="coll-area-hint">未解放</span>'}
+              </div>
             </div>
+            ${unlocked ? dropListHtml : ''}
           </div>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
     `;
   }
