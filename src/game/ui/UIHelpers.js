@@ -112,6 +112,23 @@ export function createTraitBadgeHTML(traitName, extra = '') {
   return `<span class="trait-badge ${colorCls} ${extra}" data-tooltip="${desc}" data-tooltip-title="${traitName}" data-tooltip-rarity="${rarity}">${pills}${traitName}</span>`;
 }
 
+/** 属性バッジ定義（ラベル/色/説明） */
+const ELEMENT_BADGE_DEFS = {
+  fire:      { label: '炎',  icon: '🔥', tooltip: '燃焼: 継続ダメージを与える' },
+  ice:       { label: '氷',  icon: '❄',  tooltip: '凍結: 移動速度を低下させる' },
+  poison:    { label: '毒',  icon: '☠',  tooltip: '毒: 継続ダメージ + 周囲の敵に感染' },
+  lightning: { label: '雷',  icon: '⚡', tooltip: '感電: 短時間スタン' },
+  wind:      { label: '風',  icon: '💨', tooltip: '風: 状態異常を持つ敵に命中時、周囲に拡散' },
+};
+
+/** 武器属性バッジHTMLを生成。element が未定義なら空文字を返す */
+export function createElementBadgeHTML(element, extra = '') {
+  if (!element) return '';
+  const def = ELEMENT_BADGE_DEFS[element];
+  if (!def) return '';
+  return `<span class="element-badge element-${element} ${extra}" data-tooltip="${def.tooltip}" data-tooltip-title="${def.label}属性">${def.icon}${def.label}</span>`;
+}
+
 // アイテムの画像URL（将来のカスタム画像パス対応）
 function getItemImageUrl(item) {
   const bp = ItemBlueprints[item.blueprintId];

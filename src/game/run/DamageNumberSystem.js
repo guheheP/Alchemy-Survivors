@@ -14,8 +14,9 @@ export class DamageNumberSystem {
     this.numbers = [];
 
     this._unsubs = [
-      eventBus.on('enemy:damaged', ({ x, y, damage, isCrit }) => {
-        this._spawn(x, y, Math.floor(damage), isCrit ? '#f0c060' : '#fff', isCrit);
+      eventBus.on('enemy:damaged', ({ x, y, damage, isCrit, dotColor }) => {
+        const color = dotColor || (isCrit ? '#f0c060' : '#fff');
+        this._spawn(x, y, Math.floor(damage), color, isCrit);
       }),
       eventBus.on('player:damaged', ({ hp, maxHp, damage }) => {
         // Player damage shown at a fixed screen-relative position is handled by HUD flash;

@@ -231,6 +231,34 @@ export class RunManager {
         for (const enemy of this.spawner.enemies) apply(enemy);
         for (const boss of this.bossSystem.getActiveBosses()) apply(boss);
       }),
+      // 毒の感染拡散
+      eventBus.on('statusEffect:spread', ({ x, y, radius, source, type, params }) => {
+        const r2 = radius * radius;
+        const applySpread = (enemy) => {
+          if (!enemy.active || enemy === source) return;
+          const dx = enemy.x - x;
+          const dy = enemy.y - y;
+          if (dx * dx + dy * dy < r2) enemy.applyStatusEffect(type, params);
+        };
+        for (const enemy of this.spawner.enemies) applySpread(enemy);
+        for (const boss of this.bossSystem.getActiveBosses()) applySpread(boss);
+      }),
+      // 風属性の状態異常拡散
+      eventBus.on('statusEffect:windSpread', ({ x, y, radius, source, effects }) => {
+        const r2 = radius * radius;
+        const applyWind = (enemy) => {
+          if (!enemy.active || enemy === source) return;
+          const dx = enemy.x - x;
+          const dy = enemy.y - y;
+          if (dx * dx + dy * dy < r2) {
+            for (const { type, params } of effects) {
+              enemy.applyStatusEffect(type, params);
+            }
+          }
+        };
+        for (const enemy of this.spawner.enemies) applyWind(enemy);
+        for (const boss of this.bossSystem.getActiveBosses()) applyWind(boss);
+      }),
       eventBus.on('shield:retaliate', ({ x, y, range, knockback, damage }) => {
         const allEnemies = [...this.spawner.enemies, ...this.bossSystem.getActiveBosses()];
         for (const enemy of allEnemies) {

@@ -7,7 +7,7 @@ import { GameConfig } from '../data/config.js';
 import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
-import { getTraitCategory } from '../ui/UIHelpers.js';
+import { getTraitCategory, createElementBadgeHTML } from '../ui/UIHelpers.js';
 
 /** 特性のラン中効果を簡潔な日本語表記に変換 */
 function formatTraitRunEffect(def) {
@@ -228,6 +228,7 @@ export class EquipmentScreen {
           <span class="equip-card-name">${w.name}</span>
           <div class="equip-card-meta">
             <span class="equip-card-quality">Q${w.quality}</span>
+            ${createElementBadgeHTML(bp?.element)}
             ${renderTraitBadges(w.traits)}
           </div>
         </div>
