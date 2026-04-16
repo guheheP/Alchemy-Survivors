@@ -6,20 +6,22 @@
 import { PlayFabClient } from '../core/PlayFabClient.js';
 
 const BOARDS = [
-  { id: 'best_survival_time', label: '最長生存時間', icon: '⏱', formatter: formatSeconds },
-  { id: 'total_kills',        label: '累計キル数',   icon: '⚔', formatter: formatInt },
-  { id: 'highest_damage',     label: '最大ダメージ', icon: '💥', formatter: formatInt },
+  { id: 'highest_damage', label: '最大ダメージ',   icon: '💥', formatter: formatInt },
+  { id: 'total_kills',    label: '総討伐数',       icon: '⚔',  formatter: formatInt },
+  { id: 'highest_level',  label: '最高レベル',     icon: '⭐', formatter: formatLevel },
+  { id: 'total_gold',     label: '総ゴールド獲得', icon: '💰', formatter: formatGold },
 ];
-
-function formatSeconds(v) {
-  const n = Number(v) || 0;
-  const m = Math.floor(n / 60);
-  const s = n % 60;
-  return `${m}分${String(s).padStart(2, '0')}秒`;
-}
 
 function formatInt(v) {
   return (Number(v) || 0).toLocaleString();
+}
+
+function formatLevel(v) {
+  return `Lv.${(Number(v) || 0).toLocaleString()}`;
+}
+
+function formatGold(v) {
+  return `${(Number(v) || 0).toLocaleString()} G`;
 }
 
 /** HTML 特殊文字をエスケープ（DisplayName は他ユーザー入力なので XSS 対策） */

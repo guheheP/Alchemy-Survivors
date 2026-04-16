@@ -439,6 +439,7 @@ class Game {
       killCount: resultData.killCount || 0,
       highestDamage: resultData.highestDamage || 0,
       level: resultData.level || 0,
+      goldEarned: resultData.goldEarned || 0,
       hardMode: !!resultData.hardMode,
       bossDefeated: !!resultData.bossDefeated,
       reason: resultData.reason || 'death',

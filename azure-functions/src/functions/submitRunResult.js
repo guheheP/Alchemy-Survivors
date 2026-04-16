@@ -55,10 +55,15 @@ app.http('submitRunResult', {
     const sanitized = verdict.sanitized;
 
     // リーダーボード用の統計を更新
+    // AggregationMethod は PlayFab 側の統計設定で制御:
+    //   - best_survival_time / highest_damage / highest_level → Max (大きい方を保持)
+    //   - total_kills / total_gold                            → Sum (累積)
     const statistics = [
       { StatisticName: 'best_survival_time', Value: sanitized.survivalTime },
-      { StatisticName: 'total_kills', Value: sanitized.killCount },
-      { StatisticName: 'highest_damage', Value: sanitized.highestDamage },
+      { StatisticName: 'total_kills',        Value: sanitized.killCount },
+      { StatisticName: 'highest_damage',     Value: sanitized.highestDamage },
+      { StatisticName: 'highest_level',      Value: sanitized.level },
+      { StatisticName: 'total_gold',         Value: sanitized.goldEarned },
     ];
 
     try {

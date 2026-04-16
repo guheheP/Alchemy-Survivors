@@ -10,6 +10,7 @@ const LIMITS = {
   maxKillsAbsolute: 100000,
   maxDamagePerHit: 10_000_000,
   maxLevel: 200,
+  maxGoldPerRun: 1_000_000,    // 1ラン最大100万G（インフレ想定上限）
 };
 
 function isFiniteNumber(v) {
@@ -36,6 +37,7 @@ function validateRunResult(result) {
   const killCount = Number(result.killCount);
   const highestDamage = Number(result.highestDamage || 0);
   const level = Number(result.level || 0);
+  const goldEarned = Number(result.goldEarned || 0);
   const hardMode = !!result.hardMode;
   const bossDefeated = !!result.bossDefeated;
   const reason = String(result.reason || '');
@@ -55,6 +57,9 @@ function validateRunResult(result) {
   if (!isFiniteNumber(level) || level < 0 || level > LIMITS.maxLevel) {
     return { ok: false, reason: `level out of range: ${level}` };
   }
+  if (!isFiniteNumber(goldEarned) || goldEarned < 0 || goldEarned > LIMITS.maxGoldPerRun) {
+    return { ok: false, reason: `goldEarned out of range: ${goldEarned}` };
+  }
   if (!['death', 'clear', 'retreat'].includes(reason)) {
     return { ok: false, reason: `unknown reason: ${reason}` };
   }
@@ -69,6 +74,7 @@ function validateRunResult(result) {
       killCount: clampInt(killCount, 0, LIMITS.maxKillsAbsolute),
       highestDamage: clampInt(highestDamage, 0, LIMITS.maxDamagePerHit),
       level: clampInt(level, 0, LIMITS.maxLevel),
+      goldEarned: clampInt(goldEarned, 0, LIMITS.maxGoldPerRun),
       reason,
     },
   };
