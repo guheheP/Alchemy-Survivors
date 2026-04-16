@@ -8,6 +8,7 @@ import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { craftItem, isCategorySlot, getCategoryId, materialMatchesSlot, getCurrentQualityCap } from '../ItemSystem.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
+import { createElementBadgeHTML } from '../ui/UIHelpers.js';
 
 export class CraftingScreen {
   constructor(container, inventorySystem, options = {}) {
@@ -108,7 +109,7 @@ export class CraftingScreen {
         <img src="${bp.image ? assetPath(bp.image) : ''}" class="recipe-icon" onerror="this.style.display='none'" alt="">
         <div class="recipe-info">
           <span class="recipe-name">${bp.name}</span>
-          <span class="recipe-mats">${recipe.materials.length}素材${craftable ? '' : ' <span class="recipe-lacking">不足</span>'}</span>
+          <span class="recipe-mats">${createElementBadgeHTML(bp.element)}${recipe.materials.length}素材${craftable ? '' : ' <span class="recipe-lacking">不足</span>'}</span>
         </div>
       `;
       card.addEventListener('click', () => this._selectRecipe(id));

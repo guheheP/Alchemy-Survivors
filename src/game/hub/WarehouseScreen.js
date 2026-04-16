@@ -6,6 +6,7 @@ import { ItemBlueprints, TraitDefs } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
+import { createElementBadgeHTML } from '../ui/UIHelpers.js';
 
 /** 売却価格: baseValue × (quality/100) × (1 + traits × 0.3)
  * 装備は素材の2倍、消耗品は1.5倍。低品質でも最低1G。 */
@@ -234,6 +235,7 @@ export class WarehouseScreen {
           <span class="wh-item-meta">
             <span class="wh-item-quality">Q${item.quality}</span>
             <span class="wh-item-price">💰${price}</span>
+            ${createElementBadgeHTML(bp?.element)}
             ${isEquipped ? '<span class="wh-tag wh-tag-equipped">装備</span>' : ''}
             ${isLocked ? '<span class="wh-tag wh-tag-locked">🔒</span>' : ''}
           </span>
