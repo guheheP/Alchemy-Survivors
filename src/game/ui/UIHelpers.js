@@ -251,6 +251,10 @@ function buildTraitEffectsHTML(traitName) {
     runDropRate:        v => `ドロップ率 +${(v * 100).toFixed(1)}%`,
     runAttackSpeed:     v => `攻撃速度 +${(v * 100).toFixed(0)}%`,
     runExpBonus:        v => `経験値 +${(v * 100).toFixed(0)}%`,
+    runCritChance:      v => `クリティカル率 +${(v * 100).toFixed(1)}%`,
+    runCritDamage:      v => `クリティカルダメージ +${(v * 100).toFixed(0)}%`,
+    runElementProc:     v => `属性発動率 +${(v * 100).toFixed(1)}%`,
+    runElementPower:    v => `属性効果量 +${(v * 100).toFixed(0)}%`,
   };
 
   return Object.entries(def.effects)

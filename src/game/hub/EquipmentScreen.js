@@ -17,6 +17,8 @@ function formatTraitRunEffect(def) {
     runMoveSpeed: '速度', runRegenPerSec: '回復/秒', runDodge: '回避',
     runDropRate: 'ドロップ率', runAttackSpeed: '攻速', runExpBonus: '経験値',
     runStartInvincible: '開始無敵(秒)',
+    runCritChance: 'クリ率', runCritDamage: 'クリダメ',
+    runElementProc: '属性発動', runElementPower: '属性威力',
   };
   const parts = [];
   for (const [key, val] of Object.entries(def.effects)) {
@@ -176,6 +178,7 @@ export class EquipmentScreen {
       runMoveSpeed: 0, runRegenPerSec: 0, runDodge: 0,
       runDropRate: 0, runAttackSpeed: 0, runExpBonus: 0,
       runCritChance: 0, runCritDamage: 0,
+      runElementProc: 0, runElementPower: 0,
     };
     const accumulateTraits = (item) => {
       if (!item?.traits) return;
@@ -207,6 +210,8 @@ export class EquipmentScreen {
       runExpBonus:        v => ['経験値',         `+${(v * 100).toFixed(0)}%`],
       runCritChance:      v => ['クリティカル率', `+${(v * 100).toFixed(1)}%`],
       runCritDamage:      v => ['クリティカルダメージ', `+${(v * 100).toFixed(0)}%`],
+      runElementProc:     v => ['属性発動率',   `+${(v * 100).toFixed(1)}%`],
+      runElementPower:    v => ['属性効果量',   `+${(v * 100).toFixed(0)}%`],
     };
     const traitBonusRows = Object.entries(traitBonus)
       .filter(([k, v]) => v !== 0 && traitFormatters[k])

@@ -388,6 +388,7 @@ export const TraitDefs = {
   '硬い': { name: '硬い', rarity: 'common', color: 'gray', description: '回避+1%, 調合+1, 経験値+2%', effects: { craftQualityBonus: 1, runDodge: 0.01, runExpBonus: 0.02 } },
   '丹念': { name: '丹念', rarity: 'common', color: 'gray', description: '攻撃速度+4%', effects: { runAttackSpeed: 0.04 } },
   '鋭利': { name: '鋭利', rarity: 'common', color: 'gray', description: 'クリティカル率+2%', effects: { runCritChance: 0.02 } },
+  '触媒の欠片': { name: '触媒の欠片', rarity: 'common', color: 'gray', description: '属性発動率+3%', effects: { runElementProc: 0.03 } },
 
   // ═══════════════════════════════════════════════
   //  Uncommon (アンコモン) — 各系統の中位
@@ -408,6 +409,7 @@ export const TraitDefs = {
   '体力強化': { name: '体力強化', rarity: 'uncommon', color: 'green', description: '最大HP+30, ダメージ軽減+1.5', effects: { runMaxHpFlat: 30, runDamageReduction: 1.5 } },
   '練成': { name: '練成', rarity: 'uncommon', color: 'green', description: '攻撃速度+8%', effects: { runAttackSpeed: 0.08 } },
   '切先': { name: '切先', rarity: 'uncommon', color: 'green', description: 'クリティカル率+4%, 攻撃力+3', effects: { runCritChance: 0.04, runDamageFlat: 3 } },
+  '魔触媒': { name: '魔触媒', rarity: 'uncommon', color: 'green', description: '属性発動率+5%, 属性効果量+15%', effects: { runElementProc: 0.05, runElementPower: 0.15 } },
 
   // ═══════════════════════════════════════════════
   //  Rare (レア) — 各系統の上位
@@ -430,6 +432,7 @@ export const TraitDefs = {
   '達人の業': { name: '達人の業', rarity: 'rare', color: 'blue', description: '攻撃速度+12%', effects: { runAttackSpeed: 0.12 } },
   '急所狙い': { name: '急所狙い', rarity: 'rare', color: 'blue', description: 'クリティカル率+6%, クリダメ+15%', effects: { runCritChance: 0.06, runCritDamage: 0.15 } },
   '必殺': { name: '必殺', rarity: 'rare', color: 'blue', description: 'クリティカルダメージ+30%', effects: { runCritDamage: 0.30 } },
+  '賢者触媒': { name: '賢者触媒', rarity: 'rare', color: 'blue', description: '属性発動率+8%, 属性効果量+25%', effects: { runElementProc: 0.08, runElementPower: 0.25 } },
 
   // ═══════════════════════════════════════════════
   //  Epic (エピック) — 融合でのみ入手可能
@@ -449,6 +452,7 @@ export const TraitDefs = {
   '混沌': { name: '混沌', rarity: 'epic', color: 'purple', description: '回避+7.5%, 攻撃力+5', effects: { runDodge: 0.075, runDamageFlat: 5 } },
   '再生': { name: '再生', rarity: 'epic', color: 'purple', description: 'HP回復 2/秒', effects: { runRegenPerSec: 2 } },
   '暗殺': { name: '暗殺', rarity: 'epic', color: 'purple', description: 'クリティカル率+10%, クリダメ+25%', effects: { runCritChance: 0.10, runCritDamage: 0.25 } },
+  '万能触媒': { name: '万能触媒', rarity: 'epic', color: 'purple', description: '属性発動率+12%, 属性効果量+40%', effects: { runElementProc: 0.12, runElementPower: 0.40 } },
 
   // ═══════════════════════════════════════════════
   //  Legendary (レジェンダリー) — 特殊入手
@@ -602,4 +606,8 @@ export const TraitFusionTable = {
   '鋭利': '切先',
   '切先': '急所狙い',
   '急所狙い': '暗殺',
+  // ── 属性効果系 ──
+  '触媒の欠片': '魔触媒',
+  '魔触媒': '賢者触媒',
+  '賢者触媒': '万能触媒',
 };
