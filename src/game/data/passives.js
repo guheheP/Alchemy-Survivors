@@ -78,9 +78,17 @@ export const PassiveDefs = [
   {
     id: 'crit_chance',
     name: 'クリティカル率+5%',
-    description: 'クリティカルヒット確率を5%増加（ダメージ2倍）',
+    description: 'クリティカルヒット確率を5%増加',
     icon: '💥',
     maxStacks: 8,
     effect: { stat: 'critChance', value: 0.05 },
+  },
+  {
+    id: 'crit_damage_up',
+    name: 'クリティカルダメージ+25%',
+    description: 'クリティカル時の追加ダメージ倍率を0.25増加',
+    icon: '🗡️',
+    maxStacks: 6,
+    effect: { stat: 'critDamage', value: 0.25 },
   },
 ];

@@ -136,7 +136,7 @@ export const ItemBlueprints = {
   fire_sword: { id: 'fire_sword', name: '炎の剣', type: 'equipment', equipType: 'sword', baseValue: 80, image: '/art/items/fire_sword.png' },
   ice_shield: { id: 'ice_shield', name: '氷の盾', type: 'equipment', equipType: 'shield', baseValue: 65, image: '/art/items/ice_shield.png' },
   antidote: { id: 'antidote', name: '解毒薬', type: 'consumable', baseValue: 30, image: '/art/items/antidote.png', battleEffect: { type: 'buff', target: 'ally', stat: 'def', amount: 10, duration: 20 } },
-  silver_dagger: { id: 'silver_dagger', name: '銀の短剣', type: 'equipment', equipType: 'dagger', baseValue: 55, image: '/art/items/silver_dagger.png' },
+  silver_dagger: { id: 'silver_dagger', name: '銀の短剣', type: 'equipment', equipType: 'dagger', baseValue: 55, baseCritChance: 0.05, image: '/art/items/silver_dagger.png' },
   leather_armor: { id: 'leather_armor', name: '革鎧', type: 'equipment', equipType: 'armor', baseValue: 60, image: '/art/items/leather_armor.png' },
   iron_spear: { id: 'iron_spear', name: '鉄の槍', type: 'equipment', equipType: 'spear', baseValue: 50, image: '/art/items/iron_spear.png' },
   amber_ring: { id: 'amber_ring', name: '琥珀の指輪', type: 'accessory', baseValue: 65, image: '/art/items/amber_ring.png' },
@@ -154,9 +154,9 @@ export const ItemBlueprints = {
   strength_potion: { id: 'strength_potion', name: '力の薬', type: 'consumable', baseValue: 55, image: '/art/items/strength_potion.png', battleEffect: { type: 'buff', target: 'ally', stat: 'atk', amount: 20, duration: 20 } },
   spider_cloak: { id: 'spider_cloak', name: '蜘蛛糸のマント', type: 'equipment', equipType: 'robe', baseValue: 85, image: '/art/items/spider_cloak.png' },
   crystal_orb: { id: 'crystal_orb', name: '水晶の宝珠', type: 'accessory', baseValue: 130, image: '/art/items/crystal_orb.png' },
-  dark_blade: { id: 'dark_blade', name: '暗黒の刃', type: 'equipment', equipType: 'sword', baseValue: 105, image: '/art/items/dark_blade.png' },
+  dark_blade: { id: 'dark_blade', name: '暗黒の刃', type: 'equipment', equipType: 'sword', baseValue: 105, baseCritChance: 0.03, image: '/art/items/dark_blade.png' },
   fairy_necklace: { id: 'fairy_necklace', name: '妖精のネックレス', type: 'accessory', baseValue: 100, image: '/art/items/fairy_necklace.png' },
-  poison_dagger: { id: 'poison_dagger', name: '毒塗りの短剣', type: 'equipment', equipType: 'dagger', baseValue: 88, image: '/art/items/poison_dagger.png' },
+  poison_dagger: { id: 'poison_dagger', name: '毒塗りの短剣', type: 'equipment', equipType: 'dagger', baseValue: 88, baseCritChance: 0.06, image: '/art/items/poison_dagger.png' },
   magic_ink: { id: 'magic_ink', name: '魔法のインク', type: 'consumable', baseValue: 40, image: '/art/items/magic_ink.png', battleEffect: { type: 'debuff', target: 'enemy', stat: 'spd', amount: -15, duration: 15 } },
   weakness_draught: { id: 'weakness_draught', name: '弱体化の薬', type: 'consumable', baseValue: 60, image: '/art/items/weakness_draught.png', battleEffect: { type: 'debuff', target: 'enemy', stat: 'atk', amount: -20, duration: 20 } },
 
@@ -186,7 +186,7 @@ export const ItemBlueprints = {
   void_amulet: { id: 'void_amulet', name: '虚空のアミュレット', type: 'accessory', baseValue: 390, image: '/art/items/void_amulet.png' },
   frost_blade: { id: 'frost_blade', name: '凍てつく刃', type: 'equipment', equipType: 'sword', baseValue: 290, image: '/art/items/frost_blade.png' },
   elder_staff: { id: 'elder_staff', name: '長老樹の杖', type: 'equipment', equipType: 'staff', baseValue: 260, image: '/art/items/elder_staff.png' },
-  sea_serpent_whip: { id: 'sea_serpent_whip', name: '海竜の鞭', type: 'equipment', equipType: 'dagger', baseValue: 330, image: '/art/items/sea_serpent_whip.png' },
+  sea_serpent_whip: { id: 'sea_serpent_whip', name: '海竜の鞭', type: 'equipment', equipType: 'dagger', baseValue: 330, baseCritChance: 0.08, image: '/art/items/sea_serpent_whip.png' },
   lotus_perfume: { id: 'lotus_perfume', name: '黒蓮の香水', type: 'consumable', baseValue: 180, image: '/art/items/lotus_perfume.png', battleEffect: { type: 'buff', target: 'all', stat: 'spd', amount: 25, duration: 20 } },
   revival_herb: { id: 'revival_herb', name: '蘇生草', type: 'consumable', baseValue: 250, image: '/art/items/revival_herb.png', battleEffect: { type: 'heal', target: 'ally', value: 150 } },
 
@@ -196,9 +196,9 @@ export const ItemBlueprints = {
   ancient_crown: { id: 'ancient_crown', name: '古代王の冠', type: 'accessory', baseValue: 600, image: '/art/items/ancient_crown.png' },
   sage_stone: { id: 'sage_stone', name: '賢者の石', type: 'consumable', baseValue: 350, image: '/art/items/sage_stone.png', battleEffect: { type: 'heal', target: 'all', value: 100 } },
   mystic_amulet: { id: 'mystic_amulet', name: '神秘のアミュレット', type: 'accessory', baseValue: 580, image: '/art/items/mystic_amulet.png' },
-  dragon_bow: { id: 'dragon_bow', name: '竜骨の弓', type: 'equipment', equipType: 'bow', baseValue: 430, image: '/art/items/dragon_bow.png' },
+  dragon_bow: { id: 'dragon_bow', name: '竜骨の弓', type: 'equipment', equipType: 'bow', baseValue: 430, baseCritChance: 0.04, image: '/art/items/dragon_bow.png' },
   phoenix_robe: { id: 'phoenix_robe', name: '不死鳥のローブ', type: 'equipment', equipType: 'robe', baseValue: 410, image: '/art/items/phoenix_robe.png' },
-  void_blade: { id: 'void_blade', name: '虚無の剣', type: 'equipment', equipType: 'sword', baseValue: 460, image: '/art/items/void_blade.png' },
+  void_blade: { id: 'void_blade', name: '虚無の剣', type: 'equipment', equipType: 'sword', baseValue: 460, baseCritChance: 0.04, image: '/art/items/void_blade.png' },
   dragon_potion: { id: 'dragon_potion', name: '竜の血薬', type: 'consumable', baseValue: 300, image: '/art/items/dragon_potion.png', battleEffect: { type: 'buff', target: 'all', stat: 'atk', amount: 30, duration: 20 } },
   thunder_spear: { id: 'thunder_spear', name: '雷光の槍', type: 'equipment', equipType: 'spear', baseValue: 440, image: '/art/items/thunder_spear.png' },
   cursed_crown: { id: 'cursed_crown', name: '呪王の冠', type: 'accessory', baseValue: 520, image: '/art/items/cursed_crown.png' },
@@ -216,16 +216,16 @@ export const ItemBlueprints = {
   chaos_ring: { id: 'chaos_ring', name: '混沌の指輪', type: 'accessory', baseValue: 680, image: '/art/items/chaos_ring.png' },
   star_pendant: { id: 'star_pendant', name: '星のペンダント', type: 'accessory', baseValue: 720, image: '/art/items/star_pendant.png' },
   wind_lance: { id: 'wind_lance', name: '疾風の槍', type: 'equipment', equipType: 'spear', baseValue: 570, image: '/art/items/wind_lance.png' },
-  phoenix_bow: { id: 'phoenix_bow', name: '不死鳥の弓', type: 'equipment', equipType: 'bow', baseValue: 590, image: '/art/items/phoenix_bow.png' },
+  phoenix_bow: { id: 'phoenix_bow', name: '不死鳥の弓', type: 'equipment', equipType: 'bow', baseValue: 590, baseCritChance: 0.05, image: '/art/items/phoenix_bow.png' },
 
   // ===== Rank 8: 最終レシピ (10種) =====
-  legendary_blade: { id: 'legendary_blade', name: '伝説の刃', type: 'equipment', equipType: 'sword', baseValue: 800, image: '/art/items/legendary_blade.png' },
+  legendary_blade: { id: 'legendary_blade', name: '伝説の刃', type: 'equipment', equipType: 'sword', baseValue: 800, baseCritChance: 0.05, image: '/art/items/legendary_blade.png' },
   world_tree_staff: { id: 'world_tree_staff', name: '世界樹の杖', type: 'equipment', equipType: 'staff', baseValue: 850, image: '/art/items/world_tree_staff.png' },
   genesis_armor: { id: 'genesis_armor', name: '始原の鎧', type: 'equipment', equipType: 'armor', baseValue: 900, image: '/art/items/genesis_armor.png' },
   time_blade: { id: 'time_blade', name: '時渡りの剣', type: 'equipment', equipType: 'sword', baseValue: 820, image: '/art/items/time_blade.png' },
   primordial_crown: { id: 'primordial_crown', name: '始原の冠', type: 'accessory', baseValue: 1100, image: '/art/items/primordial_crown.png' },
   eternity_ring: { id: 'eternity_ring', name: '永遠の指輪', type: 'accessory', baseValue: 1050, image: '/art/items/eternity_ring.png' },
-  cosmos_bow: { id: 'cosmos_bow', name: '星界弓コスモス', type: 'equipment', equipType: 'bow', baseValue: 830, image: '/art/items/cosmos_bow.png' },
+  cosmos_bow: { id: 'cosmos_bow', name: '星界弓コスモス', type: 'equipment', equipType: 'bow', baseValue: 830, baseCritChance: 0.05, image: '/art/items/cosmos_bow.png' },
   panacea: { id: 'panacea', name: '万象の霊薬', type: 'consumable', baseValue: 600, image: '/art/items/panacea.png', battleEffect: { type: 'healfull', target: 'all' } },
   oblivion_shield: { id: 'oblivion_shield', name: '忘却の盾', type: 'equipment', equipType: 'shield', baseValue: 770, image: '/art/items/oblivion_shield.png' },
   astral_robe: { id: 'astral_robe', name: '星衣アストラル', type: 'equipment', equipType: 'robe', baseValue: 860, image: '/art/items/astral_robe.png' },
@@ -387,6 +387,7 @@ export const TraitDefs = {
   '滋養': { name: '滋養', rarity: 'common', color: 'gray', description: '最大HP+8, HP回復 0.1/秒', effects: { runMaxHpFlat: 8, runRegenPerSec: 0.1 } },
   '硬い': { name: '硬い', rarity: 'common', color: 'gray', description: '回避+1%, 調合+1, 経験値+2%', effects: { craftQualityBonus: 1, runDodge: 0.01, runExpBonus: 0.02 } },
   '丹念': { name: '丹念', rarity: 'common', color: 'gray', description: '攻撃速度+4%', effects: { runAttackSpeed: 0.04 } },
+  '鋭利': { name: '鋭利', rarity: 'common', color: 'gray', description: 'クリティカル率+2%', effects: { runCritChance: 0.02 } },
 
   // ═══════════════════════════════════════════════
   //  Uncommon (アンコモン) — 各系統の中位
@@ -406,6 +407,7 @@ export const TraitDefs = {
   '先制': { name: '先制', rarity: 'uncommon', color: 'green', description: '回避+5%, 移動速度+5%', effects: { runDodge: 0.05, runMoveSpeed: 0.05 } },
   '体力強化': { name: '体力強化', rarity: 'uncommon', color: 'green', description: '最大HP+30, ダメージ軽減+1.5', effects: { runMaxHpFlat: 30, runDamageReduction: 1.5 } },
   '練成': { name: '練成', rarity: 'uncommon', color: 'green', description: '攻撃速度+8%', effects: { runAttackSpeed: 0.08 } },
+  '切先': { name: '切先', rarity: 'uncommon', color: 'green', description: 'クリティカル率+4%, 攻撃力+3', effects: { runCritChance: 0.04, runDamageFlat: 3 } },
 
   // ═══════════════════════════════════════════════
   //  Rare (レア) — 各系統の上位
@@ -426,6 +428,8 @@ export const TraitDefs = {
   '鉄壁': { name: '鉄壁', rarity: 'rare', color: 'blue', description: 'ダメージ軽減+4', effects: { runDamageReduction: 4 } },
   '疾走': { name: '疾走', rarity: 'rare', color: 'blue', description: '攻撃速度+18%, 移動速度+3%', effects: { runAttackSpeed: 0.18, runMoveSpeed: 0.03 } },
   '達人の業': { name: '達人の業', rarity: 'rare', color: 'blue', description: '攻撃速度+12%', effects: { runAttackSpeed: 0.12 } },
+  '急所狙い': { name: '急所狙い', rarity: 'rare', color: 'blue', description: 'クリティカル率+6%, クリダメ+15%', effects: { runCritChance: 0.06, runCritDamage: 0.15 } },
+  '必殺': { name: '必殺', rarity: 'rare', color: 'blue', description: 'クリティカルダメージ+30%', effects: { runCritDamage: 0.30 } },
 
   // ═══════════════════════════════════════════════
   //  Epic (エピック) — 融合でのみ入手可能
@@ -444,6 +448,7 @@ export const TraitDefs = {
   // スタンドアロン Epic
   '混沌': { name: '混沌', rarity: 'epic', color: 'purple', description: '回避+7.5%, 攻撃力+5', effects: { runDodge: 0.075, runDamageFlat: 5 } },
   '再生': { name: '再生', rarity: 'epic', color: 'purple', description: 'HP回復 2/秒', effects: { runRegenPerSec: 2 } },
+  '暗殺': { name: '暗殺', rarity: 'epic', color: 'purple', description: 'クリティカル率+10%, クリダメ+25%', effects: { runCritChance: 0.10, runCritDamage: 0.25 } },
 
   // ═══════════════════════════════════════════════
   //  Legendary (レジェンダリー) — 特殊入手
@@ -452,6 +457,7 @@ export const TraitDefs = {
   '星の輝き': { name: '星の輝き', rarity: 'legendary', color: 'gold', description: '調合品質+15, 経験値+30%', effects: { craftQualityBonus: 15, runExpBonus: 0.3 } },
   '武神': { name: '武神', rarity: 'legendary', color: 'gold', description: '攻撃力+15, 攻撃速度+15%, 回避+5%', effects: { runDamageFlat: 15, runAttackSpeed: 0.15, runDodge: 0.05 } },
   '不死鳥': { name: '不死鳥', rarity: 'legendary', color: 'gold', description: 'HP回復 4/秒, ダメージ軽減+6, 最大HP+30', effects: { runRegenPerSec: 4, runDamageReduction: 6, runMaxHpFlat: 30 } },
+  '絶命の一閃': { name: '絶命の一閃', rarity: 'legendary', color: 'gold', description: 'クリ率+15%, クリダメ+60%, 攻撃力+8', effects: { runCritChance: 0.15, runCritDamage: 0.60, runDamageFlat: 8 } },
 };
 
 /**
@@ -592,4 +598,8 @@ export const TraitFusionTable = {
   '滋養': '命の露',
   '命の露': '生命の雫',
   '生命の雫': '生命の奔流',
+  // ── クリティカル系 ──
+  '鋭利': '切先',
+  '切先': '急所狙い',
+  '急所狙い': '暗殺',
 };
