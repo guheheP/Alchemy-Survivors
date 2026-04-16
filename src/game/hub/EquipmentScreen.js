@@ -170,6 +170,53 @@ export class EquipmentScreen {
       if (bp) spdBonus = bp.baseValue / 500 + this.accessorySlot.quality / 1000;
     }
 
+    // 装備中アイテムの特性からステータス上昇値を集計
+    const traitBonus = {
+      runDamageFlat: 0, runDamageReduction: 0, runMaxHpFlat: 0,
+      runMoveSpeed: 0, runRegenPerSec: 0, runDodge: 0,
+      runDropRate: 0, runAttackSpeed: 0, runExpBonus: 0,
+      runCritChance: 0, runCritDamage: 0, craftQualityBonus: 0,
+    };
+    const accumulateTraits = (item) => {
+      if (!item?.traits) return;
+      for (const t of item.traits) {
+        const td = TraitDefs[t];
+        if (!td?.effects) continue;
+        for (const [k, v] of Object.entries(td.effects)) {
+          if (k in traitBonus) traitBonus[k] += v;
+        }
+      }
+    };
+    weapons.forEach(accumulateTraits);
+    accumulateTraits(this.armorSlot);
+    accumulateTraits(this.accessorySlot);
+
+    // 装備値+特性値の合計を表示するヘルパー
+    const fmtBonus = (val, formatter) => val ? `<span class="stat-trait-bonus" title="特性によるボーナス">${formatter(val)}</span>` : '';
+
+    // 特性ボーナス行のフォーマッタ
+    const traitFormatters = {
+      runDamageFlat:      v => ['攻撃力',         `+${v}`],
+      runDamageReduction: v => ['ダメージ軽減',   `+${v}`],
+      runMaxHpFlat:       v => ['最大HP',         `+${v}`],
+      runMoveSpeed:       v => ['移動速度',       `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`],
+      runRegenPerSec:     v => ['HP回復',         `+${v}/秒`],
+      runDodge:           v => ['回避率',         `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`],
+      runDropRate:        v => ['ドロップ率',     `+${(v * 100).toFixed(1)}%`],
+      runAttackSpeed:     v => ['攻撃速度',       `+${(v * 100).toFixed(1)}%`],
+      runExpBonus:        v => ['経験値',         `+${(v * 100).toFixed(0)}%`],
+      runCritChance:      v => ['クリティカル率', `+${(v * 100).toFixed(1)}%`],
+      runCritDamage:      v => ['クリティカルダメージ', `+${(v * 100).toFixed(0)}%`],
+      craftQualityBonus:  v => ['調合品質',       `+${v}`],
+    };
+    const traitBonusRows = Object.entries(traitBonus)
+      .filter(([k, v]) => v !== 0 && traitFormatters[k])
+      .map(([k, v]) => {
+        const [label, valStr] = traitFormatters[k](v);
+        return `<div class="equip-stat-item"><span>${label}</span><span class="stat-val stat-trait-only">${valStr}</span></div>`;
+      })
+      .join('');
+
     // 武器スキル一覧
     let skillsHtml = '';
     for (let i = 0; i < weapons.length; i++) {
@@ -179,15 +226,22 @@ export class EquipmentScreen {
       skillsHtml += `<div class="equip-skill-row"><span class="equip-skill-weapon">${w.name}</span><span class="equip-skill-name">${skillDef.name}</span><span class="equip-skill-cd">CD${skillDef.cooldown}s</span></div>`;
     }
 
+    // 装備値と特性値を合算した合計表示
+    const totalAtk = totalDmg + traitBonus.runDamageFlat;
+    const totalDef = def + traitBonus.runDamageReduction;
+    const totalHp = hpBonus + traitBonus.runMaxHpFlat;
+    const totalSpd = spdBonus + traitBonus.runMoveSpeed;
+
     summary.innerHTML = `
       <h4>装備合計ステータス</h4>
       <div class="equip-stat-grid">
-        <div class="equip-stat-item"><span>総攻撃力</span><span class="stat-val">${totalDmg.toFixed(1)}</span></div>
-        <div class="equip-stat-item"><span>防御力</span><span class="stat-val">${def.toFixed(1)}</span></div>
-        <div class="equip-stat-item"><span>HP増加</span><span class="stat-val">+${hpBonus.toFixed(0)}</span></div>
-        <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${(spdBonus * 100).toFixed(1)}%</span></div>
+        <div class="equip-stat-item"><span>総攻撃力</span><span class="stat-val">${totalAtk.toFixed(1)}${fmtBonus(traitBonus.runDamageFlat, v => `+${v}`)}</span></div>
+        <div class="equip-stat-item"><span>防御力</span><span class="stat-val">${totalDef.toFixed(1)}${fmtBonus(traitBonus.runDamageReduction, v => `+${v}`)}</span></div>
+        <div class="equip-stat-item"><span>HP増加</span><span class="stat-val">+${totalHp.toFixed(0)}${fmtBonus(traitBonus.runMaxHpFlat, v => `+${v}`)}</span></div>
+        <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${(totalSpd * 100).toFixed(1)}%${fmtBonus(traitBonus.runMoveSpeed, v => `+${(v * 100).toFixed(1)}%`)}</span></div>
         <div class="equip-stat-item"><span>武器数</span><span class="stat-val">${weapons.length}/4</span></div>
       </div>
+      ${traitBonusRows ? `<h4>特性ボーナス合計</h4><div class="equip-stat-grid">${traitBonusRows}</div>` : ''}
       ${skillsHtml ? `<h4>武器スキル</h4><div class="equip-skill-list">${skillsHtml}</div>` : ''}
     `;
   }
