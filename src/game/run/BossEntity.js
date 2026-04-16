@@ -203,8 +203,8 @@ export class BossEntity extends Enemy {
       case 'line':       // 直線攻撃: 槍型、長射程
         this.telegraphTimer = 1.0;
         break;
-      case 'wide_aoe':   // 広範囲攻撃
-        this.telegraphTimer = 1.5;
+      case 'wide_aoe':   // 広範囲攻撃 — 半径が大きいため余裕をもって逃げられる長めの猶予
+        this.telegraphTimer = 2.2;
         break;
       case 'radial_burst': // 放射多段攻撃
         this.telegraphTimer = 1.2;
@@ -368,6 +368,8 @@ export class BossEntity extends Enemy {
   /** スキルのダメージ範囲（RunManagerでの衝突判定用）。単一 shape or 配列を返す */
   getSkillHitArea() {
     if (!this.activeSkill) return null;
+    // テレグラフ中は着弾しない (予告赤マーカー表示中に当たり判定が走るバグ対策)
+    if (this.telegraphTimer > 0) return null;
     const skill = this.activeSkill;
     switch (skill.type) {
       case 'attack':
