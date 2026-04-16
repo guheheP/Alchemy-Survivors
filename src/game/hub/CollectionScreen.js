@@ -8,6 +8,7 @@ import { AreaDefs } from '../data/areas.js';
 import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
+import { fmt1, fmtPct1 } from '../ui/NumberFormat.js';
 
 export class CollectionScreen {
   constructor(container, inventorySystem) {
@@ -201,7 +202,7 @@ export class CollectionScreen {
                     runCritChance: 'クリ率', runCritDamage: 'クリダメ',
                     runElementProc: '属性発動', runElementPower: '属性威力',
                   }[key] || key;
-                  runEffects.push(`${label}+${typeof val === 'number' && val < 1 ? (val * 100).toFixed(0) + '%' : val}`);
+                  runEffects.push(`${label}+${typeof val === 'number' && val < 1 && val > 0 ? fmtPct1(val) + '%' : fmt1(val)}`);
                 } else if (key === 'craftQualityBonus') {
                   hasCraft = true;
                 }

@@ -5,6 +5,7 @@
 import { eventBus } from '../core/EventBus.js';
 import { Progression } from '../data/progression.js';
 import { GameConfig } from '../data/config.js';
+import { fmt1 } from '../ui/NumberFormat.js';
 
 /** 倉庫拡張 Lv → 次レベル購入コスト */
 function warehouseCost(currentLevel) {
@@ -55,7 +56,7 @@ export class UpgradeShopScreen {
             ${maxedOut ? '' : ` → <b style="color:#8f8">${nextStr}</b>`}
           </p>
           <div class="shop-level-bar">
-            <div class="shop-level-fill" style="width: ${(lv / max * 100).toFixed(1)}%"></div>
+            <div class="shop-level-fill" style="width: ${fmt1(lv / max * 100)}%"></div>
           </div>
         </div>
         ${maxedOut ? '' : `<button class="shop-buy-btn" data-stat="${def.key}" ${canAfford ? '' : 'disabled'}>
@@ -104,7 +105,7 @@ export class UpgradeShopScreen {
                 ${whMaxedOut ? '' : ` → <b style="color:#8f8">${nextCapacity}</b> 枠`}
               </p>
               <div class="shop-level-bar">
-                <div class="shop-level-fill" style="width: ${(whLv / whMax * 100).toFixed(1)}%"></div>
+                <div class="shop-level-fill" style="width: ${fmt1(whLv / whMax * 100)}%"></div>
               </div>
             </div>
             ${whMaxedOut ? '' : `<button class="shop-buy-btn" data-upg="warehouse" ${whCanAfford ? '' : 'disabled'}>

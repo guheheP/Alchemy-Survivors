@@ -7,6 +7,7 @@ import { ItemBlueprints } from '../data/items.js';
 import { GameConfig } from '../data/config.js';
 import { PassiveDefs } from '../data/passives.js';
 import { assetPath } from '../core/assetPath.js';
+import { fmt1, fmtPct1, fmtInt } from './NumberFormat.js';
 
 const _passiveDefById = Object.fromEntries(PassiveDefs.map(p => [p.id, p]));
 
@@ -334,9 +335,9 @@ export class RunHUD {
       this._dashText.textContent = 'READY';
     } else {
       const pct = Math.max(0, (1 - cd / cdMax)) * 100;
-      this._dashFill.style.width = pct.toFixed(0) + '%';
+      this._dashFill.style.width = fmtInt(pct) + '%';
       this._dashFill.classList.remove('ready');
-      this._dashText.textContent = cd.toFixed(1) + 's';
+      this._dashText.textContent = fmt1(cd) + 's';
     }
   }
 
@@ -488,9 +489,9 @@ export class RunHUD {
   // ダイジェスト文字列で前回値と比較し、変化があるときだけDOM更新。
   _updateStats(player) {
     const p = player.passives;
-    const atk = Math.floor((1 + p.damageMultiplier) * 100);
-    const def = p.damageReduction.toFixed(1);
-    const spd = Math.floor((1 + p.moveSpeedMultiplier) * 100);
+    const atk = fmtInt((1 + p.damageMultiplier) * 100);
+    const def = fmt1(p.damageReduction);
+    const spd = fmtInt((1 + p.moveSpeedMultiplier) * 100);
     const miniKey = `${atk}|${def}|${spd}`;
     if (miniKey !== this._lastStatsMiniKey) {
       this._statsMini.innerHTML =
@@ -501,18 +502,18 @@ export class RunHUD {
     }
 
     if (this._statsExpanded) {
-      const crit = (p.critChance * 100).toFixed(0);
-      const critDmg = ((1 + p.critDamage) * 100).toFixed(0);
-      const dodge = (p.dodge * 100).toFixed(0);
-      const regen = p.regenPerSec.toFixed(1);
-      const range = (p.rangeMultiplier * 100).toFixed(0);
-      const cd = (p.cooldownReduction * 100).toFixed(0);
-      const drop = (p.dropRateBonus * 100).toFixed(0);
-      const magnet = (p.magnetMultiplier * 100).toFixed(0);
+      const crit = fmtPct1(p.critChance);
+      const critDmg = fmtPct1(1 + p.critDamage);
+      const dodge = fmtPct1(p.dodge);
+      const regen = fmt1(p.regenPerSec);
+      const range = fmtPct1(p.rangeMultiplier);
+      const cd = fmtPct1(p.cooldownReduction);
+      const drop = fmtPct1(p.dropRateBonus);
+      const magnet = fmtPct1(p.magnetMultiplier);
       const detailKey = `${crit}|${critDmg}|${dodge}|${regen}|${range}|${cd}|${drop}|${magnet}`;
       if (detailKey !== this._lastStatsDetailKey) {
         this._statsDetail.innerHTML =
-          `<div>CRIT: ${crit}% (x${(1 + p.critDamage).toFixed(1)})</div>` +
+          `<div>CRIT: ${crit}% (x${fmt1(1 + p.critDamage)})</div>` +
           `<div>DODGE: ${dodge}%</div>` +
           `<div>REGEN: ${regen}/s</div>` +
           `<div>RANGE: +${range}%</div>` +
@@ -580,7 +581,7 @@ export class RunHUD {
     if (buffs && buffs.length > 0) {
       const buffsHtml = buffs.map(b => {
         const icon = BUFF_STAT_ICONS[b.stat] || '\u2B06\uFE0F';
-        return `<span class="hud-buff-active">${icon} ${b.remaining.toFixed(1)}s</span>`;
+        return `<span class="hud-buff-active">${icon} ${fmt1(b.remaining)}s</span>`;
       }).join('');
       el.innerHTML += `<div class="hud-buff-bar">${buffsHtml}</div>`;
     }
