@@ -2460,6 +2460,51 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
 }
 .coll-drop-pct { font-size: 0.7rem; color: #8cf; text-align: right; }
 
+/* --- 属性/コンボタブ --- */
+.elem-section { margin-bottom: 1rem; }
+.elem-section h4 { color: #8cf; font-size: 0.95rem; margin-bottom: 0.3rem; }
+.elem-hint { font-size: 0.75rem; color: #999; margin-bottom: 0.5rem; }
+.elem-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.5rem;
+}
+.elem-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+}
+.elem-card-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.3rem; }
+.elem-card-icon { font-size: 1.3rem; }
+.elem-card-name { font-size: 0.9rem; font-weight: 700; color: #e0e0e0; }
+.elem-card-desc { font-size: 0.78rem; color: #ccc; margin-bottom: 0.3rem; line-height: 1.4; }
+.elem-card-stats { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.72rem; color: #aaa; }
+.elem-card-stats b { color: #e0e0e0; }
+
+.combo-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.5rem;
+}
+.combo-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+}
+.combo-card-head {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
+}
+.combo-icon { font-size: 1.2rem; }
+.combo-name { font-size: 0.95rem; font-weight: 700; }
+.combo-eng { font-size: 0.65rem; color: #888; letter-spacing: 0.05em; margin-left: auto; }
+.combo-req, .combo-effect, .combo-extra, .combo-meta {
+  font-size: 0.75rem; color: #ccc; margin-top: 0.15rem;
+}
+.combo-req b { color: #fc8; }
+.combo-meta { color: #888; font-size: 0.7rem; }
+
 .coll-trait-group { margin-bottom: 1rem; }
 .coll-trait-group h4 { font-size: 0.85rem; margin-bottom: 0.4rem; }
 .coll-trait-list { display: flex; flex-direction: column; gap: 0.3rem; }

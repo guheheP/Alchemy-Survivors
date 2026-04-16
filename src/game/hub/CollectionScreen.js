@@ -9,6 +9,7 @@ import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 import { fmt1, fmtPct1 } from '../ui/NumberFormat.js';
+import { ElementCombos } from '../data/elementCombos.js';
 
 export class CollectionScreen {
   constructor(container, inventorySystem) {
@@ -72,6 +73,7 @@ export class CollectionScreen {
           <button class="coll-tab ${this.activeTab === 'bosses' ? 'active' : ''}" data-tab="bosses">ボス</button>
           <button class="coll-tab ${this.activeTab === 'areas' ? 'active' : ''}" data-tab="areas">エリア</button>
           <button class="coll-tab ${this.activeTab === 'traits' ? 'active' : ''}" data-tab="traits">特性</button>
+          <button class="coll-tab ${this.activeTab === 'elements' ? 'active' : ''}" data-tab="elements">属性</button>
         </div>
         <div class="coll-content" id="coll-content"></div>
       </div>
@@ -106,6 +108,9 @@ export class CollectionScreen {
         break;
       case 'traits':
         this._renderTraits(content);
+        break;
+      case 'elements':
+        this._renderElements(content);
         break;
     }
   }
@@ -312,6 +317,125 @@ export class CollectionScreen {
         </div>
       </div>`;
     }).join('');
+  }
+
+  _renderElements(container) {
+    // 各属性の詳細情報
+    const elements = [
+      {
+        id: 'fire', name: '炎', icon: '🔥', color: '#f62',
+        desc: '命中時に確率で燃焼状態を付与。継続ダメージ。',
+        proc: 20, duration: 3.0, power: '毎秒 ヒットダメージの25%',
+      },
+      {
+        id: 'ice', name: '氷', icon: '❄', color: '#8ef',
+        desc: '命中時に確率で凍結状態を付与。移動速度を低下。',
+        proc: 15, duration: 2.0, power: '速度 -40',
+      },
+      {
+        id: 'poison', name: '毒', icon: '☠', color: '#7c5',
+        desc: '命中時に確率で毒状態を付与。継続ダメージ+周囲への感染拡散。',
+        proc: 25, duration: 4.0, power: '毎秒 ヒットダメージの12% + 感染',
+      },
+      {
+        id: 'lightning', name: '雷', icon: '⚡', color: '#fe6',
+        desc: '命中時に確率で感電を付与。短時間スタン。',
+        proc: 12, duration: 0.4, power: 'スタン (行動不能)',
+      },
+      {
+        id: 'water', name: '水', icon: '💧', color: '#6bf',
+        desc: '命中時に確率で脆弱化を付与。被ダメージ増加。',
+        proc: 18, duration: 10.0, power: '被ダメージ +15%',
+      },
+      {
+        id: 'wind', name: '風', icon: '💨', color: '#adf',
+        desc: '命中時、対象の状態異常を周囲の敵に75%威力で拡散 (常時発動)。',
+        proc: 100, duration: 0, power: '拡散半径 140px',
+      },
+      {
+        id: 'none', name: '無属性', icon: '◇', color: '#ccc',
+        desc: '特殊な状態異常を付与しない代わりに、最終ダメージが+25%される。',
+        proc: 100, duration: 0, power: 'ダメージ +25%',
+      },
+    ];
+
+    const combos = Object.values(ElementCombos);
+
+    const elementsHtml = elements.map(e => `
+      <div class="elem-card" style="border-color:${e.color};">
+        <div class="elem-card-head">
+          <span class="elem-card-icon" style="color:${e.color};">${e.icon}</span>
+          <span class="elem-card-name">${e.name}</span>
+        </div>
+        <div class="elem-card-desc">${e.desc}</div>
+        <div class="elem-card-stats">
+          <span>発動率: <b>${e.proc}%</b></span>
+          ${e.duration > 0 ? `<span>持続: <b>${e.duration}秒</b></span>` : ''}
+          <span>効果: <b>${e.power}</b></span>
+        </div>
+      </div>
+    `).join('');
+
+    const combosHtml = combos.map(c => {
+      const req = c.requires.map(t => this._statusIcon(t)).join(' + ');
+      const effKind = {
+        aoe_damage: '範囲ダメージ',
+        chain: '連鎖攻撃',
+        slow_field: '減速エリア',
+        debuff: 'デバフ付与',
+      }[c.effect?.kind] || c.effect?.kind || '-';
+      const damageInfo = c.effect?.damageMult
+        ? `×${c.effect.damageMult} (${this._damageBaseLabel(c.effect.damageBase)})`
+        : '—';
+      const consume = c.consume && c.consume.length > 0
+        ? c.consume.map(t => this._statusIcon(t)).join('・')
+        : '消費なし';
+      const radius = c.effect?.radius ? `${c.effect.radius}px` : '単体';
+      return `
+        <div class="combo-card" style="border-color:${c.color};">
+          <div class="combo-card-head">
+            <span class="combo-icon">${c.icon}</span>
+            <span class="combo-name" style="color:${c.color};">${c.name}</span>
+            <span class="combo-eng">${c.displayName}</span>
+          </div>
+          <div class="combo-req">発動条件: <b>${req}</b></div>
+          <div class="combo-effect">${effKind} / ダメージ ${damageInfo} / 半径 ${radius}</div>
+          ${c.effect?.appliesStatus ? `<div class="combo-extra">付加効果: ${this._statusIcon(c.effect.appliesStatus.type)} ${c.effect.appliesStatus.type}</div>` : ''}
+          <div class="combo-meta">消費: ${consume} / CD: ${c.cooldown}秒</div>
+        </div>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="elem-section">
+        <h4>属性効果</h4>
+        <p class="elem-hint">武器の属性は命中時に確率で状態異常を付与します。「属性発動率UP」特性で発動率、「属性効果量UP」で持続時間/ダメージ/効果量が上昇します。</p>
+        <div class="elem-grid">${elementsHtml}</div>
+      </div>
+      <div class="elem-section">
+        <h4>属性コンボ (${combos.length}種)</h4>
+        <p class="elem-hint">敵に複数の状態異常が重なると特別な効果が発動します。コンボ発動中はクールダウンがあり、同一敵で連続発動しません。</p>
+        <div class="combo-grid">${combosHtml}</div>
+      </div>
+    `;
+  }
+
+  /** 状態異常タイプをアイコンで返す */
+  _statusIcon(type) {
+    return ({
+      burn: '🔥炎', poison: '☠毒', freeze: '❄氷',
+      shock: '⚡雷', vulnerable: '💧水脆弱',
+    })[type] || type;
+  }
+
+  /** ダメージ基準値のラベル */
+  _damageBaseLabel(base) {
+    return ({
+      hitDamage: 'ヒットダメ基準',
+      burnDps: '燃焼DPS基準',
+      poisonDps: '毒DPS基準',
+      fixed: '固定値',
+    })[base] || base || '—';
   }
 
   destroy() {
