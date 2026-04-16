@@ -262,6 +262,7 @@ export class CraftingScreen {
       </div>
       <div class="craft-traits" id="craft-traits"></div>
       <div class="craft-preview" id="craft-preview"></div>
+      ${this._renderCapacityWarning()}
       <button class="craft-btn" id="craft-execute" ${this._canCraft() ? '' : 'disabled'}>
         調合する
       </button>
@@ -892,7 +893,7 @@ export class CraftingScreen {
   }
 
   _getPatternName(equipType) {
-    const names = { sword: '回転斬り（前方弧+360°交互）', spear: '長距離貫通突き', bow: '追尾矢', staff: '周回オーブ', dagger: '3方向乱舞斬り', shield: '守護波動+自動反撃' };
+    const names = { sword: '回転斬り（225°弧+360°交互）', spear: '長距離貫通突き', bow: '追尾矢', staff: '周回オーブ', dagger: '周回する刃 (3本)', shield: '守護波動+自動反撃' };
     return names[equipType] || equipType;
   }
 
@@ -939,12 +940,37 @@ export class CraftingScreen {
   _canCraft() {
     if (!this.selectedRecipeId) return false;
     const recipe = Recipes[this.selectedRecipeId];
-    return this.assignedMaterials.length === recipe.materials.length &&
+    const materialsReady = this.assignedMaterials.length === recipe.materials.length &&
            this.assignedMaterials.every(m => m !== null);
+    if (!materialsReady) return false;
+    // 倉庫上限チェック: 素材N個消費→完成品1個追加なので差分 = 1 - N
+    // N>=1 のレシピでは基本問題ないが、`isFull` 時は保険で拒否
+    const consumed = this.assignedMaterials.length;
+    const projectedCount = this.inventory.items.length - consumed + 1;
+    if (projectedCount > this.inventory.maxCapacity) return false;
+    return true;
+  }
+
+  /** 調合実行時点での倉庫容量警告 (UI) */
+  _renderCapacityWarning() {
+    const consumed = this.assignedMaterials.length;
+    const projectedCount = this.inventory.items.length - consumed + 1;
+    if (projectedCount > this.inventory.maxCapacity) {
+      return `<p class="craft-warning">⚠️ 倉庫が上限を超えています (${this.inventory.items.length}/${this.inventory.maxCapacity})。倉庫画面でアイテムを整理してください。</p>`;
+    }
+    return '';
   }
 
   _executeCraft() {
-    if (!this._canCraft()) return;
+    if (!this._canCraft()) {
+      // 倉庫満杯が原因なら明示的に通知
+      const consumed = this.assignedMaterials.length;
+      const projectedCount = this.inventory.items.length - consumed + 1;
+      if (projectedCount > this.inventory.maxCapacity) {
+        eventBus.emit('toast', { message: '倉庫が上限を超えているため調合できません。', type: 'error' });
+      }
+      return;
+    }
 
     try {
       const item = craftItem(this.selectedRecipeId, this.assignedMaterials, this.selectedTraits, 0);

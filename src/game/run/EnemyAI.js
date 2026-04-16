@@ -48,8 +48,8 @@ export class Enemy extends Entity {
     this._dashState = 'idle'; // 'idle' | 'telegraph' | 'dashing'
     this._dashDir = { x: 0, y: 0 };
     this._dashStateTimer = 0;
-    // ノックバック管理: 1 回吹き飛ばしたら一定秒数だけ完全無視 (連続ノックバックロック対策)
-    this._knockbackCooldown = 0;
+    // ノックバック管理: 1 度でも吹き飛ばされたら、その敵の生存中は以後KBを受け付けない
+    this._knockbackUsed = false;
   }
 
   reset() {
@@ -82,24 +82,22 @@ export class Enemy extends Entity {
     this._dashState = 'idle';
     this._dashDir = { x: 0, y: 0 };
     this._dashStateTimer = 0;
-    this._knockbackCooldown = 0;
+    this._knockbackUsed = false;
   }
 
   /**
-   * ノックバックを試みる。クールダウン中は何もせず false を返す。
-   * 成功時は `enemy.x/y` に即時シフトし、一定秒数だけ再ノックバックを無視する。
+   * ノックバックを試みる。既に1度吹き飛ばされた敵は以後完全無視する (盾スタック等の対策)。
    * @param {number} dx - 押し出し方向 x (単位ベクトルでなくてもよい)
    * @param {number} dy - 押し出し方向 y
    * @param {number} dist - sqrt(dx^2 + dy^2) (0 の場合は no-op)
    * @param {number} strength - 押し出し距離 (px)
-   * @param {number} [cooldown=3.0] - 再適用までの秒数
    */
-  tryKnockback(dx, dy, dist, strength, cooldown = 3.0) {
-    if (this._knockbackCooldown > 0) return false;
+  tryKnockback(dx, dy, dist, strength) {
+    if (this._knockbackUsed) return false;
     if (!dist || dist <= 0 || !strength) return false;
     this.x += (dx / dist) * strength;
     this.y += (dy / dist) * strength;
-    this._knockbackCooldown = cooldown;
+    this._knockbackUsed = true;
     return true;
   }
 
@@ -189,10 +187,7 @@ export class Enemy extends Entity {
       }
     }
 
-    // ノックバッククールダウン
-    if (this._knockbackCooldown > 0) {
-      this._knockbackCooldown -= dt;
-    }
+    // ノックバックは1回限り (bool 管理。reset() / プール再利用時にクリア)
 
     // 状態異常ティック
     this.updateStatusEffects(dt);

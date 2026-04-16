@@ -171,6 +171,13 @@ export class EquipmentScreen {
         hpBonus = this.armorSlot.quality * 0.5;
       }
     }
+    // 武器スロットに装備した盾は追加の軽い防御ボーナス (防具の約1/4)
+    for (const w of weapons) {
+      const bp = ItemBlueprints[w.blueprintId];
+      if (bp?.equipType === 'shield') {
+        def += (bp.baseValue / 48) + (w.quality / 32);
+      }
+    }
     if (this.accessorySlot) {
       const bp = ItemBlueprints[this.accessorySlot.blueprintId];
       if (bp) spdBonus = bp.baseValue / 2500 + this.accessorySlot.quality / 5000;

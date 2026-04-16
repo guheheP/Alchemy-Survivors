@@ -21,24 +21,25 @@ export class SwordStrategy extends WeaponStrategy {
     const dmg = this.damage;
     this._swingCount++;
 
-    // 奇数回: 前方弧斬り / 偶数回: 360°回転斬り
+    // 奇数回: 前方弧斬り(225°) / 偶数回: 360°回転斬り(射程1.3倍で差別化)
     const isFullSpin = this._swingCount % 2 === 0;
     const attackArc = isFullSpin ? Math.PI * 2 : this.arc;
+    const attackRange = isFullSpin ? range * 1.3 : range;
     const effectColor = isFullSpin ? '#ff8' : '#fff';
 
     for (const enemy of enemies) {
       if (!enemy.active) continue;
       if (isFullSpin) {
-        // 360° — 距離チェックのみ
+        // 360° — 距離チェックのみ（射程拡張）
         const dx = enemy.x - px;
         const dy = enemy.y - py;
-        if (dx * dx + dy * dy < range * range) {
+        if (dx * dx + dy * dy < attackRange * attackRange) {
           const hit = dmg * 0.8;
           if (enemy.takeDamage(hit, this._lastCrit)) this._emitKill(enemy);
           else this._tryApplyStatus(enemy, hit);
         }
       } else {
-        if (CollisionSystem.pointInFan(enemy.x, enemy.y, px, py, angle, attackArc, range)) {
+        if (CollisionSystem.pointInFan(enemy.x, enemy.y, px, py, angle, attackArc, attackRange)) {
           if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
           else this._tryApplyStatus(enemy, dmg);
         }
@@ -47,12 +48,12 @@ export class SwordStrategy extends WeaponStrategy {
 
     if (isFullSpin) {
       this.effects.push({
-        type: 'ring', x: px, y: py, range,
+        type: 'ring', x: px, y: py, range: attackRange,
         timer: 0.2, maxTimer: 0.2, color: effectColor,
       });
     } else {
       this.effects.push({
-        type: 'fan', x: px, y: py, angle, range, arc: attackArc,
+        type: 'fan', x: px, y: py, angle, range: attackRange, arc: attackArc,
         timer: 0.18, maxTimer: 0.18, color: effectColor,
       });
     }

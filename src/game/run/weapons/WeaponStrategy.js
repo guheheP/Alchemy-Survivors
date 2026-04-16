@@ -17,7 +17,7 @@ const STATUS_EFFECT_CONFIG = {
   ice:       { type: 'freeze',     procChance: 0.15, duration: 2.0, speedMod: -40 },
   poison:    { type: 'poison',     procChance: 0.25, duration: 3.0, dpsRatio: 0.05 },
   lightning: { type: 'shock',      procChance: 0.12, duration: 0.4 },
-  water:     { type: 'vulnerable', procChance: 0.18, duration: 3.0, damageMultiplier: 0.15 },
+  water:     { type: 'vulnerable', procChance: 0.18, duration: 10.0, damageMultiplier: 0.15 },
   // wind は拡散専用、直接の状態異常なし
 };
 

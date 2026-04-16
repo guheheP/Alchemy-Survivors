@@ -143,7 +143,7 @@ const ELEMENT_BADGE_DEFS = {
   water: {
     label: '水',
     icon: '💧',
-    tooltip: '命中時に脆弱化を付与。3秒間、敵が受けるダメージが+15%される。',
+    tooltip: '命中時に脆弱化を付与。10秒間、敵が受けるダメージが+15%される。',
   },
   none: {
     label: '無',

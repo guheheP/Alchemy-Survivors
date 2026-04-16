@@ -100,9 +100,17 @@ export class PlayerController extends Entity {
 
   /** 武器スロットの特性もパッシブに適用（RunManagerから呼ぶ）。
    * runDamageFlat は武器固有スコープなので player.baseDamage には加算せず、
-   * WeaponStrategy 側で該当武器にのみ適用する。 */
+   * WeaponStrategy 側で該当武器にのみ適用する。
+   * また、武器スロットに装備された「盾」は本来の防具ほどではないが少量の防御ボーナスを付与する。 */
   applyWeaponTraits(weaponSlots) {
     this._applyTraitPassives(weaponSlots, { skipDamageFlat: true });
+    // 武器スロットの盾: 本体の防具が別途装備されていても追加の軽い防御ボーナス (防具の1/4程度)
+    for (const w of weaponSlots) {
+      if (!w) continue;
+      const bp = ItemBlueprints[w.blueprintId];
+      if (!bp || bp.equipType !== 'shield') continue;
+      this.passives.damageReduction += (bp.baseValue / 48) + (w.quality / 32);
+    }
     this._bindInput();
   }
 

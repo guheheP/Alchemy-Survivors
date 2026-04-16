@@ -122,6 +122,11 @@ export class BossEntity extends Enemy {
     }
   }
 
+  /** ボスはノックバック完全無効 (根を張る存在としてデザイン) */
+  tryKnockback(_dx, _dy, _dist, _strength) {
+    return false;
+  }
+
   takeDamage(amount, isCrit = false) {
     // 脆弱（水属性）: 被ダメージを増幅してから防御計算
     amount = amount * this._incomingDamageMult();
