@@ -30,7 +30,9 @@ export class WeaponStrategy {
 
     this.equipType = equipType;
     this.baseValue = bp.baseValue;
-    this.baseDamage = (bp.baseValue / wc.damageBaseDivisor) + (weaponItem.quality / wc.damageQualityDivisor);
+    // Blueprint 固有のダメージ倍率 (無属性武器のバランス調整用、既定1.0)
+    const dmgMult = bp.baseDamageMultiplier || 1.0;
+    this.baseDamage = ((bp.baseValue / wc.damageBaseDivisor) + (weaponItem.quality / wc.damageQualityDivisor)) * dmgMult;
     this.attackSpeed = wc.speedBase + (weaponItem.quality / wc.speedQualityDivisor);
     this.baseRange = typeConfig.baseRange * (1 + weaponItem.quality / wc.rangeQualityDivisor);
     this.baseCooldown = typeConfig.baseCooldown;
