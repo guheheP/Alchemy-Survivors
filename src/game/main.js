@@ -22,6 +22,7 @@ import { RunResultScreen } from './ui/RunResultScreen.js';
 import { AchievementSystem } from './AchievementSystem.js';
 import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import { initTraitTooltipTap } from './ui/UIHelpers.js';
+import { GameTooltip } from './ui/GameTooltip.js';
 import { RunPickupToasts } from './ui/RunPickupToasts.js';
 import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNamePrompt.js';
 import { initPwaRuntime, applyPwaUpdate } from './core/pwaRuntime.js';
@@ -175,6 +176,8 @@ class Game {
   async start() {
     // タッチ端末用: 特性ツールチップのタップ開閉
     initTraitTooltipTap();
+    // data-tooltip 属性ベースの汎用ツールチップ (属性バッジ等)
+    GameTooltip.init();
 
     // PWA ランタイム初期化 (インストールプロンプト / online 復帰時再送 / SW更新検知)
     initPwaRuntime({ getSaveSystem: () => this.saveSystem });
