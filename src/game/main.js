@@ -56,6 +56,8 @@ class Game {
       perArea: {},
       perWeaponType: {},
       hardModeClears: 0,
+      challengeClears: 0,
+      nightmareClears: 0,
       firstPlayDate: null,
     };
 
@@ -317,7 +319,7 @@ class Game {
     }
   }
 
-  _startRun({ weaponSlots, areaId, consumables, hardMode }) {
+  _startRun({ weaponSlots, areaId, consumables, difficulty, hardMode }) {
     this.scene = 'run';
     // 出撃したステージを記憶（次回の出撃準備画面で初期選択）
     if (areaId) this.lastSelectedAreaId = areaId;
@@ -328,8 +330,11 @@ class Game {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
 
+    // 難易度の解決: 新APIの difficulty 文字列を優先、無ければ旧 hardMode boolean を変換
+    const resolvedDifficulty = difficulty || (hardMode ? 'hard' : 'normal');
+
     // ランシステム初期化
-    this.runManager = new RunManager(this.canvas, weaponSlots, areaId, this.equippedArmor, this.equippedAccessory, consumables || [], hardMode || false);
+    this.runManager = new RunManager(this.canvas, weaponSlots, areaId, this.equippedArmor, this.equippedAccessory, consumables || [], resolvedDifficulty);
 
     // ランUI
     this.runHUD = new RunHUD(this.uiRoot);
@@ -377,8 +382,12 @@ class Game {
     if (resultData.bossDefeated) {
       this.stats.totalBossesDefeated++;
     }
-    if (resultData.hardMode && (resultData.reason === 'timeout' || resultData.reason === 'clear')) {
-      this.stats.hardModeClears++;
+    const cleared = (resultData.reason === 'timeout' || resultData.reason === 'clear');
+    if (cleared) {
+      const diff = resultData.difficulty || (resultData.hardMode ? 'hard' : 'normal');
+      if (diff === 'hard')      this.stats.hardModeClears++;
+      if (diff === 'challenge') this.stats.challengeClears = (this.stats.challengeClears || 0) + 1;
+      if (diff === 'nightmare') this.stats.nightmareClears = (this.stats.nightmareClears || 0) + 1;
     }
     // エリア別統計
     const areaId = resultData.areaId;

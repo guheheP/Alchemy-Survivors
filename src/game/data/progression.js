@@ -20,13 +20,39 @@ const QUALITY_CAP_TABLE = {
   7: 999,   // 7体撃破（全ボス）
 };
 
+// 難易度の順序（低 → 高）。markBossDefeated はクリア難易度以下の全タグを追加して
+// 上位難易度のクリアが下位難易度のゲートを満たすように単調性を保つ。
+const DIFFICULTY_RANK = ['normal', 'hard', 'challenge', 'nightmare'];
+
 export const Progression = {
-  markBossDefeated(bossId) {
-    _defeatedBosses.add(bossId);
+  /**
+   * ボス撃破を記録する。
+   * @param {string} bossId
+   * @param {'normal'|'hard'|'challenge'|'nightmare'} [difficulty='normal']
+   *
+   * 撃破した難易度以下の難易度タグを全て追加する：
+   *   - normal クリア   → `${bossId}` のみ
+   *   - hard クリア     → `${bossId}` + `${bossId}:hard`
+   *   - challenge クリア → 上記 + `${bossId}:challenge`
+   *   - nightmare クリア → 上記 + `${bossId}:nightmare`
+   */
+  markBossDefeated(bossId, difficulty = 'normal') {
+    _defeatedBosses.add(bossId); // どの難易度でも「撃破済み」を立てる
+    const idx = DIFFICULTY_RANK.indexOf(difficulty);
+    if (idx <= 0) return; // normal なら追加タグ不要
+    for (let i = 1; i <= idx; i++) {
+      _defeatedBosses.add(`${bossId}:${DIFFICULTY_RANK[i]}`);
+    }
   },
 
-  isBossDefeated(bossId) {
-    return _defeatedBosses.has(bossId);
+  /**
+   * 指定難易度でのボス撃破済みかを返す。
+   * @param {string} bossId
+   * @param {'normal'|'hard'|'challenge'|'nightmare'} [difficulty='normal']
+   */
+  isBossDefeated(bossId, difficulty = 'normal') {
+    if (difficulty === 'normal') return _defeatedBosses.has(bossId);
+    return _defeatedBosses.has(`${bossId}:${difficulty}`);
   },
 
   getDefeatedBosses() {

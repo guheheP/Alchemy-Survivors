@@ -87,7 +87,7 @@ export class PlayerController extends Entity {
     if (equippedAccessory) {
       const bp = ItemBlueprints[equippedAccessory.blueprintId];
       if (bp) {
-        this.passives.moveSpeedMultiplier += bp.baseValue / 500 + equippedAccessory.quality / 1000;
+        this.passives.moveSpeedMultiplier += bp.baseValue / 2500 + equippedAccessory.quality / 5000;
       }
     }
 

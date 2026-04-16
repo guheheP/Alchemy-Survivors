@@ -33,6 +33,8 @@ const DEFAULT_STATS = {
   perArea: {},
   perWeaponType: {},
   hardModeClears: 0,
+  challengeClears: 0,
+  nightmareClears: 0,
   firstPlayDate: null,
 };
 

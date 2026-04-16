@@ -170,7 +170,7 @@ export class EquipmentScreen {
     }
     if (this.accessorySlot) {
       const bp = ItemBlueprints[this.accessorySlot.blueprintId];
-      if (bp) spdBonus = bp.baseValue / 500 + this.accessorySlot.quality / 1000;
+      if (bp) spdBonus = bp.baseValue / 2500 + this.accessorySlot.quality / 5000;
     }
 
     // 装備中アイテムの特性からステータス上昇値を集計（戦闘に関わるrun系のみ）
@@ -261,7 +261,7 @@ export class EquipmentScreen {
         const def = fmt1(bp.baseValue / 12 + item.quality / 8);
         statsHtml = `<span class="slot-stats">DEF:${def} Q${item.quality}</span>`;
       } else {
-        const spdRatio = bp.baseValue / 500 + item.quality / 1000;
+        const spdRatio = bp.baseValue / 2500 + item.quality / 5000;
         statsHtml = `<span class="slot-stats">SPD:+${fmtPct1(spdRatio)}% Q${item.quality}</span>`;
       }
     }

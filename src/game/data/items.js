@@ -196,7 +196,7 @@ export const ItemBlueprints = {
   ancient_crown: { id: 'ancient_crown', name: '古代王の冠', type: 'accessory', baseValue: 600, image: '/art/items/ancient_crown.png' },
   sage_stone: { id: 'sage_stone', name: '賢者の石', type: 'consumable', baseValue: 350, image: '/art/items/sage_stone.png', battleEffect: { type: 'heal', target: 'all', value: 100 } },
   mystic_amulet: { id: 'mystic_amulet', name: '神秘のアミュレット', type: 'accessory', baseValue: 580, image: '/art/items/mystic_amulet.png' },
-  dragon_bow: { id: 'dragon_bow', name: '竜骨の弓', type: 'equipment', equipType: 'bow', baseValue: 430, baseCritChance: 0.04, baseDamageMultiplier: 1.25, image: '/art/items/dragon_bow.png' },
+  dragon_bow: { id: 'dragon_bow', name: '竜骨の弓', type: 'equipment', equipType: 'bow', baseValue: 430, baseCritChance: 0.04, element: 'fire', image: '/art/items/dragon_bow.png' },
   phoenix_robe: { id: 'phoenix_robe', name: '不死鳥のローブ', type: 'equipment', equipType: 'robe', baseValue: 410, image: '/art/items/phoenix_robe.png' },
   void_blade: { id: 'void_blade', name: '虚無の剣', type: 'equipment', equipType: 'sword', baseValue: 460, baseCritChance: 0.04, baseDamageMultiplier: 1.25, image: '/art/items/void_blade.png' },
   dragon_potion: { id: 'dragon_potion', name: '竜の血薬', type: 'consumable', baseValue: 300, image: '/art/items/dragon_potion.png', battleEffect: { type: 'buff', target: 'all', stat: 'atk', amount: 30, duration: 20 } },
