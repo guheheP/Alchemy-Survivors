@@ -369,7 +369,11 @@ export class WarehouseScreen {
     let statsHtml = '';
     if (bp.type === 'equipment' && bp.equipType) {
       const wc = GameConfig.weapon;
-      const dmg = fmt1(bp.baseValue / wc.damageBaseDivisor + item.quality / wc.damageQualityDivisor);
+      // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
+      const dmgMult = bp.baseDamageMultiplier || 1.0;
+      let rawDmg = (bp.baseValue / wc.damageBaseDivisor + item.quality / wc.damageQualityDivisor) * dmgMult;
+      if (bp.element === 'none') rawDmg *= 1.25;
+      const dmg = fmt1(rawDmg);
       const spd = fmt1(wc.speedBase + item.quality / wc.speedQualityDivisor);
       const typeConfig = GameConfig.weaponTypes[bp.equipType];
       const range = fmtInt(typeConfig.baseRange * (1 + item.quality / wc.rangeQualityDivisor));
