@@ -122,6 +122,8 @@ export class WeaponStrategy {
     const def = this.skillDef;
     const p = def.params;
     const color = def.color || '#ff8';
+    // フラリッシュ中心位置 — 遠隔スキル(meteor/burn_zone_at)はbestX/bestYに上書きされる
+    let flourishX = px, flourishY = py;
 
     switch (def.type) {
       case 'shockwave': {
@@ -334,6 +336,7 @@ export class WeaponStrategy {
           }
           if (count > bestCount) { bestCount = count; bestX = enemy.x; bestY = enemy.y; }
         }
+        flourishX = bestX; flourishY = bestY;
         for (const enemy of enemies) {
           if (!enemy.active) continue;
           const dx = enemy.x - bestX;
@@ -551,6 +554,7 @@ export class WeaponStrategy {
           }
           if (count > bestCount) { bestCount = count; bestX = enemy.x; bestY = enemy.y; }
         }
+        flourishX = bestX; flourishY = bestY;
         for (const enemy of enemies) {
           if (!enemy.active) continue;
           const dx = enemy.x - bestX;
@@ -763,20 +767,21 @@ export class WeaponStrategy {
     }
 
     // スキル発動時の確定状態異常付与（範囲内の生存敵に適用）
+    // 遠隔スキル(meteor/burn_zone_at)は効果位置(flourishX/Y)を中心に判定
     if (this.element) {
       const skillRadius = p.radius || p.lineRange || p.range || 200;
       for (const enemy of enemies) {
         if (!enemy.active) continue;
-        const edx = enemy.x - px;
-        const edy = enemy.y - py;
+        const edx = enemy.x - flourishX;
+        const edy = enemy.y - flourishY;
         if (edx * edx + edy * edy < skillRadius * skillRadius) {
           this._tryApplyStatus(enemy, true);
         }
       }
     }
 
-    // Tier別の追加演出（上位武器ほど派手に）
-    this._emitSkillFlourish(px, py, color, angle);
+    // Tier別の追加演出（上位武器ほど派手に、発動位置はスキルタイプ依存）
+    this._emitSkillFlourish(flourishX, flourishY, color, angle);
 
     eventBus.emit('skill:activated', { name: def.name, color, tier: this.skillTier });
   }
