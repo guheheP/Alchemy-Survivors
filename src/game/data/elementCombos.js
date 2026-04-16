@@ -40,7 +40,7 @@ export const ElementCombos = {
     effect: {
       kind: 'aoe_damage',
       damageBase: 'hitDamage',
-      damageMult: 2.5,
+      damageMult: 1.0,
       radius: 90,
       // 毒を周囲に拡散 (半減)
       appliesStatus: { type: 'poison', params: { duration: 2.0, dpsMult: 0.5 } },
@@ -61,7 +61,7 @@ export const ElementCombos = {
     effect: {
       kind: 'aoe_damage',
       damageBase: 'hitDamage',
-      damageMult: 4.0,
+      damageMult: 1.2,
       radius: 60,
     },
     consume: ['freeze', 'shock'], // 両方消費
@@ -80,7 +80,7 @@ export const ElementCombos = {
     effect: {
       kind: 'chain',
       damageBase: 'hitDamage',
-      damageMult: 1.5,
+      damageMult: 0.4, // chainCount 4 体への分散を考慮して 1 発あたりは小さめ
       radius: 160, // 連鎖範囲
       chainCount: 4,
       appliesStatus: { type: 'shock', params: { duration: 0.3 } },
@@ -136,8 +136,8 @@ export const ElementCombos = {
     requires: ['burn', 'shock'],
     effect: {
       kind: 'aoe_damage',
-      damageBase: 'burnDps',
-      damageMult: 2.5,
+      damageBase: 'burnDps', // burnDps×3 ≈ hitDamage×0.75 なので mult 1.3 で ~1.0× hitDamage 相当
+      damageMult: 1.3,
       radius: 110,
     },
     consume: ['burn', 'shock'], // 両方消費
@@ -172,8 +172,8 @@ export const ElementCombos = {
     requires: ['freeze', 'poison'],
     effect: {
       kind: 'aoe_damage',
-      damageBase: 'poisonDps',
-      damageMult: 2.0,
+      damageBase: 'poisonDps', // poisonDps×3 ≈ hitDamage×0.36 と基準自体が小さいので、追加効果として控えめに
+      damageMult: 1.2,
       radius: 70,
       // 周囲の敵に毒拡散
       appliesStatus: { type: 'poison', params: { duration: 3.0, dpsMult: 0.6 } },
