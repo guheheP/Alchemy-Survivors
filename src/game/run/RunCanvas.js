@@ -249,40 +249,7 @@ export class RunCanvas {
       }
 
       // 状態異常の視覚エフェクト
-      if (enemy._burnTimer > 0) {
-        const pulse = 0.5 + Math.sin(elapsed * 8) * 0.2;
-        ctx.save();
-        ctx.globalAlpha = pulse;
-        ctx.strokeStyle = '#f62';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(sx, sy, enemy.radius + 3, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      }
-      if (enemy._poisonTimer > 0) {
-        const pulse = 0.5 + Math.sin(elapsed * 6) * 0.2;
-        ctx.save();
-        ctx.globalAlpha = pulse;
-        ctx.strokeStyle = '#6a4';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(sx, sy, enemy.radius + 5, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-      }
-      if (enemy._freezeTimer > 0) {
-        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 1.4, '#8ef', 0.35);
-      }
-      if (enemy._shockTimer > 0) {
-        ctx.save();
-        ctx.globalAlpha = 0.6;
-        ctx.fillStyle = '#ff8';
-        ctx.beginPath();
-        ctx.arc(sx, sy, enemy.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
+      this._drawStatusEffects(ctx, sx, sy, enemy, enemy.radius, elapsed);
 
       // HPバー
       EntityRenderer.drawHpBar(ctx, sx, sy, enemy.radius, enemy.hp, enemy.maxHp);
@@ -345,27 +312,7 @@ export class RunCanvas {
         ctx.stroke();
 
         // ボスの状態異常エフェクト
-        if (boss._burnTimer > 0) {
-          ctx.save(); ctx.globalAlpha = 0.5 + Math.sin(elapsed * 8) * 0.2;
-          ctx.strokeStyle = '#f62'; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(sx, sy, boss.radius + 5, 0, Math.PI * 2); ctx.stroke();
-          ctx.restore();
-        }
-        if (boss._poisonTimer > 0) {
-          ctx.save(); ctx.globalAlpha = 0.5 + Math.sin(elapsed * 6) * 0.2;
-          ctx.strokeStyle = '#6a4'; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(sx, sy, boss.radius + 7, 0, Math.PI * 2); ctx.stroke();
-          ctx.restore();
-        }
-        if (boss._freezeTimer > 0) {
-          EntityRenderer.drawGlow(ctx, sx, sy, boss.radius * 1.4, '#8ef', 0.35);
-        }
-        if (boss._shockTimer > 0) {
-          ctx.save(); ctx.globalAlpha = 0.6;
-          ctx.fillStyle = '#ff8'; ctx.beginPath();
-          ctx.arc(sx, sy, boss.radius, 0, Math.PI * 2); ctx.fill();
-          ctx.restore();
-        }
+        this._drawStatusEffects(ctx, sx, sy, boss, boss.radius, elapsed);
       }
     }
 
@@ -440,6 +387,239 @@ export class RunCanvas {
 
     // === 11. モバイルスティック ===
     if (player.mobileControls) player.mobileControls.render(ctx);
+  }
+
+  /**
+   * 敵・ボスの状態異常エフェクトを派手に描画
+   * entity: EnemyAI または BossEntity のインスタンス (_burnTimer等を持つ)
+   */
+  _drawStatusEffects(ctx, sx, sy, entity, radius, elapsed) {
+    // 燃焼: 炎のゆらめき + 赤オレンジのグロー
+    if (entity._burnTimer > 0) {
+      const t = elapsed;
+      ctx.save();
+      // 外周のパルスグロー（加算合成）
+      ctx.globalCompositeOperation = 'lighter';
+      const grad = ctx.createRadialGradient(sx, sy, radius * 0.4, sx, sy, radius * 1.8);
+      grad.addColorStop(0, 'rgba(255,160,60,0.55)');
+      grad.addColorStop(0.5, 'rgba(255,90,20,0.35)');
+      grad.addColorStop(1, 'rgba(120,20,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius * 1.8, 0, Math.PI * 2);
+      ctx.fill();
+      // 炎の舌 (4-5本のティアドロップ状が上方向にゆらめく)
+      const flames = 5;
+      for (let i = 0; i < flames; i++) {
+        const phase = t * 4 + i * 1.3;
+        const ox = Math.sin(phase) * radius * 0.5;
+        const flicker = 0.7 + Math.sin(t * 12 + i) * 0.3;
+        const flameH = radius * (0.8 + flicker * 0.6);
+        const flameW = radius * 0.35;
+        const baseY = sy - radius * 0.3;
+        const tipY = baseY - flameH;
+        const cx = sx + ox;
+        // 外側炎（オレンジ）
+        ctx.fillStyle = `rgba(255,120,30,${0.45 * flicker})`;
+        ctx.beginPath();
+        ctx.moveTo(cx - flameW * 0.5, baseY);
+        ctx.quadraticCurveTo(cx - flameW, baseY - flameH * 0.5, cx, tipY);
+        ctx.quadraticCurveTo(cx + flameW, baseY - flameH * 0.5, cx + flameW * 0.5, baseY);
+        ctx.closePath();
+        ctx.fill();
+        // 内側炎（黄色）
+        ctx.fillStyle = `rgba(255,230,120,${0.55 * flicker})`;
+        ctx.beginPath();
+        ctx.moveTo(cx - flameW * 0.25, baseY);
+        ctx.quadraticCurveTo(cx - flameW * 0.5, baseY - flameH * 0.4, cx, tipY + flameH * 0.15);
+        ctx.quadraticCurveTo(cx + flameW * 0.5, baseY - flameH * 0.4, cx + flameW * 0.25, baseY);
+        ctx.closePath();
+        ctx.fill();
+      }
+      // 舞い上がる火の粉
+      for (let i = 0; i < 3; i++) {
+        const phase = (t * 2 + i * 0.7) % 1;
+        const a = (i * 2.094 + t * 0.5) % (Math.PI * 2);
+        const dist = radius * 0.6;
+        const px = sx + Math.cos(a) * dist;
+        const py = sy - radius * 0.2 - phase * radius * 1.5;
+        ctx.fillStyle = `rgba(255,200,80,${(1 - phase) * 0.9})`;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 毒: 緑のもや + 上昇する泡
+    if (entity._poisonTimer > 0) {
+      const t = elapsed;
+      ctx.save();
+      // 毒のもや
+      const grad = ctx.createRadialGradient(sx, sy, radius * 0.3, sx, sy, radius * 1.6);
+      grad.addColorStop(0, 'rgba(120,220,80,0.35)');
+      grad.addColorStop(0.6, 'rgba(70,170,50,0.22)');
+      grad.addColorStop(1, 'rgba(40,100,30,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      // 上昇する泡（4個、位相ズレ）
+      const bubbles = 4;
+      for (let i = 0; i < bubbles; i++) {
+        const phase = (t * 1.2 + i * 0.25) % 1;
+        const ox = Math.sin(t * 2 + i * 1.7) * radius * 0.5;
+        const by = sy + radius * 0.4 - phase * radius * 1.8;
+        const bx = sx + ox;
+        const br = 2.5 + Math.sin(phase * Math.PI) * 2.5;
+        const alpha = Math.sin(phase * Math.PI) * 0.85;
+        // 泡の本体
+        ctx.fillStyle = `rgba(100,220,80,${alpha})`;
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+        // 泡のハイライト
+        ctx.fillStyle = `rgba(200,255,160,${alpha * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(bx - br * 0.3, by - br * 0.3, br * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // 脈動する毒々しいリング
+      const ringPulse = 0.5 + Math.sin(t * 5) * 0.25;
+      ctx.globalAlpha = ringPulse;
+      ctx.strokeStyle = '#5c2';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.lineDashOffset = -t * 12;
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius + 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    // 凍結: 氷の結晶 + 冷気
+    if (entity._freezeTimer > 0) {
+      const t = elapsed;
+      ctx.save();
+      // 冷気のグロー
+      ctx.globalCompositeOperation = 'lighter';
+      const grad = ctx.createRadialGradient(sx, sy, radius * 0.3, sx, sy, radius * 1.6);
+      grad.addColorStop(0, 'rgba(180,240,255,0.5)');
+      grad.addColorStop(0.6, 'rgba(100,200,255,0.3)');
+      grad.addColorStop(1, 'rgba(60,120,200,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      // 回転する氷の結晶（6角形風、3つ）
+      const crystals = 3;
+      const rot = t * 0.6;
+      for (let i = 0; i < crystals; i++) {
+        const a = rot + (Math.PI * 2 / crystals) * i;
+        const cx = sx + Math.cos(a) * radius * 1.1;
+        const cy = sy + Math.sin(a) * radius * 1.1;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(a * 2);
+        ctx.strokeStyle = 'rgba(200,240,255,0.95)';
+        ctx.fillStyle = 'rgba(140,220,255,0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#cff';
+        ctx.shadowBlur = 6;
+        // 雪結晶: 3本のラインで六角形風
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const ka = (Math.PI / 3) * k;
+          ctx.moveTo(-Math.cos(ka) * 5, -Math.sin(ka) * 5);
+          ctx.lineTo(Math.cos(ka) * 5, Math.sin(ka) * 5);
+        }
+        ctx.stroke();
+        // 中心の小さな菱形
+        ctx.beginPath();
+        ctx.moveTo(0, -3);
+        ctx.lineTo(3, 0);
+        ctx.lineTo(0, 3);
+        ctx.lineTo(-3, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      // 下方にぶら下がる氷柱風ライン
+      ctx.strokeStyle = 'rgba(180,240,255,0.8)';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#cff';
+      ctx.shadowBlur = 4;
+      for (let i = 0; i < 3; i++) {
+        const a = Math.PI * 0.3 + i * 0.4;
+        const x1 = sx + Math.cos(a) * radius * 0.7;
+        const y1 = sy + Math.sin(a) * radius * 0.7;
+        const x2 = sx + Math.cos(a) * (radius + 5);
+        const y2 = sy + Math.sin(a) * (radius + 5);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 感電: 雷のジグザグ + 火花
+    if (entity._shockTimer > 0) {
+      const t = elapsed;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      // 黄白の放射グロー（強めの脈動）
+      const pulse = 0.6 + Math.sin(t * 40) * 0.4;
+      const grad = ctx.createRadialGradient(sx, sy, radius * 0.2, sx, sy, radius * 1.7);
+      grad.addColorStop(0, `rgba(255,255,200,${0.6 * pulse})`);
+      grad.addColorStop(0.5, `rgba(255,230,80,${0.35 * pulse})`);
+      grad.addColorStop(1, 'rgba(200,180,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius * 1.7, 0, Math.PI * 2);
+      ctx.fill();
+      // ジグザグ稲妻 (3本、毎フレーム再生成)
+      ctx.strokeStyle = '#ffffaa';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#ff0';
+      ctx.shadowBlur = 10;
+      const bolts = 3;
+      for (let b = 0; b < bolts; b++) {
+        const startA = (t * 8 + b * 2.094) % (Math.PI * 2);
+        const endA = startA + Math.PI + (Math.random() - 0.5) * 0.8;
+        const startR = radius * 0.4;
+        const endR = radius * 1.4;
+        const x1 = sx + Math.cos(startA) * startR;
+        const y1 = sy + Math.sin(startA) * startR;
+        const x2 = sx + Math.cos(endA) * endR;
+        const y2 = sy + Math.sin(endA) * endR;
+        const segs = 5;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        for (let s = 1; s < segs; s++) {
+          const sp = s / segs;
+          const jx = x1 + (x2 - x1) * sp + (Math.random() - 0.5) * 10;
+          const jy = y1 + (y2 - y1) * sp + (Math.random() - 0.5) * 10;
+          ctx.lineTo(jx, jy);
+        }
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      // 火花（ランダム位置の小さな点）
+      for (let i = 0; i < 6; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = radius * (0.6 + Math.random() * 0.8);
+        const px = sx + Math.cos(a) * r;
+        const py = sy + Math.sin(a) * r;
+        ctx.fillStyle = '#ffffcc';
+        ctx.beginPath();
+        ctx.arc(px, py, 1.5 + Math.random() * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   destroy() {
