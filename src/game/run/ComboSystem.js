@@ -33,6 +33,12 @@ export class ComboSystem {
     if (!combo || !enemy || !enemy.active) return;
     if (enemy._comboCdTimer > 0) return;
 
+    // 発動位置を先にキャプチャする。
+    // _applyEffect 内の AoE ダメージで source 敵自身が死ぬと、pool.release → Entity.reset()
+    // で enemy.x/y が (0,0) にリセットされてしまい、以降の演出/トーストがワールド原点に出る。
+    const fxX = enemy.x;
+    const fxY = enemy.y;
+
     // 効果適用
     const player = this.ctx.getPlayer?.();
     const powerMult = 1 + (player?.passives?.elementPowerBonus || 0);
@@ -43,17 +49,20 @@ export class ComboSystem {
       this._consumeStatus(enemy, combo.consume);
     }
 
-    // クールダウンセット
-    enemy._comboCdTimer = combo.cooldown || 1.5;
+    // クールダウンセット — source が AoE で死んで pool に返却されている場合は設定しない
+    // (そうでないと次に再利用される敵に stale な CD が残り、スポーン直後はコンボ不発になる)
+    if (enemy.active) {
+      enemy._comboCdTimer = combo.cooldown || 1.5;
+    }
 
-    // 演出
-    this._emitFx(combo, enemy);
+    // 演出 (キャプチャ済み座標を使用)
+    this._emitFx(combo, fxX, fxY);
 
     // UI 通知
     eventBus.emit('combo:fired', {
       combo,
-      x: enemy.x,
-      y: enemy.y,
+      x: fxX,
+      y: fxY,
     });
   }
 
@@ -67,17 +76,26 @@ export class ComboSystem {
     switch (eff.kind) {
       case 'aoe_damage': {
         const r2 = (eff.radius || 80) * (eff.radius || 80);
+        // sourceEnemy 自身も AoE で死ぬ場合があるため、起点座標を先にキャプチャ
+        const srcX = sourceEnemy.x;
+        const srcY = sourceEnemy.y;
         for (const target of allEnemies) {
           if (!target.active) continue;
-          const dx = target.x - sourceEnemy.x;
-          const dy = target.y - sourceEnemy.y;
+          const dx = target.x - srcX;
+          const dy = target.y - srcY;
           if (dx * dx + dy * dy > r2) continue;
+          // takeDamage で死亡 → pool.release → reset で target.x/y がクリアされる前に値を控える
+          const tx = target.x;
+          const ty = target.y;
           if (dmg > 0) {
             if (target.takeDamage(dmg)) {
-              eventBus.emit('enemy:killed', { enemy: target, x: target.x, y: target.y, isBoss: target.isBoss, color: target.color });
+              eventBus.emit('enemy:killed', { enemy: target, x: tx, y: ty, isBoss: target.isBoss, color: target.color });
             }
           }
-          if (eff.appliesStatus) this._applyStatusToTarget(target, eff.appliesStatus, sourceEnemy, powerMult);
+          // 死亡後(active=false)は状態異常を付与しない (プール内の敵に stale タイマーが残るのを防ぐ)
+          if (eff.appliesStatus && target.active) {
+            this._applyStatusToTarget(target, eff.appliesStatus, sourceEnemy, powerMult);
+          }
         }
         break;
       }
@@ -86,31 +104,41 @@ export class ComboSystem {
         const r2 = (eff.radius || 160) * (eff.radius || 160);
         const hit = new Set([sourceEnemy]);
         let current = sourceEnemy;
+        // source も takeDamage で死亡→reset される可能性があるので起点座標をキャプチャ
+        let currentX = sourceEnemy.x;
+        let currentY = sourceEnemy.y;
         const maxChain = eff.chainCount || 3;
         for (let i = 0; i < maxChain; i++) {
           let next = null;
           let nd = Infinity;
           for (const t of allEnemies) {
             if (!t.active || hit.has(t)) continue;
-            const dx = t.x - current.x;
-            const dy = t.y - current.y;
+            const dx = t.x - currentX;
+            const dy = t.y - currentY;
             const d = dx * dx + dy * dy;
             if (d < r2 && d < nd) { nd = d; next = t; }
           }
           if (!next) break;
           hit.add(next);
+          // takeDamage で死ぬと pool.release → reset で next.x/y が (0,0) になるため先に記憶
+          const nextX = next.x;
+          const nextY = next.y;
           if (dmg > 0) {
             if (next.takeDamage(dmg)) {
-              eventBus.emit('enemy:killed', { enemy: next, x: next.x, y: next.y, isBoss: next.isBoss, color: next.color });
+              eventBus.emit('enemy:killed', { enemy: next, x: nextX, y: nextY, isBoss: next.isBoss, color: next.color });
             }
           }
-          if (eff.appliesStatus) this._applyStatusToTarget(next, eff.appliesStatus, sourceEnemy, powerMult);
-          // 連鎖の雷ビジュアル
+          if (eff.appliesStatus && next.active) {
+            this._applyStatusToTarget(next, eff.appliesStatus, sourceEnemy, powerMult);
+          }
+          // 連鎖の雷ビジュアル (キャプチャ済み座標で表示位置のズレを防ぐ)
           eventBus.emit('particles:burst', {
-            x: (current.x + next.x) / 2, y: (current.y + next.y) / 2,
+            x: (currentX + nextX) / 2, y: (currentY + nextY) / 2,
             count: 6, config: { speed: 140, life: 0.3, size: 2, color: combo.color, shape: 'spark' },
           });
           current = next;
+          currentX = nextX;
+          currentY = nextY;
         }
         break;
       }
@@ -185,17 +213,17 @@ export class ComboSystem {
     target.applyStatusEffect(statusDef.type, params);
   }
 
-  _emitFx(combo, enemy) {
+  _emitFx(combo, x, y) {
     const fx = combo.fx || {};
     if (fx.shockwave) {
       eventBus.emit('fx:shockwave', {
-        x: enemy.x, y: enemy.y, color: combo.color || '#fff',
+        x, y, color: combo.color || '#fff',
         maxRadius: combo.effect?.radius || 100, duration: 0.45,
       });
     }
     if (fx.burst) {
       eventBus.emit('particles:burst', {
-        x: enemy.x, y: enemy.y, count: fx.burst,
+        x, y, count: fx.burst,
         config: { speed: 160, life: 0.5, size: 3, color: combo.color || '#ff8', shape: 'square', gravity: 40 },
       });
     }
