@@ -176,17 +176,17 @@ export const ItemBlueprints = {
   thunder_bomb: { id: 'thunder_bomb', name: '雷鳴の爆弾', type: 'consumable', baseValue: 100, image: '/art/items/thunder_bomb.png', battleEffect: { type: 'stun', target: 'enemy', duration: 8 } },
 
   // ===== Rank 5: 深海解放 (12種) =====
-  trident: { id: 'trident', name: '海神の三叉槍', type: 'equipment', equipType: 'spear', baseValue: 320, baseDamageMultiplier: 1.25, image: '/art/items/trident.png' },
+  trident: { id: 'trident', name: '海神の三叉槍', type: 'equipment', equipType: 'spear', baseValue: 320, element: 'water', image: '/art/items/trident.png' },
   coral_armor: { id: 'coral_armor', name: '珊瑚の鎧', type: 'equipment', equipType: 'armor', baseValue: 280, image: '/art/items/coral_armor.png' },
   pearl_tiara: { id: 'pearl_tiara', name: '真珠のティアラ', type: 'accessory', baseValue: 360, image: '/art/items/pearl_tiara.png' },
-  tidal_bow: { id: 'tidal_bow', name: '潮流の弓', type: 'equipment', equipType: 'bow', baseValue: 300, baseDamageMultiplier: 1.25, image: '/art/items/tidal_bow.png' },
+  tidal_bow: { id: 'tidal_bow', name: '潮流の弓', type: 'equipment', equipType: 'bow', baseValue: 300, element: 'water', image: '/art/items/tidal_bow.png' },
   deep_elixir: { id: 'deep_elixir', name: '深海の霊薬', type: 'consumable', baseValue: 200, image: '/art/items/deep_elixir.png', battleEffect: { type: 'heal', target: 'all', value: 60 } },
   mithril_sword: { id: 'mithril_sword', name: 'ミスリルの剣', type: 'equipment', equipType: 'sword', baseValue: 350, baseDamageMultiplier: 1.25, image: '/art/items/mithril_sword.png' },
   mithril_shield: { id: 'mithril_shield', name: 'ミスリルの盾', type: 'equipment', equipType: 'shield', baseValue: 310, baseDamageMultiplier: 1.25, image: '/art/items/mithril_shield.png' },
   void_amulet: { id: 'void_amulet', name: '虚空のアミュレット', type: 'accessory', baseValue: 390, image: '/art/items/void_amulet.png' },
   frost_blade: { id: 'frost_blade', name: '凍てつく刃', type: 'equipment', equipType: 'sword', baseValue: 290, element: 'ice', image: '/art/items/frost_blade.png' },
   elder_staff: { id: 'elder_staff', name: '長老樹の杖', type: 'equipment', equipType: 'staff', baseValue: 260, baseDamageMultiplier: 1.25, image: '/art/items/elder_staff.png' },
-  sea_serpent_whip: { id: 'sea_serpent_whip', name: '海竜の鞭', type: 'equipment', equipType: 'dagger', baseValue: 330, baseCritChance: 0.08, baseDamageMultiplier: 1.25, image: '/art/items/sea_serpent_whip.png' },
+  sea_serpent_whip: { id: 'sea_serpent_whip', name: '海竜の鞭', type: 'equipment', equipType: 'dagger', baseValue: 330, baseCritChance: 0.08, element: 'water', image: '/art/items/sea_serpent_whip.png' },
   lotus_perfume: { id: 'lotus_perfume', name: '黒蓮の香水', type: 'consumable', baseValue: 180, image: '/art/items/lotus_perfume.png', battleEffect: { type: 'buff', target: 'all', stat: 'spd', amount: 25, duration: 20 } },
   revival_herb: { id: 'revival_herb', name: '蘇生草', type: 'consumable', baseValue: 250, image: '/art/items/revival_herb.png', battleEffect: { type: 'heal', target: 'ally', value: 150 } },
 

@@ -120,6 +120,7 @@ const ELEMENT_BADGE_DEFS = {
   poison:    { label: '毒',  icon: '☠',  tooltip: '毒: 継続ダメージ + 周囲の敵に感染' },
   lightning: { label: '雷',  icon: '⚡', tooltip: '感電: 短時間スタン' },
   wind:      { label: '風',  icon: '💨', tooltip: '風: 状態異常を持つ敵に命中時、周囲に拡散' },
+  water:     { label: '水',  icon: '💧', tooltip: '脆弱: 敵が受けるダメージが15%増加' },
 };
 
 /** 武器属性バッジHTMLを生成。element が未定義なら空文字を返す */

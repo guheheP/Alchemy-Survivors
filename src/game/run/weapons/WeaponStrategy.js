@@ -13,10 +13,11 @@ import { eventBus } from '../../core/EventBus.js';
  *           しか出なかった。新実装は hitDamage 基準で強化に追従する。
  */
 const STATUS_EFFECT_CONFIG = {
-  fire:      { type: 'burn',   procChance: 0.20, duration: 3.0, dpsRatio: 0.10 },
-  ice:       { type: 'freeze', procChance: 0.15, duration: 2.0, speedMod: -40 },
-  poison:    { type: 'poison', procChance: 0.25, duration: 3.0, dpsRatio: 0.05 },
-  lightning: { type: 'shock',  procChance: 0.12, duration: 0.4 },
+  fire:      { type: 'burn',       procChance: 0.20, duration: 3.0, dpsRatio: 0.10 },
+  ice:       { type: 'freeze',     procChance: 0.15, duration: 2.0, speedMod: -40 },
+  poison:    { type: 'poison',     procChance: 0.25, duration: 3.0, dpsRatio: 0.05 },
+  lightning: { type: 'shock',      procChance: 0.12, duration: 0.4 },
+  water:     { type: 'vulnerable', procChance: 0.18, duration: 3.0, damageMultiplier: 0.15 },
   // wind は拡散専用、直接の状態異常なし
 };
 
@@ -1859,6 +1860,9 @@ export class WeaponStrategy {
     if (cfg.type === 'freeze') {
       params.speedMod = cfg.speedMod * powerMult;
     }
+    if (cfg.type === 'vulnerable') {
+      params.damageMultiplier = cfg.damageMultiplier * powerMult;
+    }
     enemy.applyStatusEffect(cfg.type, params);
   }
 
@@ -1878,6 +1882,12 @@ export class WeaponStrategy {
     }
     if (enemy._shockTimer > 0) {
       effects.push({ type: 'shock', params: { duration: 0.2 * powerMult } });
+    }
+    if (enemy._vulnerableTimer > 0) {
+      effects.push({ type: 'vulnerable', params: {
+        duration: enemy._vulnerableTimer * spread,
+        damageMultiplier: enemy._vulnerableMult * spread,
+      } });
     }
     if (effects.length > 0) {
       // 拡散半径も属性発動率ボーナスに応じて微増
