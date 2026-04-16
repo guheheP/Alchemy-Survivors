@@ -75,8 +75,14 @@ export class BossEntity extends Enemy {
 
     if (this.hitFlashTimer > 0) this.hitFlashTimer -= dt;
 
+    // 状態異常ティック
+    this.updateStatusEffects(dt);
+
     // フェーズ遷移チェック
     this._checkPhaseTransition();
+
+    // 感電スタン中は行動不能
+    if (this.isStunned) return;
 
     // スキル実行中
     if (this.activeSkill) {

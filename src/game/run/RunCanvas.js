@@ -248,6 +248,42 @@ export class RunCanvas {
         ctx.restore();
       }
 
+      // 状態異常の視覚エフェクト
+      if (enemy._burnTimer > 0) {
+        const pulse = 0.5 + Math.sin(elapsed * 8) * 0.2;
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        ctx.strokeStyle = '#f62';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(sx, sy, enemy.radius + 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (enemy._poisonTimer > 0) {
+        const pulse = 0.5 + Math.sin(elapsed * 6) * 0.2;
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        ctx.strokeStyle = '#6a4';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(sx, sy, enemy.radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (enemy._freezeTimer > 0) {
+        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 1.4, '#8ef', 0.35);
+      }
+      if (enemy._shockTimer > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#ff8';
+        ctx.beginPath();
+        ctx.arc(sx, sy, enemy.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
       // HPバー
       EntityRenderer.drawHpBar(ctx, sx, sy, enemy.radius, enemy.hp, enemy.maxHp);
     }
@@ -307,6 +343,29 @@ export class RunCanvas {
         ctx.beginPath();
         ctx.arc(sx, sy, boss.radius + 2, 0, Math.PI * 2);
         ctx.stroke();
+
+        // ボスの状態異常エフェクト
+        if (boss._burnTimer > 0) {
+          ctx.save(); ctx.globalAlpha = 0.5 + Math.sin(elapsed * 8) * 0.2;
+          ctx.strokeStyle = '#f62'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(sx, sy, boss.radius + 5, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+        if (boss._poisonTimer > 0) {
+          ctx.save(); ctx.globalAlpha = 0.5 + Math.sin(elapsed * 6) * 0.2;
+          ctx.strokeStyle = '#6a4'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(sx, sy, boss.radius + 7, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+        if (boss._freezeTimer > 0) {
+          EntityRenderer.drawGlow(ctx, sx, sy, boss.radius * 1.4, '#8ef', 0.35);
+        }
+        if (boss._shockTimer > 0) {
+          ctx.save(); ctx.globalAlpha = 0.6;
+          ctx.fillStyle = '#ff8'; ctx.beginPath();
+          ctx.arc(sx, sy, boss.radius, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
       }
     }
 

@@ -7,6 +7,15 @@ import { ItemBlueprints } from '../../data/items.js';
 import { WeaponSkillDefs } from '../../data/weaponSkills.js';
 import { eventBus } from '../../core/EventBus.js';
 
+/** 属性→状態異常の変換テーブル */
+const STATUS_EFFECT_CONFIG = {
+  fire:      { type: 'burn',   procChance: 0.20, duration: 3.0, dpsScale: 0.15 },
+  ice:       { type: 'freeze', procChance: 0.15, duration: 2.0, speedMod: -40 },
+  poison:    { type: 'poison', procChance: 0.25, duration: 3.0, dpsScale: 0.10 },
+  lightning: { type: 'shock',  procChance: 0.12, duration: 0.4 },
+  // wind は拡散専用、直接の状態異常なし
+};
+
 export class WeaponStrategy {
   constructor(player, weaponItem) {
     this.player = player;
@@ -29,6 +38,8 @@ export class WeaponStrategy {
     this.weaponName = bp.name;
     // 武器固有のベースクリ率（Blueprintで定義、dagger/特定武器のみ）
     this.baseCritChance = bp.baseCritChance || 0;
+    // 武器属性（fire/ice/poison/lightning/wind）
+    this.element = bp.element || null;
 
     // スキルシステム
     this.skillTier = this._calcSkillTier(bp.baseValue);
@@ -749,6 +760,19 @@ export class WeaponStrategy {
       }
     }
 
+    // スキル発動時の確定状態異常付与（範囲内の生存敵に適用）
+    if (this.element) {
+      const skillRadius = p.radius || p.lineRange || p.range || 200;
+      for (const enemy of enemies) {
+        if (!enemy.active) continue;
+        const edx = enemy.x - px;
+        const edy = enemy.y - py;
+        if (edx * edx + edy * edy < skillRadius * skillRadius) {
+          this._tryApplyStatus(enemy, true);
+        }
+      }
+    }
+
     eventBus.emit('skill:activated', { name: def.name, color });
   }
 
@@ -1171,5 +1195,55 @@ export class WeaponStrategy {
 
   _emitKill(enemy) {
     eventBus.emit('enemy:killed', { enemy, x: enemy.x, y: enemy.y, isBoss: enemy.isBoss, color: enemy.color });
+  }
+
+  /**
+   * 属性による状態異常付与を試みる
+   * @param {Enemy} enemy - 対象
+   * @param {boolean} guaranteed - trueならproc判定スキップ（スキル使用時）
+   */
+  _tryApplyStatus(enemy, guaranteed = false) {
+    if (!this.element || !enemy.active) return;
+
+    // 風属性: 敵の既存状態異常を周囲に拡散
+    if (this.element === 'wind') {
+      this._tryWindSpread(enemy);
+      return;
+    }
+
+    const cfg = STATUS_EFFECT_CONFIG[this.element];
+    if (!cfg) return;
+    if (!guaranteed && Math.random() >= cfg.procChance) return;
+
+    const params = { duration: cfg.duration };
+    if (cfg.type === 'burn' || cfg.type === 'poison') {
+      params.dps = this.baseDamage * cfg.dpsScale;
+    }
+    if (cfg.type === 'freeze') {
+      params.speedMod = cfg.speedMod;
+    }
+    enemy.applyStatusEffect(cfg.type, params);
+  }
+
+  /** 風属性: 敵が状態異常を持っていれば周囲に半減拡散 */
+  _tryWindSpread(enemy) {
+    const effects = [];
+    if (enemy._burnTimer > 0) {
+      effects.push({ type: 'burn', params: { duration: enemy._burnTimer * 0.4, dps: enemy._burnDps * 0.4 } });
+    }
+    if (enemy._poisonTimer > 0) {
+      effects.push({ type: 'poison', params: { duration: enemy._poisonTimer * 0.4, dps: enemy._poisonDps * 0.4 } });
+    }
+    if (enemy._freezeTimer > 0) {
+      effects.push({ type: 'freeze', params: { duration: enemy._freezeTimer * 0.4, speedMod: -20 } });
+    }
+    if (enemy._shockTimer > 0) {
+      effects.push({ type: 'shock', params: { duration: 0.2 } });
+    }
+    if (effects.length > 0) {
+      eventBus.emit('statusEffect:windSpread', {
+        x: enemy.x, y: enemy.y, radius: 80, source: enemy, effects,
+      });
+    }
   }
 }

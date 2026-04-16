@@ -30,6 +30,15 @@ export class Enemy extends Entity {
     // デバフ管理
     this._debuffTimer = 0;
     this._baseSpeed = 0;
+    // 状態異常（フラット構造でGC回避）
+    this._burnTimer = 0;
+    this._burnDps = 0;
+    this._burnAccum = 0;
+    this._poisonTimer = 0;
+    this._poisonDps = 0;
+    this._poisonAccum = 0;
+    this._freezeTimer = 0;
+    this._shockTimer = 0;
     // 挙動パターン
     this.behavior = 'chase';
     this.armorHits = 0;
@@ -55,6 +64,14 @@ export class Enemy extends Entity {
     this.critFlashTimer = 0;
     this._debuffTimer = 0;
     this._baseSpeed = 0;
+    this._burnTimer = 0;
+    this._burnDps = 0;
+    this._burnAccum = 0;
+    this._poisonTimer = 0;
+    this._poisonDps = 0;
+    this._poisonAccum = 0;
+    this._freezeTimer = 0;
+    this._shockTimer = 0;
     this.behavior = 'chase';
     this.armorHits = 0;
     this._behaviorTimer = 0;
@@ -173,6 +190,12 @@ export class Enemy extends Entity {
       this._knockbackCooldown -= dt;
     }
 
+    // 状態異常ティック
+    this.updateStatusEffects(dt);
+
+    // 感電スタン中は移動不能
+    if (this.isStunned) return;
+
     this._behaviorTimer += dt;
 
     const dx = playerX - this.x;
@@ -245,7 +268,7 @@ export class Enemy extends Entity {
   get isTelegraphing() { return this.behavior === 'dasher' && this._dashState === 'telegraph'; }
   get isDashing() { return this.behavior === 'dasher' && this._dashState === 'dashing'; }
 
-  takeDamage(amount, isCrit = false) {
+  takeDamage(amount, isCrit = false, dotColor = null) {
     // armored: 最初のN発を無効化
     if (this.armorHits > 0) {
       this.armorHits--;
@@ -256,7 +279,93 @@ export class Enemy extends Entity {
     this.hp -= amount;
     this.hitFlashTimer = 0.1;
     if (isCrit) this.critFlashTimer = 0.18;
-    eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: amount, isCrit });
+    eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: amount, isCrit, dotColor });
     return this.hp <= 0;
+  }
+
+  /**
+   * 状態異常を適用（refresh-if-stronger方式）
+   * @param {'burn'|'poison'|'freeze'|'shock'} type
+   * @param {{ duration: number, dps?: number, speedMod?: number }} params
+   */
+  applyStatusEffect(type, params) {
+    switch (type) {
+      case 'burn':
+        if (params.duration > this._burnTimer) this._burnTimer = params.duration;
+        if (params.dps > this._burnDps) this._burnDps = params.dps;
+        break;
+      case 'poison':
+        if (params.duration > this._poisonTimer) this._poisonTimer = params.duration;
+        if (params.dps > this._poisonDps) this._poisonDps = params.dps;
+        break;
+      case 'freeze':
+        this._freezeTimer = Math.max(this._freezeTimer, params.duration);
+        this.applyDebuff(params.speedMod || -40, params.duration);
+        break;
+      case 'shock':
+        this._shockTimer = Math.max(this._shockTimer, params.duration);
+        break;
+    }
+  }
+
+  /** 状態異常のティック処理 */
+  updateStatusEffects(dt) {
+    // 燃焼 DoT
+    if (this._burnTimer > 0) {
+      this._burnTimer -= dt;
+      this._burnAccum += dt;
+      if (this._burnAccum >= 0.5) {
+        this._burnAccum -= 0.5;
+        const dmg = this._burnDps * 0.5;
+        if (dmg > 0 && this.active) {
+          this.hp -= dmg;
+          eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: dmg, isCrit: false, dotColor: '#f62' });
+          if (this.hp <= 0) {
+            eventBus.emit('enemy:killed', { enemy: this, x: this.x, y: this.y, isBoss: this.isBoss, color: this.color });
+          }
+        }
+      }
+      if (this._burnTimer <= 0) { this._burnDps = 0; this._burnAccum = 0; }
+    }
+
+    // 毒 DoT + 感染拡散
+    if (this._poisonTimer > 0) {
+      this._poisonTimer -= dt;
+      this._poisonAccum += dt;
+      if (this._poisonAccum >= 0.5) {
+        this._poisonAccum -= 0.5;
+        const dmg = this._poisonDps * 0.5;
+        if (dmg > 0 && this.active) {
+          this.hp -= dmg;
+          eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: dmg, isCrit: false, dotColor: '#6a4' });
+          if (this.hp <= 0) {
+            eventBus.emit('enemy:killed', { enemy: this, x: this.x, y: this.y, isBoss: this.isBoss, color: this.color });
+          }
+        }
+        // 毒の感染拡散（半径60px、半減のDPS/持続時間）
+        if (this.active && this._poisonTimer > 0) {
+          eventBus.emit('statusEffect:spread', {
+            x: this.x, y: this.y, radius: 60, source: this,
+            type: 'poison', params: { duration: Math.min(this._poisonTimer, 2), dps: this._poisonDps * 0.5 },
+          });
+        }
+      }
+      if (this._poisonTimer <= 0) { this._poisonDps = 0; this._poisonAccum = 0; }
+    }
+
+    // 凍結（視覚タイマーのみ、スロー自体は applyDebuff が管理）
+    if (this._freezeTimer > 0) {
+      this._freezeTimer -= dt;
+    }
+
+    // 感電スタン
+    if (this._shockTimer > 0) {
+      this._shockTimer -= dt;
+    }
+  }
+
+  /** 感電中は移動不能 */
+  get isStunned() {
+    return this._shockTimer > 0;
   }
 }

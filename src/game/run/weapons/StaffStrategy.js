@@ -43,6 +43,7 @@ export class StaffStrategy extends WeaponStrategy {
           if (dx * dx + dy * dy < hitR * hitR) {
             // tick 半減に合わせてダメージも半減 (1秒あたりの合計DPSは概ね維持)
             if (enemy.takeDamage(this.damage * 0.2, this._lastCrit)) this._emitKill(enemy);
+            else this._tryApplyStatus(enemy);
             // ヒットエフェクト: 命中位置に小さなスパーク (既存エフェクト配列に渡す)
             if (this.effects.length < 64) {
               this.effects.push({
