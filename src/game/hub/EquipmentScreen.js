@@ -170,12 +170,12 @@ export class EquipmentScreen {
       if (bp) spdBonus = bp.baseValue / 500 + this.accessorySlot.quality / 1000;
     }
 
-    // 装備中アイテムの特性からステータス上昇値を集計
+    // 装備中アイテムの特性からステータス上昇値を集計（戦闘に関わるrun系のみ）
     const traitBonus = {
       runDamageFlat: 0, runDamageReduction: 0, runMaxHpFlat: 0,
       runMoveSpeed: 0, runRegenPerSec: 0, runDodge: 0,
       runDropRate: 0, runAttackSpeed: 0, runExpBonus: 0,
-      runCritChance: 0, runCritDamage: 0, craftQualityBonus: 0,
+      runCritChance: 0, runCritDamage: 0,
     };
     const accumulateTraits = (item) => {
       if (!item?.traits) return;
@@ -207,7 +207,6 @@ export class EquipmentScreen {
       runExpBonus:        v => ['経験値',         `+${(v * 100).toFixed(0)}%`],
       runCritChance:      v => ['クリティカル率', `+${(v * 100).toFixed(1)}%`],
       runCritDamage:      v => ['クリティカルダメージ', `+${(v * 100).toFixed(0)}%`],
-      craftQualityBonus:  v => ['調合品質',       `+${v}`],
     };
     const traitBonusRows = Object.entries(traitBonus)
       .filter(([k, v]) => v !== 0 && traitFormatters[k])
