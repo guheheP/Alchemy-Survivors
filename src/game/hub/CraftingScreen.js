@@ -481,7 +481,10 @@ export class CraftingScreen {
       html += this._renderShieldDualPreview(bp, finalQ, recipe.targetId);
     } else if (bp.type === 'equipment' && this._isWeaponType(bp.equipType)) {
       const wc = GameConfig.weapon;
-      const dmg = bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor;
+      // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
+      const dmgMult = bp.baseDamageMultiplier || 1.0;
+      let dmg = (bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor) * dmgMult;
+      if (bp.element === 'none') dmg *= 1.25;
       const spd = wc.speedBase + finalQ / wc.speedQualityDivisor;
       const typeConfig = GameConfig.weaponTypes[bp.equipType];
       if (typeConfig) {
@@ -767,7 +770,10 @@ export class CraftingScreen {
 
     // ── 武器として装備した場合 ──
     const wc = GameConfig.weapon;
-    const dmg = bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor;
+    // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
+    const dmgMult = bp.baseDamageMultiplier || 1.0;
+    let dmg = (bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor) * dmgMult;
+    if (bp.element === 'none') dmg *= 1.25;
     const spd = wc.speedBase + finalQ / wc.speedQualityDivisor;
     const typeConfig = GameConfig.weaponTypes.shield;
     const range = typeConfig.baseRange * (1 + finalQ / wc.rangeQualityDivisor);
@@ -830,7 +836,10 @@ export class CraftingScreen {
 
     const bp = ItemBlueprints[equipped.blueprintId];
     const wc = GameConfig.weapon;
-    const curDmg = bp.baseValue / wc.damageBaseDivisor + equipped.quality / wc.damageQualityDivisor;
+    // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
+    const curDmgMult = bp.baseDamageMultiplier || 1.0;
+    let curDmg = (bp.baseValue / wc.damageBaseDivisor + equipped.quality / wc.damageQualityDivisor) * curDmgMult;
+    if (bp.element === 'none') curDmg *= 1.25;
     const curSpd = wc.speedBase + equipped.quality / wc.speedQualityDivisor;
     const typeConfig = GameConfig.weaponTypes[bp.equipType];
     const curRange = typeConfig ? typeConfig.baseRange * (1 + equipped.quality / wc.rangeQualityDivisor) : 0;
