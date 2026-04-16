@@ -398,6 +398,8 @@ export class WarehouseScreen {
                   runMaxHpFlat: '最大HP', runMoveSpeed: '移動速度', runRegenPerSec: 'HP回復/秒',
                   runDodge: '回避率', runDropRate: 'ドロップ率', runAttackSpeed: '攻撃速度',
                   runExpBonus: '経験値ボーナス', runStartInvincible: '開始時無敵',
+                  runCritChance: 'クリティカル率', runCritDamage: 'クリティカルダメージ',
+                  runElementProc: '属性発動率', runElementPower: '属性効果量',
                 }[key] || key;
                 runEffects.push(`${label}: +${val}`);
               }

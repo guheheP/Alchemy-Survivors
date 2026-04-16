@@ -1829,44 +1829,53 @@ export class WeaponStrategy {
   _tryApplyStatus(enemy, guaranteed = false) {
     if (!this.element || !enemy.active) return;
 
+    // プレイヤー特性による属性ボーナス (発動率 / 効果量)
+    const procBonus = this.player?.passives?.elementProcBonus || 0;
+    const powerMult = 1 + (this.player?.passives?.elementPowerBonus || 0);
+
     // 風属性: 敵の既存状態異常を周囲に拡散
     if (this.element === 'wind') {
-      this._tryWindSpread(enemy);
+      this._tryWindSpread(enemy, procBonus, powerMult);
       return;
     }
 
     const cfg = STATUS_EFFECT_CONFIG[this.element];
     if (!cfg) return;
-    if (!guaranteed && Math.random() >= cfg.procChance) return;
+    const procChance = Math.min(1, cfg.procChance + procBonus);
+    if (!guaranteed && Math.random() >= procChance) return;
 
-    const params = { duration: cfg.duration };
+    const params = { duration: cfg.duration * powerMult };
     if (cfg.type === 'burn' || cfg.type === 'poison') {
-      params.dps = this.baseDamage * cfg.dpsScale;
+      params.dps = this.baseDamage * cfg.dpsScale * powerMult;
     }
     if (cfg.type === 'freeze') {
-      params.speedMod = cfg.speedMod;
+      params.speedMod = cfg.speedMod * powerMult;
     }
     enemy.applyStatusEffect(cfg.type, params);
   }
 
   /** 風属性: 敵が状態異常を持っていれば周囲に半減拡散 */
-  _tryWindSpread(enemy) {
+  _tryWindSpread(enemy, procBonus = 0, powerMult = 1) {
     const effects = [];
+    // 拡散強度 (基礎40%) に属性効果量ボーナスを乗算
+    const spread = 0.4 * powerMult;
     if (enemy._burnTimer > 0) {
-      effects.push({ type: 'burn', params: { duration: enemy._burnTimer * 0.4, dps: enemy._burnDps * 0.4 } });
+      effects.push({ type: 'burn', params: { duration: enemy._burnTimer * spread, dps: enemy._burnDps * spread } });
     }
     if (enemy._poisonTimer > 0) {
-      effects.push({ type: 'poison', params: { duration: enemy._poisonTimer * 0.4, dps: enemy._poisonDps * 0.4 } });
+      effects.push({ type: 'poison', params: { duration: enemy._poisonTimer * spread, dps: enemy._poisonDps * spread } });
     }
     if (enemy._freezeTimer > 0) {
-      effects.push({ type: 'freeze', params: { duration: enemy._freezeTimer * 0.4, speedMod: -20 } });
+      effects.push({ type: 'freeze', params: { duration: enemy._freezeTimer * spread, speedMod: -20 * powerMult } });
     }
     if (enemy._shockTimer > 0) {
-      effects.push({ type: 'shock', params: { duration: 0.2 } });
+      effects.push({ type: 'shock', params: { duration: 0.2 * powerMult } });
     }
     if (effects.length > 0) {
+      // 拡散半径も属性発動率ボーナスに応じて微増
+      const radius = 80 * (1 + procBonus);
       eventBus.emit('statusEffect:windSpread', {
-        x: enemy.x, y: enemy.y, radius: 80, source: enemy, effects,
+        x: enemy.x, y: enemy.y, radius, source: enemy, effects,
       });
     }
   }
