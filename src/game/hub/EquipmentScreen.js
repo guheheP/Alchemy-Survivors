@@ -233,6 +233,7 @@ export class EquipmentScreen {
 
     // 装備値と特性値を合算した合計表示
     const totalAtk = totalDmg + traitBonus.runDamageFlat;
+    const avgAtk = weapons.length > 0 ? totalAtk / weapons.length : 0;
     const totalDef = def + traitBonus.runDamageReduction;
     const totalHp = hpBonus + traitBonus.runMaxHpFlat;
     const totalSpd = spdBonus + traitBonus.runMoveSpeed;
@@ -240,7 +241,8 @@ export class EquipmentScreen {
     summary.innerHTML = `
       <h4>装備合計ステータス</h4>
       <div class="equip-stat-grid">
-        <div class="equip-stat-item"><span>総攻撃力</span><span class="stat-val">${fmt1(totalAtk)}${fmtBonus(traitBonus.runDamageFlat, v => `+${fmt1(v)}`)}</span></div>
+        <div class="equip-stat-item"><span>合算攻撃力</span><span class="stat-val">${fmt1(totalAtk)}${fmtBonus(traitBonus.runDamageFlat, v => `+${fmt1(v)}`)}</span></div>
+        <div class="equip-stat-item"><span>平均攻撃力</span><span class="stat-val">${weapons.length > 0 ? fmt1(avgAtk) : '—'}</span></div>
         <div class="equip-stat-item"><span>防御力</span><span class="stat-val">${fmt1(totalDef)}${fmtBonus(traitBonus.runDamageReduction, v => `+${fmt1(v)}`)}</span></div>
         <div class="equip-stat-item"><span>HP増加</span><span class="stat-val">+${fmtInt(totalHp)}${fmtBonus(traitBonus.runMaxHpFlat, v => `+${fmt1(v)}`)}</span></div>
         <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${fmtPct1(totalSpd)}%${fmtBonus(traitBonus.runMoveSpeed, v => `+${fmtPct1(v)}%`)}</span></div>
