@@ -660,7 +660,7 @@ export class CraftingScreen {
     });
     finalTraits.length = Math.min(finalTraits.length, GameConfig.maxTraitSlots);
 
-    return { finalQ, avgQ, craftBonus, capped, fusionMap, finalTraits };
+    return { finalQ, maxQ, craftBonus, capped, fusionMap, finalTraits };
   }
 
   /** 消耗品プレビュー — 品質と最終特性による補正を適用 */
