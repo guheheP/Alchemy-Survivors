@@ -9,6 +9,7 @@ import { craftItem, isCategorySlot, getCategoryId, materialMatchesSlot, getCurre
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 import { createElementBadgeHTML } from '../ui/UIHelpers.js';
+import { fmt1, fmtPct1, fmtInt } from '../ui/NumberFormat.js';
 
 export class CraftingScreen {
   constructor(container, inventorySystem, options = {}) {
@@ -485,9 +486,9 @@ export class CraftingScreen {
       if (typeConfig) {
         const range = typeConfig.baseRange * (1 + finalQ / wc.rangeQualityDivisor);
         const cmp = this._compareWithEquipped(bp, { dmg, spd, range });
-        html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${dmg.toFixed(1)}${cmp.dmg}</span></div>`;
-        html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd.toFixed(2)}x${cmp.spd}</span></div>`;
-        html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range.toFixed(0)}px${cmp.range}</span></div>`;
+        html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${fmt1(dmg)}${cmp.dmg}</span></div>`;
+        html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${fmt1(spd)}x${cmp.spd}</span></div>`;
+        html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${fmtInt(range)}px${cmp.range}</span></div>`;
         html += `<div class="preview-row"><span>パターン:</span><span class="preview-val">${this._getPatternName(bp.equipType)}</span></div>`;
         if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
         const skillInfo = this._getSkillInfo(bp.equipType, bp.baseValue, recipe.targetId);
@@ -500,14 +501,14 @@ export class CraftingScreen {
       const defVal = bp.baseValue / 12 + finalQ / 8;
       const hpBonus = finalQ * 0.5;
       const cmp = this._compareArmor({ def: defVal, hp: hpBonus });
-      html += `<div class="preview-row"><span>防御値:</span><span class="preview-val">+${defVal.toFixed(1)}${cmp.def}</span></div>`;
-      html += `<div class="preview-row"><span>最大HP:</span><span class="preview-val">+${hpBonus.toFixed(0)}${cmp.hp}</span></div>`;
+      html += `<div class="preview-row"><span>防御値:</span><span class="preview-val">+${fmt1(defVal)}${cmp.def}</span></div>`;
+      html += `<div class="preview-row"><span>最大HP:</span><span class="preview-val">+${fmtInt(hpBonus)}${cmp.hp}</span></div>`;
       html += `<div class="preview-row"><span>種別:</span><span class="preview-val">${this._getArmorTypeName(bp.equipType)}</span></div>`;
       if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
     } else if (bp.type === 'accessory') {
       const spdBonus = (bp.baseValue / 500 + finalQ / 1000);
       const cmp = this._compareAccessory(spdBonus);
-      html += `<div class="preview-row"><span>移動速度:</span><span class="preview-val">+${(spdBonus * 100).toFixed(1)}%${cmp.spd}</span></div>`;
+      html += `<div class="preview-row"><span>移動速度:</span><span class="preview-val">+${fmtPct1(spdBonus)}%${cmp.spd}</span></div>`;
       if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
     } else if (bp.type === 'consumable' && bp.battleEffect) {
       html += this._renderConsumablePreview(bp, finalQ, finalTraits);
@@ -549,7 +550,7 @@ export class CraftingScreen {
               runCritChance: 'クリ率', runCritDamage: 'クリダメ',
               runElementProc: '属性発動', runElementPower: '属性威力',
             }[key] || key;
-            runEffects.push(`${label}+${typeof val === 'number' && val < 1 && val > 0 ? (val * 100).toFixed(0) + '%' : val}`);
+            runEffects.push(`${label}+${typeof val === 'number' && val < 1 && val > 0 ? fmtPct1(val) + '%' : fmt1(val)}`);
           }
         }
         if (runEffects.length > 0) {
@@ -708,18 +709,18 @@ export class CraftingScreen {
         const dur = fx.duration * (1 + mods.consumableDurationMult);
         let label;
         let display;
-        if (fx.stat === 'atk') { label = '⬆️ 攻撃力:'; display = `+${amt.toFixed(0)}%`; }
-        else if (fx.stat === 'spd') { label = '⬆️ 移動速度:'; display = `+${amt.toFixed(0)}%`; }
-        else if (fx.stat === 'def') { label = '⬆️ 防御値:'; display = `+${amt.toFixed(1)}`; }
-        else { label = `⬆️ ${statNames[fx.stat] || fx.stat}:`; display = `+${amt.toFixed(1)}`; }
+        if (fx.stat === 'atk') { label = '⬆️ 攻撃力:'; display = `+${fmt1(amt)}%`; }
+        else if (fx.stat === 'spd') { label = '⬆️ 移動速度:'; display = `+${fmt1(amt)}%`; }
+        else if (fx.stat === 'def') { label = '⬆️ 防御値:'; display = `+${fmt1(amt)}`; }
+        else { label = `⬆️ ${statNames[fx.stat] || fx.stat}:`; display = `+${fmt1(amt)}`; }
         html += `<div class="preview-row"><span>${label}</span><span class="preview-val">${display}${this._effectBadge(mods.consumableBuffMult, false)}</span></div>`;
-        html += `<div class="preview-row"><span>⏱️ 継続:</span><span class="preview-val">${dur.toFixed(1)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
+        html += `<div class="preview-row"><span>⏱️ 継続:</span><span class="preview-val">${fmt1(dur)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
         break;
       }
       case 'debuff': {
         const dur = fx.duration * (1 + mods.consumableDurationMult);
         html += `<div class="preview-row"><span>⬇️ 敵${statNames[fx.stat] || fx.stat}:</span><span class="preview-val">${fx.amount}</span></div>`;
-        html += `<div class="preview-row"><span>⏱️ 継続:</span><span class="preview-val">${dur.toFixed(1)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
+        html += `<div class="preview-row"><span>⏱️ 継続:</span><span class="preview-val">${fmt1(dur)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
         html += `<div class="preview-row"><span>📏 範囲:</span><span class="preview-val">半径120px</span></div>`;
         break;
       }
@@ -731,7 +732,7 @@ export class CraftingScreen {
       }
       case 'stun': {
         const dur = fx.duration * (1 + mods.consumableDurationMult);
-        html += `<div class="preview-row"><span>⚡ スタン:</span><span class="preview-val">${dur.toFixed(1)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
+        html += `<div class="preview-row"><span>⚡ スタン:</span><span class="preview-val">${fmt1(dur)}秒${this._effectBadge(mods.consumableDurationMult, false)}</span></div>`;
         html += `<div class="preview-row"><span>📏 範囲:</span><span class="preview-val">半径100px</span></div>`;
         break;
       }
@@ -741,13 +742,13 @@ export class CraftingScreen {
 
     const cdMult = Math.max(0.1, 1 + mods.consumableCooldownMult);
     const cd = 3.0 * cdMult;
-    html += `<div class="preview-row"><span>🔄 クールダウン:</span><span class="preview-val">${cd.toFixed(2)}秒${this._effectBadge(mods.consumableCooldownMult, true)}</span></div>`;
+    html += `<div class="preview-row"><span>🔄 クールダウン:</span><span class="preview-val">${fmt1(cd)}秒${this._effectBadge(mods.consumableCooldownMult, true)}</span></div>`;
 
     const uses = fx.uses || 3;
     html += `<div class="preview-row"><span>🔢 使用回数:</span><span class="preview-val">${uses}回</span></div>`;
 
     if (regenAmount > 0 && regenDuration > 0) {
-      html += `<div class="preview-row"><span>🌿 効果後再生:</span><span class="preview-val">+${regenAmount.toFixed(1)}HP/秒 (${regenDuration}秒)</span></div>`;
+      html += `<div class="preview-row"><span>🌿 効果後再生:</span><span class="preview-val">+${fmt1(regenAmount)}HP/秒 (${regenDuration}秒)</span></div>`;
     }
 
     // 装備中の同名消耗品と比較（簡易）
@@ -772,9 +773,9 @@ export class CraftingScreen {
     const wCmp = this._compareWithEquipped(bp, { dmg, spd, range });
 
     html += `<div class="preview-dual-section preview-dual-weapon"><h5>⚔️ 武器スロット装備時</h5>`;
-    html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${dmg.toFixed(1)}${wCmp.dmg}</span></div>`;
-    html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${spd.toFixed(2)}x${wCmp.spd}</span></div>`;
-    html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${range.toFixed(0)}px${wCmp.range}</span></div>`;
+    html += `<div class="preview-row"><span>攻撃力:</span><span class="preview-val">${fmt1(dmg)}${wCmp.dmg}</span></div>`;
+    html += `<div class="preview-row"><span>攻撃速度:</span><span class="preview-val">${fmt1(spd)}x${wCmp.spd}</span></div>`;
+    html += `<div class="preview-row"><span>射程:</span><span class="preview-val">${fmtInt(range)}px${wCmp.range}</span></div>`;
     html += `<div class="preview-row"><span>パターン:</span><span class="preview-val">${this._getPatternName('shield')}</span></div>`;
     if (wCmp.label) html += `<div class="preview-compare">${wCmp.label}</div>`;
     const skillInfo = this._getSkillInfo('shield', bp.baseValue, targetId);
@@ -790,8 +791,8 @@ export class CraftingScreen {
     const aCmp = this._compareArmor({ def: defVal, hp: hpBonus });
 
     html += `<div class="preview-dual-section preview-dual-armor"><h5>🛡️ 防具スロット装備時</h5>`;
-    html += `<div class="preview-row"><span>防御値:</span><span class="preview-val">+${defVal.toFixed(1)}${aCmp.def}</span></div>`;
-    html += `<div class="preview-row"><span>最大HP:</span><span class="preview-val">+${hpBonus.toFixed(0)}${aCmp.hp}</span></div>`;
+    html += `<div class="preview-row"><span>防御値:</span><span class="preview-val">+${fmt1(defVal)}${aCmp.def}</span></div>`;
+    html += `<div class="preview-row"><span>最大HP:</span><span class="preview-val">+${fmtInt(hpBonus)}${aCmp.hp}</span></div>`;
     if (aCmp.label) html += `<div class="preview-compare">${aCmp.label}</div>`;
     html += `</div>`;
 
@@ -885,7 +886,9 @@ export class CraftingScreen {
     const sign = d > 0 ? '+' : '';
     const cls = d > 0 ? 'up' : 'down';
     const arrow = d > 0 ? '▲' : '▼';
-    return ` <span class="preview-diff ${cls}">${arrow}${sign}${d.toFixed(digits)}${unit}</span>`;
+    // digits は閾値計算用としてのみ利用し、表示は全て最大1桁で統一
+    const display = digits <= 0 ? fmtInt(d) : fmt1(d);
+    return ` <span class="preview-diff ${cls}">${arrow}${sign}${display}${unit}</span>`;
   }
 
   _getPatternName(equipType) {
@@ -913,7 +916,7 @@ export class CraftingScreen {
     for (const [key, val] of Object.entries(def.effects)) {
       if (key.startsWith('run') && labels[key]) {
         const display = typeof val === 'number' && val < 1 && val > 0
-          ? `+${(val * 100).toFixed(0)}%` : `+${val}`;
+          ? `+${fmtPct1(val)}%` : `+${fmt1(val)}`;
         parts.push(`${labels[key]}${display}`);
       }
     }

@@ -7,6 +7,7 @@ import { GameConfig } from '../data/config.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 import { createElementBadgeHTML } from '../ui/UIHelpers.js';
+import { fmt1, fmtPct1, fmtInt } from '../ui/NumberFormat.js';
 
 /** 売却価格: baseValue × (quality/100) × (1 + traits × 0.3)
  * 装備は素材の2倍、消耗品は1.5倍。低品質でも最低1G。 */
@@ -368,10 +369,10 @@ export class WarehouseScreen {
     let statsHtml = '';
     if (bp.type === 'equipment' && bp.equipType) {
       const wc = GameConfig.weapon;
-      const dmg = (bp.baseValue / wc.damageBaseDivisor + item.quality / wc.damageQualityDivisor).toFixed(1);
-      const spd = (wc.speedBase + item.quality / wc.speedQualityDivisor).toFixed(2);
+      const dmg = fmt1(bp.baseValue / wc.damageBaseDivisor + item.quality / wc.damageQualityDivisor);
+      const spd = fmt1(wc.speedBase + item.quality / wc.speedQualityDivisor);
       const typeConfig = GameConfig.weaponTypes[bp.equipType];
-      const range = (typeConfig.baseRange * (1 + item.quality / wc.rangeQualityDivisor)).toFixed(0);
+      const range = fmtInt(typeConfig.baseRange * (1 + item.quality / wc.rangeQualityDivisor));
       statsHtml = `
         <div class="wh-stats">
           <div>攻撃力: ${dmg}</div>
@@ -401,7 +402,7 @@ export class WarehouseScreen {
                   runCritChance: 'クリティカル率', runCritDamage: 'クリティカルダメージ',
                   runElementProc: '属性発動率', runElementPower: '属性効果量',
                 }[key] || key;
-                runEffects.push(`${label}: +${val}`);
+                runEffects.push(`${label}: +${typeof val === 'number' && val < 1 && val > 0 ? fmtPct1(val) + '%' : fmt1(val)}`);
               }
             }
           }

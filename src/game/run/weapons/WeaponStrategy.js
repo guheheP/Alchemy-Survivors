@@ -7,11 +7,15 @@ import { ItemBlueprints } from '../../data/items.js';
 import { WeaponSkillDefs } from '../../data/weaponSkills.js';
 import { eventBus } from '../../core/EventBus.js';
 
-/** 属性→状態異常の変換テーブル */
+/** 属性→状態異常の変換テーブル
+ * dpsRatio: DoT の毎秒ダメージを「そのヒットで実際に与えたダメージ」の何割にするか。
+ *           旧実装は this.baseDamage 基準で、プレイヤー強化が反映されず 0〜2 ダメージ
+ *           しか出なかった。新実装は hitDamage 基準で強化に追従する。
+ */
 const STATUS_EFFECT_CONFIG = {
-  fire:      { type: 'burn',   procChance: 0.20, duration: 3.0, dpsScale: 0.15 },
+  fire:      { type: 'burn',   procChance: 0.20, duration: 3.0, dpsRatio: 0.10 },
   ice:       { type: 'freeze', procChance: 0.15, duration: 2.0, speedMod: -40 },
-  poison:    { type: 'poison', procChance: 0.25, duration: 3.0, dpsScale: 0.10 },
+  poison:    { type: 'poison', procChance: 0.25, duration: 3.0, dpsRatio: 0.05 },
   lightning: { type: 'shock',  procChance: 0.12, duration: 0.4 },
   // wind は拡散専用、直接の状態異常なし
 };
@@ -770,12 +774,13 @@ export class WeaponStrategy {
     // 遠隔スキル(meteor/burn_zone_at)は効果位置(flourishX/Y)を中心に判定
     if (this.element) {
       const skillRadius = p.radius || p.lineRange || p.range || 200;
+      // スキルDoTはスキル基準ダメージ(dmg)を hitDamage として渡す
       for (const enemy of enemies) {
         if (!enemy.active) continue;
         const edx = enemy.x - flourishX;
         const edy = enemy.y - flourishY;
         if (edx * edx + edy * edy < skillRadius * skillRadius) {
-          this._tryApplyStatus(enemy, true);
+          this._tryApplyStatus(enemy, dmg, true);
         }
       }
     }
@@ -1824,9 +1829,10 @@ export class WeaponStrategy {
   /**
    * 属性による状態異常付与を試みる
    * @param {Enemy} enemy - 対象
+   * @param {number} hitDamage - そのヒットで敵に与えた実ダメージ（DoT計算の基準）
    * @param {boolean} guaranteed - trueならproc判定スキップ（スキル使用時）
    */
-  _tryApplyStatus(enemy, guaranteed = false) {
+  _tryApplyStatus(enemy, hitDamage = 0, guaranteed = false) {
     if (!this.element || !enemy.active) return;
 
     // プレイヤー特性による属性ボーナス (発動率 / 効果量)
@@ -1846,7 +1852,9 @@ export class WeaponStrategy {
 
     const params = { duration: cfg.duration * powerMult };
     if (cfg.type === 'burn' || cfg.type === 'poison') {
-      params.dps = this.baseDamage * cfg.dpsScale * powerMult;
+      // 実ヒットダメージの割合を DoT dps とする。
+      // refresh-if-stronger で弱い DoT は強い DoT に上書きされる。
+      params.dps = Math.max(0, hitDamage) * cfg.dpsRatio * powerMult;
     }
     if (cfg.type === 'freeze') {
       params.speedMod = cfg.speedMod * powerMult;

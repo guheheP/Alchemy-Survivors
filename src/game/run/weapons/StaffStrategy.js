@@ -1,5 +1,9 @@
 /**
  * StaffStrategy — 周囲にオーブ発射（全方位）
+ *
+ * 周回半径は baseRange 固定（range-up の影響を受けない）。
+ * 攻撃範囲アップ (rangeMultiplier) はオーブ生成時に hitScale として
+ * スナップショットされ、衝突判定半径と描画半径を同倍率で拡大する。
  */
 
 import { WeaponStrategy } from './WeaponStrategy.js';
@@ -29,21 +33,23 @@ export class StaffStrategy extends WeaponStrategy {
       orb.y = this.player.y + Math.sin(orb.angle) * orb.radius;
 
       // Damage enemies on tick — 空間ハッシュで近傍のみ走査
-      // ビジュアルの外周(ORB_HIT_RADIUS)に重なった敵を対象にするので見た目と一致する
+      // ビジュアルの外周(ORB_HIT_RADIUS * orb.hitScale)に重なった敵を対象にするので見た目と一致する
       if (orb.damageTick <= 0) {
         orb.damageTick = this.orbDamageInterval;
+        const hitRadius = ORB_HIT_RADIUS * orb.hitScale;
         const candidates = collisionSystem
-          ? collisionSystem.query(orb.x, orb.y, ORB_HIT_RADIUS + 24)
+          ? collisionSystem.query(orb.x, orb.y, hitRadius + 24)
           : enemies;
         for (const enemy of candidates) {
           if (!enemy.active) continue;
           const dx = orb.x - enemy.x;
           const dy = orb.y - enemy.y;
-          const hitR = ORB_HIT_RADIUS + enemy.radius;
+          const hitR = hitRadius + enemy.radius;
           if (dx * dx + dy * dy < hitR * hitR) {
             // tick 半減に合わせてダメージも半減 (1秒あたりの合計DPSは概ね維持)
-            if (enemy.takeDamage(this.damage * 0.2, this._lastCrit)) this._emitKill(enemy);
-            else this._tryApplyStatus(enemy);
+            const hit = this.damage * 0.2;
+            if (enemy.takeDamage(hit, this._lastCrit)) this._emitKill(enemy);
+            else this._tryApplyStatus(enemy, hit);
             // ヒットエフェクト: 命中位置に小さなスパーク (既存エフェクト配列に渡す)
             if (this.effects.length < 64) {
               this.effects.push({
@@ -86,15 +92,19 @@ export class StaffStrategy extends WeaponStrategy {
   _spawnOrbs() {
     const baseAngle = Math.random() * Math.PI * 2;
     const count = this.orbCount + this.player.passives.extraProjectile;
+    // 周回半径は range-up の影響を受けず baseRange で固定。
+    // 攻撃範囲アップはオーブの当たり判定/描画サイズに反映させる。
+    const hitScale = 1 + (this.player.passives.rangeMultiplier || 0);
     for (let i = 0; i < count; i++) {
       this.orbs.push({
         x: this.player.x,
         y: this.player.y,
         angle: baseAngle + (Math.PI * 2 / count) * i,
-        radius: this.range,
+        radius: this.baseRange,
         speed: 2.5, // radians/sec
         life: 3.0,
         damageTick: 0,
+        hitScale,
       });
     }
   }
@@ -111,8 +121,9 @@ export class StaffStrategy extends WeaponStrategy {
 
       // 外周オーラ (当たり判定範囲を示すラジアルグラデ)
       ctx.globalAlpha = lifeAlpha * 0.8;
-      const outerR = ORB_HIT_RADIUS * pulse;
-      const grad = ctx.createRadialGradient(sx, sy, ORB_CORE_RADIUS * 0.5, sx, sy, outerR);
+      const outerR = ORB_HIT_RADIUS * orb.hitScale * pulse;
+      const innerR = ORB_CORE_RADIUS * orb.hitScale * 0.5;
+      const grad = ctx.createRadialGradient(sx, sy, innerR, sx, sy, outerR);
       grad.addColorStop(0, 'rgba(200,150,255,0.9)');
       grad.addColorStop(0.5, 'rgba(170,100,255,0.45)');
       grad.addColorStop(1, 'rgba(170,100,255,0)');
@@ -127,7 +138,7 @@ export class StaffStrategy extends WeaponStrategy {
       ctx.shadowColor = '#c08fff';
       ctx.shadowBlur = 14;
       ctx.beginPath();
-      ctx.arc(sx, sy, ORB_CORE_RADIUS * pulse, 0, Math.PI * 2);
+      ctx.arc(sx, sy, ORB_CORE_RADIUS * orb.hitScale * pulse, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();

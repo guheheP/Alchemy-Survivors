@@ -31,7 +31,7 @@ export class SpearStrategy extends WeaponStrategy {
       const lateral = Math.abs(-dx * sin + dy * cos);
       if (lateral < thrustWidth + enemy.radius) {
         if (enemy.takeDamage(dmg, this._lastCrit)) this._emitKill(enemy);
-        else this._tryApplyStatus(enemy);
+        else this._tryApplyStatus(enemy, dmg);
       }
     }
 

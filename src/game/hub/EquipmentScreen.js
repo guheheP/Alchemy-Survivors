@@ -8,6 +8,7 @@ import { WeaponSkillDefs } from '../data/weaponSkills.js';
 import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 import { getTraitCategory, createElementBadgeHTML } from '../ui/UIHelpers.js';
+import { fmt1, fmtPct1, fmtInt } from '../ui/NumberFormat.js';
 
 /** 特性のラン中効果を簡潔な日本語表記に変換 */
 function formatTraitRunEffect(def) {
@@ -24,7 +25,7 @@ function formatTraitRunEffect(def) {
   for (const [key, val] of Object.entries(def.effects)) {
     if (key.startsWith('run') && labels[key]) {
       const display = typeof val === 'number' && val < 1 && val > 0
-        ? `+${(val * 100).toFixed(0)}%` : `+${val}`;
+        ? `+${fmtPct1(val)}%` : `+${fmt1(val)}`;
       parts.push(`${labels[key]}${display}`);
     }
   }
@@ -96,7 +97,7 @@ export class EquipmentScreen {
               const bp = weapon ? ItemBlueprints[weapon.blueprintId] : null;
               let statsHtml = '';
               if (weapon && bp) {
-                const dmg = (bp.baseValue / wc.damageBaseDivisor + weapon.quality / wc.damageQualityDivisor).toFixed(1);
+                const dmg = fmt1(bp.baseValue / wc.damageBaseDivisor + weapon.quality / wc.damageQualityDivisor);
                 statsHtml = `<span class="slot-stats">ATK:${dmg} Q${weapon.quality}</span>`;
               }
               return `<div class="weapon-slot ${weapon ? 'filled' : 'empty'}" data-slot="${i}" data-type="weapon">
@@ -199,19 +200,19 @@ export class EquipmentScreen {
 
     // 特性ボーナス行のフォーマッタ
     const traitFormatters = {
-      runDamageFlat:      v => ['攻撃力',         `+${v}`],
-      runDamageReduction: v => ['ダメージ軽減',   `+${v}`],
-      runMaxHpFlat:       v => ['最大HP',         `+${v}`],
-      runMoveSpeed:       v => ['移動速度',       `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`],
-      runRegenPerSec:     v => ['HP回復',         `+${v}/秒`],
-      runDodge:           v => ['回避率',         `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%`],
-      runDropRate:        v => ['ドロップ率',     `+${(v * 100).toFixed(1)}%`],
-      runAttackSpeed:     v => ['攻撃速度',       `+${(v * 100).toFixed(1)}%`],
-      runExpBonus:        v => ['経験値',         `+${(v * 100).toFixed(0)}%`],
-      runCritChance:      v => ['クリティカル率', `+${(v * 100).toFixed(1)}%`],
-      runCritDamage:      v => ['クリティカルダメージ', `+${(v * 100).toFixed(0)}%`],
-      runElementProc:     v => ['属性発動率',   `+${(v * 100).toFixed(1)}%`],
-      runElementPower:    v => ['属性効果量',   `+${(v * 100).toFixed(0)}%`],
+      runDamageFlat:      v => ['攻撃力',         `+${fmt1(v)}`],
+      runDamageReduction: v => ['ダメージ軽減',   `+${fmt1(v)}`],
+      runMaxHpFlat:       v => ['最大HP',         `+${fmt1(v)}`],
+      runMoveSpeed:       v => ['移動速度',       `${v >= 0 ? '+' : ''}${fmtPct1(v)}%`],
+      runRegenPerSec:     v => ['HP回復',         `+${fmt1(v)}/秒`],
+      runDodge:           v => ['回避率',         `${v >= 0 ? '+' : ''}${fmtPct1(v)}%`],
+      runDropRate:        v => ['ドロップ率',     `+${fmtPct1(v)}%`],
+      runAttackSpeed:     v => ['攻撃速度',       `+${fmtPct1(v)}%`],
+      runExpBonus:        v => ['経験値',         `+${fmtPct1(v)}%`],
+      runCritChance:      v => ['クリティカル率', `+${fmtPct1(v)}%`],
+      runCritDamage:      v => ['クリティカルダメージ', `+${fmtPct1(v)}%`],
+      runElementProc:     v => ['属性発動率',   `+${fmtPct1(v)}%`],
+      runElementPower:    v => ['属性効果量',   `+${fmtPct1(v)}%`],
     };
     const traitBonusRows = Object.entries(traitBonus)
       .filter(([k, v]) => v !== 0 && traitFormatters[k])
@@ -239,10 +240,10 @@ export class EquipmentScreen {
     summary.innerHTML = `
       <h4>装備合計ステータス</h4>
       <div class="equip-stat-grid">
-        <div class="equip-stat-item"><span>総攻撃力</span><span class="stat-val">${totalAtk.toFixed(1)}${fmtBonus(traitBonus.runDamageFlat, v => `+${v}`)}</span></div>
-        <div class="equip-stat-item"><span>防御力</span><span class="stat-val">${totalDef.toFixed(1)}${fmtBonus(traitBonus.runDamageReduction, v => `+${v}`)}</span></div>
-        <div class="equip-stat-item"><span>HP増加</span><span class="stat-val">+${totalHp.toFixed(0)}${fmtBonus(traitBonus.runMaxHpFlat, v => `+${v}`)}</span></div>
-        <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${(totalSpd * 100).toFixed(1)}%${fmtBonus(traitBonus.runMoveSpeed, v => `+${(v * 100).toFixed(1)}%`)}</span></div>
+        <div class="equip-stat-item"><span>総攻撃力</span><span class="stat-val">${fmt1(totalAtk)}${fmtBonus(traitBonus.runDamageFlat, v => `+${fmt1(v)}`)}</span></div>
+        <div class="equip-stat-item"><span>防御力</span><span class="stat-val">${fmt1(totalDef)}${fmtBonus(traitBonus.runDamageReduction, v => `+${fmt1(v)}`)}</span></div>
+        <div class="equip-stat-item"><span>HP増加</span><span class="stat-val">+${fmtInt(totalHp)}${fmtBonus(traitBonus.runMaxHpFlat, v => `+${fmt1(v)}`)}</span></div>
+        <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${fmtPct1(totalSpd)}%${fmtBonus(traitBonus.runMoveSpeed, v => `+${fmtPct1(v)}%`)}</span></div>
         <div class="equip-stat-item"><span>武器数</span><span class="stat-val">${weapons.length}/4</span></div>
       </div>
       ${traitBonusRows ? `<h4>特性ボーナス合計</h4><div class="equip-stat-grid">${traitBonusRows}</div>` : ''}
@@ -255,11 +256,11 @@ export class EquipmentScreen {
     let statsHtml = '';
     if (item && bp) {
       if (type === 'armor') {
-        const def = (bp.baseValue / 12 + item.quality / 8).toFixed(1);
+        const def = fmt1(bp.baseValue / 12 + item.quality / 8);
         statsHtml = `<span class="slot-stats">DEF:${def} Q${item.quality}</span>`;
       } else {
-        const spd = (bp.baseValue / 500 + item.quality / 1000).toFixed(3);
-        statsHtml = `<span class="slot-stats">SPD:+${(spd * 100).toFixed(1)}% Q${item.quality}</span>`;
+        const spdRatio = bp.baseValue / 500 + item.quality / 1000;
+        statsHtml = `<span class="slot-stats">SPD:+${fmtPct1(spdRatio)}% Q${item.quality}</span>`;
       }
     }
     return `<div class="weapon-slot ${item ? 'filled' : 'empty'}" data-type="${type}">

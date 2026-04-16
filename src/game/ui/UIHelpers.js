@@ -6,6 +6,7 @@ import { ItemBlueprints, TraitDefs } from '../data/items.js';
 import { AdventurerDefs, UnlockableAdventurers } from '../data/adventurers.js';
 import { assetPath } from '../core/assetPath.js';
 import { eventBus } from '../core/EventBus.js';
+import { fmt1, fmtPct1 } from './NumberFormat.js';
 
 // ===== 品質ティア定義（Q0-100は通常、Q101+はエンドゲーム解放時のみ） =====
 const QualityTiers = [
@@ -241,20 +242,20 @@ function buildTraitEffectsHTML(traitName) {
   if (!def?.effects) return '';
 
   const labels = {
-    craftQualityBonus:  v => `調合品質 +${v}`,
-    runDamageFlat:      v => `攻撃力 +${v}`,
-    runDamageReduction: v => `ダメージ軽減 +${v}`,
-    runMaxHpFlat:       v => `最大HP +${v}`,
-    runMoveSpeed:       v => `移動速度 +${(v * 100).toFixed(1)}%`,
-    runRegenPerSec:     v => `HP回復 +${v}/秒`,
-    runDodge:           v => `回避率 ${v > 0 ? '+' : ''}${(v * 100).toFixed(1)}%`,
-    runDropRate:        v => `ドロップ率 +${(v * 100).toFixed(1)}%`,
-    runAttackSpeed:     v => `攻撃速度 +${(v * 100).toFixed(0)}%`,
-    runExpBonus:        v => `経験値 +${(v * 100).toFixed(0)}%`,
-    runCritChance:      v => `クリティカル率 +${(v * 100).toFixed(1)}%`,
-    runCritDamage:      v => `クリティカルダメージ +${(v * 100).toFixed(0)}%`,
-    runElementProc:     v => `属性発動率 +${(v * 100).toFixed(1)}%`,
-    runElementPower:    v => `属性効果量 +${(v * 100).toFixed(0)}%`,
+    craftQualityBonus:  v => `調合品質 +${fmt1(v)}`,
+    runDamageFlat:      v => `攻撃力 +${fmt1(v)}`,
+    runDamageReduction: v => `ダメージ軽減 +${fmt1(v)}`,
+    runMaxHpFlat:       v => `最大HP +${fmt1(v)}`,
+    runMoveSpeed:       v => `移動速度 +${fmtPct1(v)}%`,
+    runRegenPerSec:     v => `HP回復 +${fmt1(v)}/秒`,
+    runDodge:           v => `回避率 ${v > 0 ? '+' : ''}${fmtPct1(v)}%`,
+    runDropRate:        v => `ドロップ率 +${fmtPct1(v)}%`,
+    runAttackSpeed:     v => `攻撃速度 +${fmtPct1(v)}%`,
+    runExpBonus:        v => `経験値 +${fmtPct1(v)}%`,
+    runCritChance:      v => `クリティカル率 +${fmtPct1(v)}%`,
+    runCritDamage:      v => `クリティカルダメージ +${fmtPct1(v)}%`,
+    runElementProc:     v => `属性発動率 +${fmtPct1(v)}%`,
+    runElementPower:    v => `属性効果量 +${fmtPct1(v)}%`,
   };
 
   return Object.entries(def.effects)
