@@ -154,15 +154,14 @@ export class RunPrepScreen {
       });
     });
 
-    // 難易度ラジオボタン
-    this.el.querySelectorAll('input[name="difficulty"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        if (radio.checked && !radio.disabled) {
-          this.difficulty = radio.value;
-          this.render();
-        }
+    // 難易度プルダウン
+    const diffSelect = this.el.querySelector('#difficulty-select');
+    if (diffSelect) {
+      diffSelect.addEventListener('change', () => {
+        this.difficulty = diffSelect.value;
+        this.render();
       });
-    });
+    }
 
     const startBtn = this.el.querySelector('.prep-start-btn');
     if (startBtn && canStart) {
@@ -252,29 +251,34 @@ export class RunPrepScreen {
     return Progression.isBossDefeated(area.boss.id, requiredClear);
   }
 
-  /** 難易度選択ラジオ + 現在選択中の倍率説明 */
+  /** 難易度選択プルダウン + 現在選択中の倍率説明 */
   _renderDifficultySelector() {
     const area = AreaDefs[this.selectedArea];
     if (!area?.boss) return ''; // ボスのないエリアは難易度選択なし
 
-    // 表示する難易度: ノーマル + 解放済の上位
-    const visible = DIFFICULTY_ORDER.filter(d => d === 'normal' || this._isDifficultyAvailable(d) || d === this._nextLockedDifficulty());
-    const radios = visible.map(d => {
+    // 表示ルール:
+    //  - ノーマル: 常時
+    //  - 解放済難易度: 常時
+    //  - 次にロック中の 1 つ: 🔒 付き disabled で目標提示
+    //  - さらに上のロック中: 非表示
+    const nextLocked = this._nextLockedDifficulty();
+    const options = DIFFICULTY_ORDER.map(d => {
       const meta = DifficultyMeta[d];
       const available = this._isDifficultyAvailable(d);
-      const checked = this.difficulty === d;
-      return `<label class="difficulty-radio ${available ? '' : 'locked'} ${checked ? 'selected' : ''}">
-        <input type="radio" name="difficulty" value="${d}" ${checked ? 'checked' : ''} ${available ? '' : 'disabled'}>
-        <span class="diff-icon">${meta.icon}</span>
-        <span class="diff-label">${meta.label}</span>
-        ${available ? '' : '<span class="diff-lock">🔒</span>'}
-      </label>`;
-    }).join('');
+      if (!available && d !== nextLocked) return '';
+      const prefix = available ? '' : '🔒 ';
+      const selected = this.difficulty === d ? 'selected' : '';
+      const disabled = available ? '' : 'disabled';
+      return `<option value="${d}" ${selected} ${disabled}>${prefix}${meta.icon} ${meta.label}</option>`;
+    }).filter(Boolean).join('');
 
     const currentMeta = DifficultyMeta[this.difficulty] || DifficultyMeta.normal;
     return `
       <div class="prep-difficulty">
-        <div class="difficulty-radios">${radios}</div>
+        <label class="difficulty-select-label">
+          <span>難易度:</span>
+          <select id="difficulty-select" class="difficulty-select">${options}</select>
+        </label>
         ${this.difficulty !== 'normal' ? `<div class="difficulty-desc">${currentMeta.icon} ${currentMeta.label}: ${currentMeta.shortDesc}</div>` : ''}
       </div>
     `;
