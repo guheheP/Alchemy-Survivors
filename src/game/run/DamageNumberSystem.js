@@ -8,6 +8,9 @@ import { eventBus } from '../core/EventBus.js';
 const MAX_NUMBERS = 30;
 const FLOAT_DURATION = 0.8;
 const FLOAT_SPEED = 60; // px/sec upward
+const COMBO_DURATION = 1.4;
+const COMBO_FLOAT_SPEED = 35;
+const COMBO_INITIAL_OFFSET = 60; // 敵中心からの初期オフセット (px)
 
 export class DamageNumberSystem {
   constructor() {
@@ -28,9 +31,9 @@ export class DamageNumberSystem {
       eventBus.on('damageNumber:heal', ({ x, y, value }) => {
         this._spawn(x, y, typeof value === 'string' ? value : `+${Math.floor(value)}`, '#4c4', false);
       }),
-      // 属性コンボ発動時の頭上ポップアップ
+      // 属性コンボ発動時のポップアップ (敵の十分上に表示、長く残る)
       eventBus.on('combo:fired', ({ combo, x, y }) => {
-        this._spawn(x, y - 25, `${combo.icon} ${combo.displayName}`, combo.color || '#ff8', true);
+        this._spawnCombo(x, y, combo);
       }),
     ];
   }
@@ -48,6 +51,24 @@ export class DamageNumberSystem {
       color,
       isCrit,
       timer: FLOAT_DURATION,
+      kind: 'damage',
+    });
+  }
+
+  /** 属性コンボ専用ポップアップ */
+  _spawnCombo(worldX, worldY, combo) {
+    if (this.numbers.length >= MAX_NUMBERS) {
+      this.numbers[0] = this.numbers[this.numbers.length - 1];
+      this.numbers.pop();
+    }
+    this.numbers.push({
+      x: worldX,
+      y: worldY - COMBO_INITIAL_OFFSET,
+      text: `${combo.icon} ${combo.displayName}`,
+      color: combo.color || '#ff8',
+      isCrit: false,
+      timer: COMBO_DURATION,
+      kind: 'combo',
     });
   }
 
@@ -56,7 +77,8 @@ export class DamageNumberSystem {
     for (let i = this.numbers.length - 1; i >= 0; i--) {
       const n = this.numbers[i];
       n.timer -= dt;
-      n.y -= FLOAT_SPEED * dt;
+      const speed = n.kind === 'combo' ? COMBO_FLOAT_SPEED : FLOAT_SPEED;
+      n.y -= speed * dt;
       if (n.timer <= 0) {
         const last = this.numbers.length - 1;
         if (i !== last) this.numbers[i] = this.numbers[last];
@@ -69,23 +91,44 @@ export class DamageNumberSystem {
     for (const n of this.numbers) {
       const sx = camera.worldToScreenX(n.x);
       const sy = camera.worldToScreenY(n.y);
-      const alpha = Math.min(1, n.timer / (FLOAT_DURATION * 0.3));
 
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = n.color;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      if (n.isCrit) {
+      if (n.kind === 'combo') {
+        // コンボ演出: 大きく、アウトライン付き、弾け感
+        const totalDuration = COMBO_DURATION;
+        const t = 1 - (n.timer / totalDuration); // 0→1
+        const alpha = n.timer < 0.3 ? (n.timer / 0.3) : 1;
+        // 出現時ポップ (0〜0.15秒で120%→100%)
+        const popPhase = Math.min(1, t / 0.1);
+        const scale = 1 + (1 - popPhase) * 0.3;
+        ctx.globalAlpha = alpha;
+        ctx.font = `bold ${Math.round(22 * scale)}px monospace`;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+        ctx.shadowColor = n.color;
+        ctx.shadowBlur = 14;
+        ctx.strokeText(n.text, sx, sy);
+        ctx.fillStyle = n.color;
+        ctx.fillText(n.text, sx, sy);
+      } else if (n.isCrit) {
+        const alpha = Math.min(1, n.timer / (FLOAT_DURATION * 0.3));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = n.color;
         ctx.font = 'bold 18px monospace';
         ctx.shadowColor = n.color;
         ctx.shadowBlur = 6;
+        ctx.fillText(n.text, sx, sy);
       } else {
+        const alpha = Math.min(1, n.timer / (FLOAT_DURATION * 0.3));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = n.color;
         ctx.font = 'bold 13px monospace';
+        ctx.fillText(n.text, sx, sy);
       }
 
-      ctx.fillText(n.text, sx, sy);
       ctx.shadowBlur = 0;
       ctx.restore();
     }
