@@ -121,6 +121,7 @@ const ELEMENT_BADGE_DEFS = {
   lightning: { label: '雷',  icon: '⚡', tooltip: '感電: 短時間スタン' },
   wind:      { label: '風',  icon: '💨', tooltip: '風: 状態異常を持つ敵に命中時、周囲に拡散' },
   water:     { label: '水',  icon: '💧', tooltip: '脆弱: 敵が受けるダメージが15%増加' },
+  none:      { label: '無',  icon: '◇', tooltip: '無属性: 与ダメージ +25%' },
 };
 
 /** 武器属性バッジHTMLを生成。element が未定義なら空文字を返す */

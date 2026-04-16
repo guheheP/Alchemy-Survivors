@@ -46,7 +46,10 @@ export class RunPrepScreen {
     const armor = this.getArmor();
     const accessory = this.getAccessory();
     const area = AreaDefs[this.selectedArea];
-    const canStart = equippedWeapons.length > 0;
+    const invItemCount = this.inventory?.items?.length ?? 0;
+    const invMax = this.inventory?.maxCapacity ?? Infinity;
+    const overCapacity = invItemCount > invMax;
+    const canStart = equippedWeapons.length > 0 && !overCapacity;
 
     const weaponListHtml = equippedWeapons.length > 0
       ? equippedWeapons.map((w, i) => {
@@ -123,7 +126,8 @@ export class RunPrepScreen {
               ${this._renderDifficultySelector()}
             </div>
           </div>
-          ${!canStart ? '<p class="prep-warning">武器を1つ以上装備してください</p>' : ''}
+          ${equippedWeapons.length === 0 ? '<p class="prep-warning">武器を1つ以上装備してください</p>' : ''}
+          ${overCapacity ? `<p class="prep-warning">⚠️ 倉庫が上限を超えています (${invItemCount}/${invMax})。倉庫画面でアイテムを整理してください。</p>` : ''}
           <button class="prep-start-btn" ${canStart ? '' : 'disabled'}>出撃！</button>
         </div>
       </div>

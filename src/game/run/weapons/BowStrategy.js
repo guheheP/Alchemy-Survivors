@@ -65,7 +65,7 @@ export class BowStrategy extends WeaponStrategy {
       const dx = enemy.x - px;
       const dy = enemy.y - py;
       const dist = dx * dx + dy * dy;
-      if (dist < nearestDist && dist < this.range * this.range * 4) {
+      if (dist < nearestDist && dist < this.range * this.range * 2.25) {
         nearestDist = dist;
         nearest = enemy;
       }
@@ -82,7 +82,7 @@ export class BowStrategy extends WeaponStrategy {
       if (this.projectiles.length >= this.maxProjectiles) break;
       const spread = count > 1 ? (n - (count - 1) / 2) * spreadAngle : 0;
       this.projectiles.push({
-        x: px, y: py, angle: angle + spread, life: 2.0, hit: false,
+        x: px, y: py, angle: angle + spread, life: 1.3, hit: false,
       });
     }
 

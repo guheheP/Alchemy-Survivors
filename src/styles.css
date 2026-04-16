@@ -1780,11 +1780,14 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
 .element-lightning { background: rgba(255, 238, 102, 0.18); color: #fe6; border-color: #fc4; }
 .element-wind      { background: rgba(170, 221, 255, 0.18); color: #adf; border-color: #9cf; }
 .element-water     { background: rgba(68, 170, 238, 0.20); color: #6bf; border-color: #6bf; }
+.element-none      { background: rgba(200, 200, 210, 0.16); color: #cdd; border-color: #aab; }
 .wh-item-price { display: inline; font-size: 0.7rem; color: #fc4; }
 .wh-detail-price { color: #fc4; margin-left: 8px; }
-.wh-detail-actions { margin-left: auto; }
+.wh-detail-actions { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .wh-lock-btn { background: rgba(240,192,96,0.1); border: 1px solid #f0c060; color: #f0c060; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
 .wh-lock-btn:hover { background: rgba(240,192,96,0.25); }
+.wh-sell-single { background: rgba(255, 204, 68, 0.12); border: 1px solid #fc4; color: #fc4; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+.wh-sell-single:hover { background: rgba(255, 204, 68, 0.26); }
 
 /* 複数選択モード */
 .wh-multiselect-toggle {
@@ -3380,6 +3383,7 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
   }
   .wh-selbar-sell { margin-left: auto; }
   .wh-lock-btn { min-height: 40px; padding: 0.45rem 0.9rem; }
+  .wh-sell-single { min-height: 40px; padding: 0.45rem 0.9rem; }
 
   /* --- Shop: カードは高さ固定を外し内容に追従、購入ボタン44px --- */
   .shop-card { height: auto; min-height: 150px; padding: 0.6rem 0.7rem; }

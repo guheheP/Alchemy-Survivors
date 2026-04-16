@@ -3,7 +3,7 @@
  */
 
 import { GameConfig } from '../../data/config.js';
-import { ItemBlueprints } from '../../data/items.js';
+import { ItemBlueprints, TraitDefs } from '../../data/items.js';
 import { WeaponSkillDefs } from '../../data/weaponSkills.js';
 import { eventBus } from '../../core/EventBus.js';
 
@@ -45,8 +45,20 @@ export class WeaponStrategy {
     this.weaponName = bp.name;
     // 武器固有のベース会心率（Blueprintで定義、dagger/特定武器のみ）
     this.baseCritChance = bp.baseCritChance || 0;
-    // 武器属性（fire/ice/poison/lightning/wind）
+    // 武器属性（fire/ice/poison/lightning/wind/water/none）
     this.element = bp.element || null;
+
+    // 武器スロット特性由来の runDamageFlat（武器固有スコープ）。
+    // 防具/アクセサリ由来の runDamageFlat は player.baseDamage 側で全武器共通適用。
+    this.weaponTraitDamageFlat = 0;
+    if (weaponItem.traits) {
+      for (const traitName of weaponItem.traits) {
+        const def = TraitDefs[traitName];
+        if (def?.effects?.runDamageFlat) {
+          this.weaponTraitDamageFlat += def.effects.runDamageFlat;
+        }
+      }
+    }
 
     // スキルシステム
     this.skillTier = this._calcSkillTier(bp.baseValue);
@@ -68,7 +80,10 @@ export class WeaponStrategy {
   }
 
   get damage() {
-    let dmg = this.baseDamage * (1 + this.player.passives.damageMultiplier) + this.player.baseDamage;
+    // 武器固有のrunDamageFlat特性 + 武器ベースダメ → 乗算 → 防具/アクセ由来のplayer.baseDamageを加算
+    let dmg = (this.baseDamage + this.weaponTraitDamageFlat) * (1 + this.player.passives.damageMultiplier) + this.player.baseDamage;
+    // 無属性(明示指定): 最終ダメージ +25%
+    if (this.element === 'none') dmg *= 1.25;
     // 会心判定 — プレイヤーの会心率 + 武器ベース会心率（上限100%）
     this._lastCrit = false;
     const totalCrit = Math.min(1, this.player.passives.critChance + this.baseCritChance);

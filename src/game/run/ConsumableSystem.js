@@ -78,7 +78,13 @@ export class ConsumableSystem {
     // スロット情報の前回値キャッシュ（差分があるときだけ emit してDOM churnを防ぐ）
     this._lastSlotsInfo = null;
 
+    // レベルアップモーダルなどのUIがキー入力を占有しているか
+    this._inputBlocked = false;
+    this._unsubInputBlock = eventBus.on('input:blockGame', () => { this._inputBlocked = true; });
+    this._unsubInputRelease = eventBus.on('input:releaseGame', () => { this._inputBlocked = false; });
+
     this._onKeyDown = (e) => {
+      if (this._inputBlocked) return;
       if (e.code === 'Digit1') this._use(0);
       else if (e.code === 'Digit2') this._use(1);
       else if (e.code === 'Digit3') this._use(2);
@@ -259,5 +265,7 @@ export class ConsumableSystem {
   destroy() {
     window.removeEventListener('keydown', this._onKeyDown);
     if (this._unsubRequestUse) this._unsubRequestUse();
+    if (this._unsubInputBlock) this._unsubInputBlock();
+    if (this._unsubInputRelease) this._unsubInputRelease();
   }
 }

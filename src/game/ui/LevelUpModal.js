@@ -26,6 +26,8 @@ export class LevelUpModal {
 
   _show(level, choices) {
     this.el.classList.remove('hidden');
+    // ゲーム内キー入力(数字キー等)を一時的にブロック
+    eventBus.emit('input:blockGame');
     this.el.innerHTML = `
       <div class="levelup-overlay"></div>
       <div class="levelup-content">
@@ -129,6 +131,8 @@ export class LevelUpModal {
   _hide() {
     this.el.classList.add('hidden');
     this.el.innerHTML = '';
+    // ゲーム内キー入力ブロックを解除
+    eventBus.emit('input:releaseGame');
   }
 
   destroy() {
@@ -139,6 +143,10 @@ export class LevelUpModal {
     }
     for (const tid of this._pendingTimeouts) clearTimeout(tid);
     this._pendingTimeouts.clear();
+    // 表示中に破棄された場合もブロックを解除しておく
+    if (!this.el.classList.contains('hidden')) {
+      eventBus.emit('input:releaseGame');
+    }
     this.el.remove();
   }
 }

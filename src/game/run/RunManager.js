@@ -425,13 +425,33 @@ export class RunManager {
       if (CollisionSystem.circleOverlap(this.player, boss)) {
         this.player.takeDamage(boss.damage);
       }
-      // ボススキルのダメージ判定
+      // ボススキルのダメージ判定 — circle/rect/配列に対応
       const hitArea = boss.getSkillHitArea();
       if (hitArea) {
-        const dx = this.player.x - hitArea.x;
-        const dy = this.player.y - hitArea.y;
-        if (dx * dx + dy * dy < hitArea.radius * hitArea.radius) {
-          this.player.takeDamage(boss.getSkillDamage());
+        const shapes = Array.isArray(hitArea) ? hitArea : [hitArea];
+        const pr = this.player.radius;
+        for (const shape of shapes) {
+          let hit = false;
+          if (shape.type === 'rect') {
+            // 回転矩形: 前方[0..range] × 側方[±width/2]
+            const cos = Math.cos(shape.angle);
+            const sin = Math.sin(shape.angle);
+            const px = this.player.x - shape.x;
+            const py = this.player.y - shape.y;
+            const forward = px * cos + py * sin;
+            const lateral = Math.abs(-px * sin + py * cos);
+            hit = forward >= -pr && forward <= shape.range + pr && lateral <= shape.width / 2 + pr;
+          } else {
+            // 既定 circle
+            const dx = this.player.x - shape.x;
+            const dy = this.player.y - shape.y;
+            const r = shape.radius + pr;
+            hit = dx * dx + dy * dy < r * r;
+          }
+          if (hit) {
+            this.player.takeDamage(boss.getSkillDamage());
+            break; // 同一スキルで複数ヒット防止
+          }
         }
       }
     }

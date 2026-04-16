@@ -18,6 +18,9 @@ export class BossEntity extends Enemy {
     this.skillTimer = 0;
     this.telegraphTimer = 0;
     this.telegraphPos = null;
+    this.telegraphAngle = 0;         // 発動方向 (line/radial_burst用)
+    this.telegraphStartX = 0;         // 発動開始時のボス座標 (line/radial_burst用)
+    this.telegraphStartY = 0;
     this.baseDamage = 0;
     this.baseSpeed = 0;
     this.defense = 0;
@@ -35,6 +38,9 @@ export class BossEntity extends Enemy {
     this.skillTimer = 0;
     this.telegraphTimer = 0;
     this.telegraphPos = null;
+    this.telegraphAngle = 0;
+    this.telegraphStartX = 0;
+    this.telegraphStartY = 0;
     this.baseDamage = 0;
     this.baseSpeed = 0;
     this.defense = 0;
@@ -170,17 +176,32 @@ export class BossEntity extends Enemy {
     }
 
     this.telegraphPos = { x: playerX, y: playerY };
+    // 発動方向と開始位置を凍結（line/radial_burst 用に必要）
+    const dxAim = playerX - this.x;
+    const dyAim = playerY - this.y;
+    this.telegraphAngle = Math.atan2(dyAim, dxAim);
+    this.telegraphStartX = this.x;
+    this.telegraphStartY = this.y;
 
-    // テレグラフ時間（スキルタイプ別）
+    // テレグラフ時間（スキルタイプ別）— ダッシュ(0.15s)+反応時間を考慮した猶予
     switch (skill.type) {
       case 'attack':
-        this.telegraphTimer = 0.3;
+        this.telegraphTimer = 0.55;
         break;
       case 'aoe':
-        this.telegraphTimer = 0.8;
+        this.telegraphTimer = 1.0;
         break;
       case 'heavy':
+        this.telegraphTimer = 1.2;
+        break;
+      case 'line':       // 直線攻撃: 槍型、長射程
         this.telegraphTimer = 1.0;
+        break;
+      case 'wide_aoe':   // 広範囲攻撃
+        this.telegraphTimer = 1.5;
+        break;
+      case 'radial_burst': // 放射多段攻撃
+        this.telegraphTimer = 1.2;
         break;
       case 'heal':
         this.telegraphTimer = 0.5;
@@ -252,14 +273,13 @@ export class BossEntity extends Enemy {
     }
   }
 
-  /** スキルのダメージ範囲（RunManagerでの衝突判定用） */
+  /** スキルのダメージ範囲（RunManagerでの衝突判定用）。単一 shape or 配列を返す */
   getSkillHitArea() {
     if (!this.activeSkill) return null;
-    // attack(突進)は実行中ずっと当たり判定を有効にする（前は skillTimer>0.3 で切れて後半0.3秒が無効だった）
-    // aoe / heavy はテレグラフ位置で着弾する攻撃なので短い着弾ウィンドウを維持（~0.3秒）
     const skill = this.activeSkill;
     switch (skill.type) {
       case 'attack':
+        // 突進中ずっと当たり判定有効
         return { type: 'circle', x: this.x, y: this.y, radius: 30 };
       case 'aoe':
         if (this.skillTimer > 0.3) return null;
@@ -267,6 +287,31 @@ export class BossEntity extends Enemy {
       case 'heavy':
         if (this.skillTimer > 0.3) return null;
         return { type: 'circle', x: this.telegraphPos?.x || this.x, y: this.telegraphPos?.y || this.y, radius: 50 };
+      case 'line': {
+        // 直線攻撃: 発動開始位置からtelegraphAngle方向に range×width の矩形
+        if (this.skillTimer > 0.3) return null;
+        const range = skill.range || 320;
+        const width = skill.width || 55;
+        return { type: 'rect', x: this.telegraphStartX, y: this.telegraphStartY, angle: this.telegraphAngle, range, width };
+      }
+      case 'wide_aoe': {
+        // 広範囲攻撃: 着弾位置に大きめの円
+        if (this.skillTimer > 0.4) return null;
+        return { type: 'circle', x: this.telegraphPos?.x || this.x, y: this.telegraphPos?.y || this.y, radius: skill.radius || 170 };
+      }
+      case 'radial_burst': {
+        // 放射多段: 発動開始位置から全方向に複数の矩形
+        if (this.skillTimer > 0.3) return null;
+        const rayCount = skill.rayCount || 6;
+        const rayRange = skill.rayRange || 260;
+        const rayWidth = skill.rayWidth || 48;
+        const shapes = [];
+        for (let i = 0; i < rayCount; i++) {
+          const a = this.telegraphAngle + (Math.PI * 2 / rayCount) * i;
+          shapes.push({ type: 'rect', x: this.telegraphStartX, y: this.telegraphStartY, angle: a, range: rayRange, width: rayWidth });
+        }
+        return shapes;
+      }
       default:
         return null;
     }

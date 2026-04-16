@@ -154,11 +154,14 @@ export class EquipmentScreen {
     }
 
     const wc = GameConfig.weapon;
-    let totalDmg = 0;
-    for (const w of weapons) {
+
+    // 武器ごとの基礎ダメージ（baseValue+quality+baseDamageMultiplier）を個別計算
+    const weaponBaseDmgs = weapons.map(w => {
       const bp = ItemBlueprints[w.blueprintId];
-      if (bp) totalDmg += bp.baseValue / wc.damageBaseDivisor + w.quality / wc.damageQualityDivisor;
-    }
+      if (!bp) return 0;
+      const dmgMult = bp.baseDamageMultiplier || 1.0;
+      return (bp.baseValue / wc.damageBaseDivisor + w.quality / wc.damageQualityDivisor) * dmgMult;
+    });
 
     let def = 0, hpBonus = 0, spdBonus = 0;
     if (this.armorSlot) {
@@ -181,19 +184,39 @@ export class EquipmentScreen {
       runCritChance: 0, runCritDamage: 0,
       runElementProc: 0, runElementPower: 0,
     };
-    const accumulateTraits = (item) => {
+    const accumulateTraits = (item, targetBag = traitBonus) => {
       if (!item?.traits) return;
       for (const t of item.traits) {
         const td = TraitDefs[t];
         if (!td?.effects) continue;
         for (const [k, v] of Object.entries(td.effects)) {
-          if (k in traitBonus) traitBonus[k] += v;
+          if (k in targetBag) targetBag[k] += v;
         }
       }
     };
-    weapons.forEach(accumulateTraits);
+    weapons.forEach(w => accumulateTraits(w));
     accumulateTraits(this.armorSlot);
     accumulateTraits(this.accessorySlot);
+
+    // 武器固有スコープの runDamageFlat (各武器に個別適用)
+    const weaponOwnFlat = weapons.map(w => {
+      if (!w?.traits) return 0;
+      let sum = 0;
+      for (const t of w.traits) {
+        const td = TraitDefs[t];
+        if (td?.effects?.runDamageFlat) sum += td.effects.runDamageFlat;
+      }
+      return sum;
+    });
+    // 全武器共通スコープ (防具+アクセサリ由来の runDamageFlat)
+    let gearFlat = 0;
+    for (const slot of [this.armorSlot, this.accessorySlot]) {
+      if (!slot?.traits) continue;
+      for (const t of slot.traits) {
+        const td = TraitDefs[t];
+        if (td?.effects?.runDamageFlat) gearFlat += td.effects.runDamageFlat;
+      }
+    }
 
     // 装備値+特性値の合計を表示するヘルパー
     const fmtBonus = (val, formatter) => val ? `<span class="stat-trait-bonus" title="特性によるボーナス">${formatter(val)}</span>` : '';
@@ -231,10 +254,20 @@ export class EquipmentScreen {
       skillsHtml += `<div class="equip-skill-row"><span class="equip-skill-weapon">${w.name}</span><span class="equip-skill-name">${skillDef.name}</span><span class="equip-skill-cd">CD${skillDef.cooldown}s</span></div>`;
     }
 
-    // 装備値と特性値を合算した合計表示
-    // 特性 runDamageFlat は毎ヒット各武器の damage に加算されるため、合算寄与は N 倍。
-    const flatBonusTotal = weapons.length * traitBonus.runDamageFlat;
-    const totalAtk = totalDmg + flatBonusTotal;
+    // 装備値と特性値を合算した合計表示（武器固有スコープ対応版）
+    // - 武器スロットの runDamageFlat: その武器のみに加算
+    // - 防具/アクセの runDamageFlat: 全武器に加算 (weapons.length × gearFlat)
+    // - 無属性武器(element='none'): 該当武器のダメージに ×1.25
+    let totalAtk = 0;
+    for (let i = 0; i < weapons.length; i++) {
+      const w = weapons[i];
+      const bp = ItemBlueprints[w.blueprintId];
+      let perWeapon = weaponBaseDmgs[i] + weaponOwnFlat[i] + gearFlat;
+      if (bp?.element === 'none') perWeapon *= 1.25;
+      totalAtk += perWeapon;
+    }
+    const totalDmg = weaponBaseDmgs.reduce((a, b) => a + b, 0);
+    const flatBonusTotal = totalAtk - totalDmg;
     const avgAtk = weapons.length > 0 ? totalAtk / weapons.length : 0;
     const totalDef = def + traitBonus.runDamageReduction;
     const totalHp = hpBonus + traitBonus.runMaxHpFlat;

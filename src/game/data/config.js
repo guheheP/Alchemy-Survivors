@@ -58,9 +58,9 @@ export const GameConfig = {
 
   // --- 武器ステータス計算（企画書 Section 4.1） ---
   weapon: {
-    // 攻撃力 = baseValue / 10 + quality / 5
+    // 攻撃力 = baseValue / 10 + quality / 2.5
     damageBaseDivisor: 10,
-    damageQualityDivisor: 5,
+    damageQualityDivisor: 2.5,
     // 攻撃速度 = 1.0 + quality / 500 (最大約3.0倍)
     speedBase: 1.0,
     speedQualityDivisor: 500,
@@ -72,7 +72,7 @@ export const GameConfig = {
   weaponTypes: {
     sword:  { baseRange: 100, baseCooldown: 0.95, arc: Math.PI * 0.7, pattern: 'cleave' },
     spear:  { baseRange: 150, baseCooldown: 1.1, arc: Math.PI / 8, pattern: 'thrust' },
-    bow:    { baseRange: 250, baseCooldown: 0.65, arc: 0, pattern: 'projectile' },
+    bow:    { baseRange: 180, baseCooldown: 0.65, arc: 0, pattern: 'projectile' },
     staff:  { baseRange: 130, baseCooldown: 0.85, arc: Math.PI * 2, pattern: 'orbit' },
     dagger: { baseRange: 60, baseCooldown: 0.30, arc: Math.PI / 3, pattern: 'flurry' },
     shield: { baseRange: 90, baseCooldown: 1.5, arc: Math.PI * 2, pattern: 'pulse' },

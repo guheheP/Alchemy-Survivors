@@ -98,9 +98,11 @@ export class PlayerController extends Entity {
     this.passives.damageReduction += this._permanentDefValue;
   }
 
-  /** 武器スロットの特性もパッシブに適用（RunManagerから呼ぶ） */
+  /** 武器スロットの特性もパッシブに適用（RunManagerから呼ぶ）。
+   * runDamageFlat は武器固有スコープなので player.baseDamage には加算せず、
+   * WeaponStrategy 側で該当武器にのみ適用する。 */
   applyWeaponTraits(weaponSlots) {
-    this._applyTraitPassives(weaponSlots);
+    this._applyTraitPassives(weaponSlots, { skipDamageFlat: true });
     this._bindInput();
   }
 
@@ -236,14 +238,15 @@ export class PlayerController extends Entity {
     }
   }
 
-  _applyTraitPassives(items) {
+  _applyTraitPassives(items, options = {}) {
+    const skipDamageFlat = options.skipDamageFlat === true;
     for (const item of items) {
       if (!item || !item.traits) continue;
       for (const traitName of item.traits) {
         const def = TraitDefs[traitName];
         if (!def || !def.effects) continue;
         const fx = def.effects;
-        if (fx.runDamageFlat) this.baseDamage += fx.runDamageFlat;
+        if (fx.runDamageFlat && !skipDamageFlat) this.baseDamage += fx.runDamageFlat;
         if (fx.runDamageReduction) this.passives.damageReduction += fx.runDamageReduction;
         if (fx.runMaxHpFlat) { this.maxHp += fx.runMaxHpFlat; this.hp = this.maxHp; }
         if (fx.runMoveSpeed) this.passives.moveSpeedMultiplier += fx.runMoveSpeed;

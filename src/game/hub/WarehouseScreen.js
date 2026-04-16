@@ -418,6 +418,8 @@ export class WarehouseScreen {
     const equipped = this.getEquippedUids();
     const isEquipped = equipped.has(item.uid);
     const canToggleLock = !isEquipped;
+    // 個別売却は 装備中 / ロック中 のときは不可
+    const canSellSingle = !isEquipped && !item.locked;
 
     detail.innerHTML = `
       <div class="wh-detail-content">
@@ -433,6 +435,7 @@ export class WarehouseScreen {
           </div>
           <div class="wh-detail-actions">
             ${canToggleLock ? `<button class="wh-lock-btn" data-uid="${item.uid}">${item.locked ? '🔓 ロック解除' : '🔒 ロック'}</button>` : ''}
+            ${canSellSingle ? `<button class="wh-sell-single" data-uid="${item.uid}" data-price="${price}">💰 単品売却 (${price}G)</button>` : ''}
           </div>
         </div>
         ${statsHtml}
@@ -447,6 +450,20 @@ export class WarehouseScreen {
         // 再描画
         this._renderGrid();
         this._showDetail(uid);
+      });
+    }
+
+    const sellBtn = detail.querySelector('.wh-sell-single');
+    if (sellBtn) {
+      sellBtn.addEventListener('click', () => {
+        const ok = confirm(`「${item.name}」を ${price}G で売却しますか？\nこの操作は取り消せません。`);
+        if (!ok) return;
+        const result = this.inventory.sellItems([uid], calcSellPrice);
+        eventBus.emit('toast', { message: `💰 ${item.name} を売却しました (+${result.total}G)`, type: 'success' });
+        // 選択解除 + 再描画（詳細ペインも閉じる）
+        this.selected.delete(uid);
+        detail.innerHTML = '';
+        this._rerender();
       });
     }
   }

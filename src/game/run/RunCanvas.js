@@ -263,23 +263,54 @@ export class RunCanvas {
         const sy = boss.lerpY(alpha) - camera.y;
         if (sx < -80 || sx > w + 80 || sy < -80 || sy > h + 80) continue;
 
-        // テレグラフ表示（スキル予告円）
+        // テレグラフ表示（スキル予告）— circle / line / radial_burst / wide_aoe に対応
         if (boss.telegraphTimer > 0 && boss.telegraphPos) {
           const tx = boss.telegraphPos.x - camera.x;
           const ty = boss.telegraphPos.y - camera.y;
           const skill = boss.activeSkill;
-          const telegraphRadius = skill?.type === 'aoe'
-            ? 80 * (skill.damageMult || 1)
-            : skill?.type === 'heavy' ? 50 : 30;
           ctx.save();
           ctx.globalAlpha = 0.3 + Math.sin(boss.telegraphTimer * 12) * 0.15;
           ctx.fillStyle = '#f44';
-          ctx.beginPath();
-          ctx.arc(tx, ty, telegraphRadius, 0, Math.PI * 2);
-          ctx.fill();
           ctx.strokeStyle = '#f88';
           ctx.lineWidth = 2;
-          ctx.stroke();
+          const skillType = skill?.type;
+          if (skillType === 'line') {
+            // 直線攻撃: 発動開始位置から telegraphAngle 方向に range×width
+            const bx = boss.telegraphStartX - camera.x;
+            const by = boss.telegraphStartY - camera.y;
+            const range = skill.range || 320;
+            const width = skill.width || 55;
+            ctx.translate(bx, by);
+            ctx.rotate(boss.telegraphAngle);
+            ctx.fillRect(0, -width / 2, range, width);
+            ctx.strokeRect(0, -width / 2, range, width);
+          } else if (skillType === 'radial_burst') {
+            // 放射多段: 発動位置から全方向の矩形
+            const bx = boss.telegraphStartX - camera.x;
+            const by = boss.telegraphStartY - camera.y;
+            const rayCount = skill.rayCount || 6;
+            const rayRange = skill.rayRange || 260;
+            const rayWidth = skill.rayWidth || 48;
+            ctx.translate(bx, by);
+            for (let i = 0; i < rayCount; i++) {
+              ctx.save();
+              ctx.rotate(boss.telegraphAngle + (Math.PI * 2 / rayCount) * i);
+              ctx.fillRect(0, -rayWidth / 2, rayRange, rayWidth);
+              ctx.strokeRect(0, -rayWidth / 2, rayRange, rayWidth);
+              ctx.restore();
+            }
+          } else {
+            // 円形系: aoe / heavy / wide_aoe / その他
+            const telegraphRadius = skillType === 'wide_aoe'
+              ? (skill.radius || 170)
+              : skillType === 'aoe'
+                ? 80 * (skill.damageMult || 1)
+                : skillType === 'heavy' ? 50 : 30;
+            ctx.beginPath();
+            ctx.arc(tx, ty, telegraphRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
           ctx.restore();
         }
 
