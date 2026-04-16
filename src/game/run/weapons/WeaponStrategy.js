@@ -237,6 +237,46 @@ export class WeaponStrategy {
         this._flash(color, 0.2);
         break;
       }
+      // 線突き + 毒のエリア付与 (dark_blade用)
+      case 'multi_thrust_poison': {
+        const lineCount = p.lineCount || 3;
+        const lineRange = p.lineRange || 200;
+        const width = p.width || 25;
+        const poisonDps = (p.poisonDps || 3) * dmg * 0.04; // ヒットダメの約4%を毒DPSに
+        const poisonDuration = p.poisonDuration || 4;
+        for (let n = 0; n < lineCount; n++) {
+          const spreadAngle = angle + (n - (lineCount - 1) / 2) * 0.3;
+          const cos = Math.cos(spreadAngle);
+          const sin = Math.sin(spreadAngle);
+          for (const enemy of enemies) {
+            if (!enemy.active) continue;
+            const dx = enemy.x - px;
+            const dy = enemy.y - py;
+            const forward = dx * cos + dy * sin;
+            if (forward < 0 || forward > lineRange) continue;
+            const lateral = Math.abs(-dx * sin + dy * cos);
+            if (lateral < width + enemy.radius) {
+              if (enemy.takeDamage(dmg * (p.dmgMult || 2))) this._emitKill(enemy);
+              else {
+                // 追加で毒状態を直接付与 (スキル命中時は必中)
+                enemy.applyStatusEffect?.('poison', { duration: poisonDuration, dps: poisonDps });
+              }
+            }
+          }
+          this.effects.push({ type: 'thrust', x: px, y: py, angle: spreadAngle, range: lineRange, width, timer: 0.4, maxTimer: 0.4, color });
+          // 地面に毒霧エリア
+          const segments = 4;
+          for (let s = 1; s <= segments; s++) {
+            const bx = px + cos * (lineRange * s / segments);
+            const by = py + sin * (lineRange * s / segments);
+            this.effects.push({ type: 'fill', x: bx, y: by, range: width + 12, timer: 0.9 + s * 0.1, maxTimer: 0.9 + s * 0.1, color: '#6a4' });
+            this._emitBurst(bx, by, 4, { speed: 35, life: 0.8, size: 2, color: '#8c5', shape: 'circle', gravity: -20 });
+          }
+        }
+        this._shake(5, 0.25);
+        this._flash(color, 0.2);
+        break;
+      }
       // 突き + 先端で連鎖（thunder_spear用）
       case 'multi_chain': {
         const lineCount = p.lineCount || 5;
@@ -852,6 +892,7 @@ export class WeaponStrategy {
       // 前方突進/ビーム/扇状
       case 'multi_thrust':
       case 'multi_thrust_burn':
+      case 'multi_thrust_poison':
       case 'multi_chain':
       case 'piercing_shot':
       case 'arrow_fan':
