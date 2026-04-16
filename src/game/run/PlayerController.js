@@ -64,7 +64,7 @@ export class PlayerController extends Entity {
       extraProjectile: 0,
       expMultiplier: 0,
       critChance: 0,
-      critDamage: 1.0, // クリ時の追加倍率 (1.0 = ×2.0)
+      critDamage: 1.0, // 会心時の追加倍率 (1.0 = ×2.0)
       elementProcBonus: 0,   // 属性発動率ボーナス (0.05 = +5%)
       elementPowerBonus: 0,  // 属性効果量ボーナス (0.15 = +15%)
     };
@@ -87,7 +87,7 @@ export class PlayerController extends Entity {
     if (equippedAccessory) {
       const bp = ItemBlueprints[equippedAccessory.blueprintId];
       if (bp) {
-        this.passives.moveSpeedMultiplier += bp.baseValue / 500 + equippedAccessory.quality / 1000;
+        this.passives.moveSpeedMultiplier += bp.baseValue / 2500 + equippedAccessory.quality / 5000;
       }
     }
 

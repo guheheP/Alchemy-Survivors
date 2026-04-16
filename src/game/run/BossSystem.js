@@ -21,10 +21,11 @@ const BOSS_UNLOCK_MAP = {
 };
 
 export class BossSystem {
-  constructor(areaId, modifiers = null) {
+  constructor(areaId, modifiers = null, difficulty = 'normal') {
     this.areaId = areaId;
     this.area = AreaDefs[areaId];
     this.modifiers = modifiers;
+    this.difficulty = difficulty;
     this.boss = null;
     this.bossEntity = new BossEntity();
     this.spawnTimes = [...GameConfig.run.bossSpawnTimes]; // [300, 600, 900]
@@ -112,7 +113,7 @@ export class BossSystem {
   onBossKilled() {
     this.bossDefeated = true;
     const bossId = this.bossEntity.enemyId;
-    Progression.markBossDefeated(bossId);
+    Progression.markBossDefeated(bossId, this.difficulty);
     this.boss = null;
     this.spawnerPaused = false;
 

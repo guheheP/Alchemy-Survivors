@@ -19,7 +19,7 @@ import { AreaDefs } from '../data/areas.js';
 import { eventBus } from '../core/EventBus.js';
 import { GameFeelSettings } from '../core/GameFeelSettings.js';
 import { ItemBlueprints } from '../data/items.js';
-import { HardModeModifiers } from '../data/hardmode.js';
+import { DifficultyModifiers } from '../data/hardmode.js';
 import { BossSystem } from './BossSystem.js';
 import { ConsumableSystem } from './ConsumableSystem.js';
 import { DamageNumberSystem } from './DamageNumberSystem.js';
@@ -41,16 +41,18 @@ export class RunManager {
    * @param {object|null} equippedArmor - 装備中の防具
    * @param {object|null} equippedAccessory - 装備中のアクセサリ
    */
-  constructor(canvasEl, weaponSlots, areaId, equippedArmor = null, equippedAccessory = null, consumables = [], hardMode = false) {
+  constructor(canvasEl, weaponSlots, areaId, equippedArmor = null, equippedAccessory = null, consumables = [], difficulty = 'normal') {
     this.areaId = areaId;
     this.area = AreaDefs[areaId];
-    this.hardMode = hardMode;
+    this.difficulty = difficulty;
+    // 旧API互換: hardMode boolean を参照する箇所のために hard 以上を真として残す
+    this.hardMode = difficulty !== 'normal';
     this.state = 'running';
     this.elapsed = 0;
     this.killCount = 0;
     this.goldEarned = 0;
 
-    const modifiers = hardMode ? HardModeModifiers : null;
+    const modifiers = DifficultyModifiers[difficulty] || null;
 
     // サブシステム初期化
     this.canvas = new RunCanvas(canvasEl);
@@ -62,9 +64,15 @@ export class RunManager {
     this.collision = new CollisionSystem(64);
     const qMin = (this.area.qualityMin || 10) + (modifiers ? modifiers.qualityBonusMin : 0);
     const qMax = (this.area.qualityMax || 40) + (modifiers ? modifiers.qualityBonusMax : 0);
-    this.drops = new DropSystem(this.area.dropTable, this.area.traitPool || [], qMin, qMax, modifiers ? modifiers.dropRateMultiplier : 1);
+    // 難易度別の特性プール選択（未定義なら通常 traitPool にフォールバック）
+    const traitPool = (difficulty === 'nightmare' && this.area.nightmareTraitPool)
+      ? this.area.nightmareTraitPool
+      : (difficulty === 'challenge' && this.area.challengeTraitPool)
+        ? this.area.challengeTraitPool
+        : (this.area.traitPool || []);
+    this.drops = new DropSystem(this.area.dropTable, traitPool, qMin, qMax, modifiers ? modifiers.dropRateMultiplier : 1);
     this.levelUp = new LevelUpSystem(this.player, this.weapon);
-    this.bossSystem = new BossSystem(areaId, modifiers);
+    this.bossSystem = new BossSystem(areaId, modifiers, difficulty);
     this.consumables = consumables.length > 0 ? new ConsumableSystem(this.player, consumables) : null;
     this.damageNumbers = new DamageNumberSystem();
     this.materialCount = 0;
@@ -140,7 +148,7 @@ export class RunManager {
         // 被弾粒子
         if (x != null && y != null) {
           if (isCrit) {
-            // クリティカル: より強いスパーク + 軽いシェイク + 微ヒットストップ
+            // 会心: より強いスパーク + 軽いシェイク + 微ヒットストップ
             this.particles.emitBurst(x, y, 10, {
               speed: 160, life: 0.32, size: 3, color: '#ffdc6a', shape: 'spark',
             });
@@ -543,7 +551,8 @@ export class RunManager {
 
   _onEnemyKilled(enemy) {
     this.killCount++;
-    const goldMult = this.hardMode ? HardModeModifiers.goldMultiplier : 1;
+    const mods = DifficultyModifiers[this.difficulty];
+    const goldMult = mods ? mods.goldMultiplier : 1;
     this.goldEarned += Math.floor(GameConfig.gold.perKill * goldMult);
     if (enemy.isBoss) {
       this.goldEarned += Math.floor(GameConfig.gold.bossBonus * goldMult);
@@ -605,6 +614,7 @@ export class RunManager {
       highestDamage: this.highestDamage,
       weaponTypesUsed: this.weaponTypesUsed,
       hardMode: this.hardMode || false,
+      difficulty: this.difficulty,
     });
   }
 

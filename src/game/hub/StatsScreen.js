@@ -38,7 +38,9 @@ export class StatsScreen {
           <div class="stats-item"><span class="stats-label">生存回数</span><span class="stats-value">${s.totalSurvivals}</span></div>
           <div class="stats-item"><span class="stats-label">死亡回数</span><span class="stats-value">${s.totalDeaths}</span></div>
           <div class="stats-item"><span class="stats-label">ボス撃破数</span><span class="stats-value">${s.totalBossesDefeated}</span></div>
-          <div class="stats-item"><span class="stats-label">ハードクリア</span><span class="stats-value">${s.hardModeClears}</span></div>
+          <div class="stats-item"><span class="stats-label">ハードクリア</span><span class="stats-value">${s.hardModeClears || 0}</span></div>
+          <div class="stats-item"><span class="stats-label">チャレンジクリア</span><span class="stats-value">${s.challengeClears || 0}</span></div>
+          <div class="stats-item"><span class="stats-label">ナイトメアクリア</span><span class="stats-value">${s.nightmareClears || 0}</span></div>
         </div>
       </div>
 

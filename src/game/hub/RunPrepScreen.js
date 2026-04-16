@@ -7,6 +7,7 @@ import { AreaDefs } from '../data/areas.js';
 import { ItemBlueprints } from '../data/items.js';
 import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
+import { DifficultyMeta, DIFFICULTY_ORDER } from '../data/hardmode.js';
 
 export class RunPrepScreen {
   constructor(container, getWeaponSlots, getArmor, getAccessory, inventory, initialConsumableUids = [], initialAreaId = null) {
@@ -24,7 +25,7 @@ export class RunPrepScreen {
     // 前回のステージ選択を復元（未解放なら草原にフォールバック）
     const savedArea = initialAreaId && AreaDefs[initialAreaId];
     this.selectedArea = (savedArea && savedArea.unlocked) ? initialAreaId : 'plains';
-    this.hardMode = false;
+    this.difficulty = 'normal';
   }
 
   /** ステージ選択変更を emit（Game側で永続化） */
@@ -119,15 +120,7 @@ export class RunPrepScreen {
               <div class="prep-row"><span>難易度:</span><span>${'★'.repeat(area.difficulty + 1)}</span></div>
               <div class="prep-row"><span>ドロップ品質:</span><span>Q${area.qualityMin}〜Q${area.qualityMax}</span></div>
               <div class="prep-row"><span>ボス:</span><span>${area.boss ? `${area.boss.icon} ${area.boss.name} (HP${area.boss.maxHp})` : 'なし'}</span></div>
-              ${this._canHardMode() ? `
-                <div class="prep-hard-mode">
-                  <label class="hard-mode-toggle">
-                    <input type="checkbox" id="hard-mode-check" ${this.hardMode ? 'checked' : ''}>
-                    <span class="hard-mode-label">🔥 ハードモード</span>
-                  </label>
-                  ${this.hardMode ? '<div class="hard-mode-desc">敵HP2倍 / 敵攻撃力1.5倍 / スポーン率1.5倍<br>ドロップ率1.3倍 / ゴールド2倍 / 品質+10〜20</div>' : ''}
-                </div>
-              ` : ''}
+              ${this._renderDifficultySelector()}
             </div>
           </div>
           ${!canStart ? '<p class="prep-warning">武器を1つ以上装備してください</p>' : ''}
@@ -161,23 +154,27 @@ export class RunPrepScreen {
       });
     });
 
-    // ハードモードトグル
-    const hardCheck = this.el.querySelector('#hard-mode-check');
-    if (hardCheck) {
-      hardCheck.addEventListener('change', () => {
-        this.hardMode = hardCheck.checked;
-        this.render();
+    // 難易度ラジオボタン
+    this.el.querySelectorAll('input[name="difficulty"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        if (radio.checked && !radio.disabled) {
+          this.difficulty = radio.value;
+          this.render();
+        }
       });
-    }
+    });
 
     const startBtn = this.el.querySelector('.prep-start-btn');
     if (startBtn && canStart) {
       startBtn.addEventListener('click', () => {
+        // 選択中の難易度がそのエリアで未解放なら normal に落とす（誤クリック保護）
+        const safeDifficulty = this._isDifficultyAvailable(this.difficulty) ? this.difficulty : 'normal';
         eventBus.emit('run:start', {
           weaponSlots: weaponSlots.filter(w => w !== null),
           areaId: this.selectedArea,
           consumables: [...this.selectedConsumables],
-          hardMode: this.hardMode,
+          difficulty: safeDifficulty,
+          hardMode: safeDifficulty !== 'normal', // 旧API互換
         });
       });
     }
@@ -237,10 +234,59 @@ export class RunPrepScreen {
     document.body.appendChild(overlay);
   }
 
-  /** 選択中エリアのボスが撃破済みならハードモード選択可能 */
-  _canHardMode() {
+  /** 指定難易度がそのエリアで選択可能かを返す（順次解放）
+   *   normal:    常時可能
+   *   hard:      そのエリアのボスを normal 以上でクリア
+   *   challenge: そのエリアのボスを hard 以上でクリア
+   *   nightmare: そのエリアのボスを challenge 以上でクリア
+   */
+  _isDifficultyAvailable(difficulty) {
+    if (difficulty === 'normal') return true;
     const area = AreaDefs[this.selectedArea];
-    return area?.boss && Progression.isBossDefeated(area.boss.id);
+    if (!area?.boss) return false;
+    const requiredClear = {
+      hard:      'normal',
+      challenge: 'hard',
+      nightmare: 'challenge',
+    }[difficulty];
+    return Progression.isBossDefeated(area.boss.id, requiredClear);
+  }
+
+  /** 難易度選択ラジオ + 現在選択中の倍率説明 */
+  _renderDifficultySelector() {
+    const area = AreaDefs[this.selectedArea];
+    if (!area?.boss) return ''; // ボスのないエリアは難易度選択なし
+
+    // 表示する難易度: ノーマル + 解放済の上位
+    const visible = DIFFICULTY_ORDER.filter(d => d === 'normal' || this._isDifficultyAvailable(d) || d === this._nextLockedDifficulty());
+    const radios = visible.map(d => {
+      const meta = DifficultyMeta[d];
+      const available = this._isDifficultyAvailable(d);
+      const checked = this.difficulty === d;
+      return `<label class="difficulty-radio ${available ? '' : 'locked'} ${checked ? 'selected' : ''}">
+        <input type="radio" name="difficulty" value="${d}" ${checked ? 'checked' : ''} ${available ? '' : 'disabled'}>
+        <span class="diff-icon">${meta.icon}</span>
+        <span class="diff-label">${meta.label}</span>
+        ${available ? '' : '<span class="diff-lock">🔒</span>'}
+      </label>`;
+    }).join('');
+
+    const currentMeta = DifficultyMeta[this.difficulty] || DifficultyMeta.normal;
+    return `
+      <div class="prep-difficulty">
+        <div class="difficulty-radios">${radios}</div>
+        ${this.difficulty !== 'normal' ? `<div class="difficulty-desc">${currentMeta.icon} ${currentMeta.label}: ${currentMeta.shortDesc}</div>` : ''}
+      </div>
+    `;
+  }
+
+  /** 順次解放のうち、次にロック中の1つだけは表示してプレイヤーに目標を見せる */
+  _nextLockedDifficulty() {
+    for (const d of DIFFICULTY_ORDER) {
+      if (d === 'normal') continue;
+      if (!this._isDifficultyAvailable(d)) return d;
+    }
+    return null;
   }
 
   _describeBattleEffect(fx) {

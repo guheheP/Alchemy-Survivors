@@ -18,7 +18,7 @@ function formatTraitRunEffect(def) {
     runMoveSpeed: '速度', runRegenPerSec: '回復/秒', runDodge: '回避',
     runDropRate: 'ドロップ率', runAttackSpeed: '攻速', runExpBonus: '経験値',
     runStartInvincible: '開始無敵(秒)',
-    runCritChance: 'クリ率', runCritDamage: 'クリダメ',
+    runCritChance: '会心率', runCritDamage: '会心ダメ',
     runElementProc: '属性発動', runElementPower: '属性威力',
   };
   const parts = [];
@@ -170,7 +170,7 @@ export class EquipmentScreen {
     }
     if (this.accessorySlot) {
       const bp = ItemBlueprints[this.accessorySlot.blueprintId];
-      if (bp) spdBonus = bp.baseValue / 500 + this.accessorySlot.quality / 1000;
+      if (bp) spdBonus = bp.baseValue / 2500 + this.accessorySlot.quality / 5000;
     }
 
     // 装備中アイテムの特性からステータス上昇値を集計（戦闘に関わるrun系のみ）
@@ -209,8 +209,8 @@ export class EquipmentScreen {
       runDropRate:        v => ['ドロップ率',     `+${fmtPct1(v)}%`],
       runAttackSpeed:     v => ['攻撃速度',       `+${fmtPct1(v)}%`],
       runExpBonus:        v => ['経験値',         `+${fmtPct1(v)}%`],
-      runCritChance:      v => ['クリティカル率', `+${fmtPct1(v)}%`],
-      runCritDamage:      v => ['クリティカルダメージ', `+${fmtPct1(v)}%`],
+      runCritChance:      v => ['会心率', `+${fmtPct1(v)}%`],
+      runCritDamage:      v => ['会心ダメージ', `+${fmtPct1(v)}%`],
       runElementProc:     v => ['属性発動率',   `+${fmtPct1(v)}%`],
       runElementPower:    v => ['属性効果量',   `+${fmtPct1(v)}%`],
     };
@@ -233,6 +233,7 @@ export class EquipmentScreen {
 
     // 装備値と特性値を合算した合計表示
     const totalAtk = totalDmg + traitBonus.runDamageFlat;
+    const avgAtk = weapons.length > 0 ? totalAtk / weapons.length : 0;
     const totalDef = def + traitBonus.runDamageReduction;
     const totalHp = hpBonus + traitBonus.runMaxHpFlat;
     const totalSpd = spdBonus + traitBonus.runMoveSpeed;
@@ -240,7 +241,8 @@ export class EquipmentScreen {
     summary.innerHTML = `
       <h4>装備合計ステータス</h4>
       <div class="equip-stat-grid">
-        <div class="equip-stat-item"><span>総攻撃力</span><span class="stat-val">${fmt1(totalAtk)}${fmtBonus(traitBonus.runDamageFlat, v => `+${fmt1(v)}`)}</span></div>
+        <div class="equip-stat-item"><span>合算攻撃力</span><span class="stat-val">${fmt1(totalAtk)}${fmtBonus(traitBonus.runDamageFlat, v => `+${fmt1(v)}`)}</span></div>
+        <div class="equip-stat-item"><span>平均攻撃力</span><span class="stat-val">${weapons.length > 0 ? fmt1(avgAtk) : '—'}</span></div>
         <div class="equip-stat-item"><span>防御力</span><span class="stat-val">${fmt1(totalDef)}${fmtBonus(traitBonus.runDamageReduction, v => `+${fmt1(v)}`)}</span></div>
         <div class="equip-stat-item"><span>HP増加</span><span class="stat-val">+${fmtInt(totalHp)}${fmtBonus(traitBonus.runMaxHpFlat, v => `+${fmt1(v)}`)}</span></div>
         <div class="equip-stat-item"><span>速度増加</span><span class="stat-val">+${fmtPct1(totalSpd)}%${fmtBonus(traitBonus.runMoveSpeed, v => `+${fmtPct1(v)}%`)}</span></div>
@@ -259,7 +261,7 @@ export class EquipmentScreen {
         const def = fmt1(bp.baseValue / 12 + item.quality / 8);
         statsHtml = `<span class="slot-stats">DEF:${def} Q${item.quality}</span>`;
       } else {
-        const spdRatio = bp.baseValue / 500 + item.quality / 1000;
+        const spdRatio = bp.baseValue / 2500 + item.quality / 5000;
         statsHtml = `<span class="slot-stats">SPD:+${fmtPct1(spdRatio)}% Q${item.quality}</span>`;
       }
     }

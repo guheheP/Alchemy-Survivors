@@ -1699,6 +1699,28 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
 .hard-mode-label { color: #f84; font-weight: 700; font-size: 0.9rem; }
 .hard-mode-desc { margin-top: 0.4rem; font-size: 0.75rem; color: #fa8; line-height: 1.4; }
 
+/* Difficulty Selector (Normal / Hard / Challenge / Nightmare) */
+.prep-difficulty { margin-top: 0.6rem; padding: 0.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; }
+.difficulty-radios { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; }
+.difficulty-radio {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.difficulty-radio:hover:not(.locked) { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.25); }
+.difficulty-radio.selected { background: rgba(96,176,255,0.18); border-color: #6bf; }
+.difficulty-radio.locked { opacity: 0.45; cursor: not-allowed; }
+.difficulty-radio input { accent-color: #6bf; cursor: inherit; }
+.difficulty-radio .diff-icon { font-size: 1rem; }
+.difficulty-radio .diff-label { font-weight: 600; }
+.difficulty-radio .diff-lock { margin-left: auto; font-size: 0.7rem; }
+.difficulty-desc { margin-top: 0.4rem; font-size: 0.75rem; color: #cce; line-height: 1.4; }
+
 /* ===== Warehouse ===== */
 .warehouse-layout { display: flex; flex-direction: column; height: 100%; }
 .warehouse-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }

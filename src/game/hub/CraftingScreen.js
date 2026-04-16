@@ -506,7 +506,7 @@ export class CraftingScreen {
       html += `<div class="preview-row"><span>種別:</span><span class="preview-val">${this._getArmorTypeName(bp.equipType)}</span></div>`;
       if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
     } else if (bp.type === 'accessory') {
-      const spdBonus = (bp.baseValue / 500 + finalQ / 1000);
+      const spdBonus = (bp.baseValue / 2500 + finalQ / 5000);
       const cmp = this._compareAccessory(spdBonus);
       html += `<div class="preview-row"><span>移動速度:</span><span class="preview-val">+${fmtPct1(spdBonus)}%${cmp.spd}</span></div>`;
       if (cmp.label) html += `<div class="preview-compare">${cmp.label}</div>`;
@@ -547,7 +547,7 @@ export class CraftingScreen {
               runMaxHpFlat: 'HP', runMoveSpeed: '速度', runRegenPerSec: '回復/秒',
               runDodge: '回避', runDropRate: 'ドロップ率', runAttackSpeed: '攻速',
               runExpBonus: '経験値', runStartInvincible: '開始無敵',
-              runCritChance: 'クリ率', runCritDamage: 'クリダメ',
+              runCritChance: '会心率', runCritDamage: '会心ダメ',
               runElementProc: '属性発動', runElementPower: '属性威力',
             }[key] || key;
             runEffects.push(`${label}+${typeof val === 'number' && val < 1 && val > 0 ? fmtPct1(val) + '%' : fmt1(val)}`);
@@ -847,7 +847,7 @@ export class CraftingScreen {
     if (!eq?.accessory) return { spd: '', label: '現在 アクセサリ 未装備' };
     const bp = ItemBlueprints[eq.accessory.blueprintId];
     if (!bp) return { spd: '', label: '' };
-    const curSpdBonus = bp.baseValue / 500 + eq.accessory.quality / 1000;
+    const curSpdBonus = bp.baseValue / 2500 + eq.accessory.quality / 5000;
     return {
       spd: this._diffBadge(newSpdBonus * 100, curSpdBonus * 100, 1, '%'),
       label: `現在装備: ${eq.accessory.name} (Q${eq.accessory.quality})`,
@@ -909,7 +909,7 @@ export class CraftingScreen {
       runMoveSpeed: '速度', runRegenPerSec: '回復/秒', runDodge: '回避',
       runDropRate: 'ドロップ率', runAttackSpeed: '攻速', runExpBonus: '経験値',
       runStartInvincible: '開始無敵(秒)',
-      runCritChance: 'クリ率', runCritDamage: 'クリダメ',
+      runCritChance: '会心率', runCritDamage: '会心ダメ',
       runElementProc: '属性発動', runElementPower: '属性威力',
     };
     const parts = [];
