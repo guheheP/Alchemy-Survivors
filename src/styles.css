@@ -1661,6 +1661,14 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
   font-size: 0.8rem;
 }
 .stat-val { color: #4af; font-weight: 700; }
+.stat-val.stat-trait-only { color: #c98cf5; }
+.stat-trait-bonus {
+  margin-left: 0.35rem;
+  color: #c98cf5;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-shadow: 0 0 4px rgba(200,140,245,0.35);
+}
 
 .equip-skill-list { display: flex; flex-direction: column; gap: 0.3rem; margin-top: 0.3rem; }
 .equip-skill-row {
