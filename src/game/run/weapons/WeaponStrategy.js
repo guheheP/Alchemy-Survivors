@@ -448,7 +448,38 @@ export class WeaponStrategy {
         this._flash(color, 0.2);
         break;
       }
-      // バリア + HP回復（elder_staff用）
+      // 持続回復エリア (elder_staff用)。エリア内にいる間、毎秒 regenPerSec の割合でHP回復
+      case 'regen_zone': {
+        const radius = p.radius || 120;
+        const duration = p.duration || 6;
+        const knockback = p.knockback || 40;
+        // 発動時の一回押し出し + 軽いダメージ
+        for (const enemy of enemies) {
+          if (!enemy.active) continue;
+          const dx = enemy.x - px;
+          const dy = enemy.y - py;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < radius + enemy.radius) {
+            if (enemy.takeDamage(dmg * (p.dmgMult || 0.8))) this._emitKill(enemy);
+            else if (dist > 0.1) enemy.tryKnockback?.(dx, dy, dist, knockback);
+          }
+        }
+        // 持続回復エリア本体 (update 側で player が中にいれば毎フレーム回復)
+        this.effects.push({
+          type: 'regen_zone', x: px, y: py, range: radius,
+          timer: duration, maxTimer: duration, color,
+          regenPerSec: p.regenPerSec || 0.03,
+        });
+        // 開幕演出
+        for (let i = 0; i < 3; i++) {
+          this.effects.push({ type: 'ring', x: px, y: py, range: radius * (0.5 + i * 0.25), timer: 0.5 + i * 0.1, maxTimer: 0.5 + i * 0.1, color });
+        }
+        this.effects.push({ type: 'fill', x: px, y: py, range: radius * 0.4, timer: 0.3, maxTimer: 0.3, color: '#afa' });
+        this._emitBurst(px, py, 20, { speed: 80, life: 1.0, size: 3, color, shape: 'triangle', gravity: -40 });
+        this._flash(color, 0.15);
+        break;
+      }
+      // バリア + HP回復（旧elder_staff用、互換保持）
       case 'barrier_heal': {
         const radius = p.radius || 130;
         const knockback = p.knockback || 60;
@@ -1209,6 +1240,7 @@ export class WeaponStrategy {
         case 'lightning': this._renderLightning(ctx, camera, fx); break;
         case 'meteor_fall': this._renderMeteorFall(ctx, camera, fx); break;
         case 'burn_zone': this._renderBurnZone(ctx, camera, fx); break;
+        case 'regen_zone': this._renderRegenZone(ctx, camera, fx); break;
         case 'freeze_zone': this._renderFreezeZone(ctx, camera, fx); break;
         case 'barrier_orbit': this._renderBarrierOrbit(ctx, camera, fx); break;
         case 'spin_blades': this._renderSpinBlades(ctx, camera, fx); break;
@@ -1478,6 +1510,34 @@ export class WeaponStrategy {
     ctx.lineDashOffset = (1 - pct) * 30;
     ctx.beginPath();
     ctx.arc(sx, sy, fx.range, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  _renderRegenZone(ctx, camera, fx) {
+    const sx = camera.worldToScreenX(fx.x);
+    const sy = camera.worldToScreenY(fx.y);
+    const pct = fx.timer / fx.maxTimer;
+    const pulse = 0.85 + Math.sin(fx.timer * 3) * 0.15;
+    ctx.save();
+    // 芝の柔らかい緑のラジアルグラデ
+    ctx.globalAlpha = pct * 0.30;
+    const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, fx.range);
+    grad.addColorStop(0, this._hexA(fx.color, 0.55));
+    grad.addColorStop(0.7, this._hexA(fx.color, 0.20));
+    grad.addColorStop(1, this._hexA(fx.color, 0));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(sx, sy, fx.range, 0, Math.PI * 2);
+    ctx.fill();
+    // 外縁の柔らかい脈動リング
+    ctx.globalAlpha = pct * 0.5 * pulse;
+    ctx.strokeStyle = fx.color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3, 6]);
+    ctx.lineDashOffset = (1 - pct) * -40;
+    ctx.beginPath();
+    ctx.arc(sx, sy, fx.range * pulse, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }

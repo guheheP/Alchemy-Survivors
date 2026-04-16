@@ -84,8 +84,21 @@ export class StaffStrategy extends WeaponStrategy {
 
     // Update base effects
     for (let i = this.effects.length - 1; i >= 0; i--) {
-      this.effects[i].timer -= dt;
-      if (this.effects[i].timer <= 0) this.effects.splice(i, 1);
+      const fx = this.effects[i];
+      // 回復エリア: プレイヤーが範囲内にいれば毎フレーム regenPerSec * dt の割合でHP回復
+      if (fx.type === 'regen_zone') {
+        const pdx = this.player.x - fx.x;
+        const pdy = this.player.y - fx.y;
+        if (pdx * pdx + pdy * pdy < fx.range * fx.range) {
+          const maxHp = this.player.effectiveMaxHp;
+          const healAmt = maxHp * (fx.regenPerSec || 0) * dt;
+          if (healAmt > 0 && this.player.hp < maxHp) {
+            this.player.hp = Math.min(maxHp, this.player.hp + healAmt);
+          }
+        }
+      }
+      fx.timer -= dt;
+      if (fx.timer <= 0) this.effects.splice(i, 1);
     }
   }
 

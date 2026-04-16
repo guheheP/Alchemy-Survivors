@@ -237,11 +237,12 @@ export const WeaponSkillDefs = {
   },
   elder_staff: {
     name: '大樹の祝福',
-    description: '大樹の力で周囲にバリアを展開しHPを回復する',
-    cooldown: 10,
-    type: 'barrier_heal',
-    params: { radius: 130, knockback: 60, dmgMult: 1.15, invincDuration: 1.5, healPct: 0.23 },
-    color: '#4a4',
+    description: '足元に癒しのエリアを展開。エリア内にいる間HPが継続回復する',
+    cooldown: 13,
+    type: 'regen_zone',
+    // regenPerSec: 毎秒HPの何%回復するか。radius: 癒しのエリア半径。duration: 持続秒数。
+    params: { radius: 120, duration: 6, regenPerSec: 0.02, dmgMult: 0.8, knockback: 40 },
+    color: '#6c6',
   },
   aether_staff: {
     name: 'エーテル崩壊',
