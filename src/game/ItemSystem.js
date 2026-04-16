@@ -78,9 +78,10 @@ export function craftItem(recipeId, materialInstances, selectedTraits = [], qual
     }
   }
 
-  // 2. 品質計算 (素材の平均品質)
-  const totalQuality = materialInstances.reduce((sum, item) => sum + item.quality, 0);
-  const avgQuality = materialInstances.length > 0 ? (totalQuality / materialInstances.length) : 50;
+  // 2. 品質計算 (素材の最高品質を採用)
+  const maxQuality = materialInstances.length > 0
+    ? Math.max(...materialInstances.map(m => m.quality))
+    : 50;
 
   // 3. 特性引き継ぎ + 融合
   const traitCounts = {};
@@ -153,7 +154,7 @@ export function craftItem(recipeId, materialInstances, selectedTraits = [], qual
     }
   }
   const qualityCap = getCurrentQualityCap();
-  const finalQuality = Math.min(qualityCap, Math.max(0, avgQuality + qualityBonus + craftTraitBonus));
+  const finalQuality = Math.min(qualityCap, Math.max(0, maxQuality + qualityBonus + craftTraitBonus));
 
   // 4. アイテムインスタンスの作成
   const item = createItemInstance(recipe.targetId, finalQuality, finalTraits);

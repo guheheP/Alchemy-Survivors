@@ -90,6 +90,7 @@ export class EquipmentScreen {
         <div class="equip-current">
           <h3>装備セット</h3>
           <p class="equip-hint">武器4枠 + 防具 + アクセサリ。武器はレベルアップで順番に解放。</p>
+          ${this._renderPresetBar()}
 
           <h4>武器スロット</h4>
           <div class="equip-slots">
@@ -97,7 +98,11 @@ export class EquipmentScreen {
               const bp = weapon ? ItemBlueprints[weapon.blueprintId] : null;
               let statsHtml = '';
               if (weapon && bp) {
-                const dmg = fmt1(bp.baseValue / wc.damageBaseDivisor + weapon.quality / wc.damageQualityDivisor);
+                // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
+                const dmgMult = bp.baseDamageMultiplier || 1.0;
+                let atkVal = (bp.baseValue / wc.damageBaseDivisor + weapon.quality / wc.damageQualityDivisor) * dmgMult;
+                if (bp.element === 'none') atkVal *= 1.25;
+                const dmg = fmt1(atkVal);
                 statsHtml = `<span class="slot-stats">ATK:${dmg} Q${weapon.quality}</span>`;
               }
               return `<div class="weapon-slot ${weapon ? 'filled' : 'empty'}" data-slot="${i}" data-type="weapon">
@@ -138,9 +143,89 @@ export class EquipmentScreen {
 
     this._currentFilter = 'weapon';
     this._bindEvents(weapons, armors, allAccessories, equippedUids);
+    this._bindPresetEvents();
     this._renderSummary();
 
+    // プリセット変更通知を受けて再描画
+    if (!this._unsubPreset) {
+      this._unsubPreset = eventBus.on('preset:changed', () => {
+        // equipment:changed で親から再描画されるので何もしなくて良いが、
+        // 装備画面表示中に上書き/削除した場合はプリセットバーだけ更新
+        const bar = this.el.querySelector('.equip-presets');
+        if (bar) bar.outerHTML = this._renderPresetBar();
+        this._bindPresetEvents();
+      });
+    }
+
     return this.el;
+  }
+
+  _renderPresetBar() {
+    const mgr = this.presetsManager;
+    if (!mgr) return '';
+    const presets = mgr.list || [];
+    const items = presets.map(p => `
+      <div class="preset-item" data-preset-id="${p.id}">
+        <span class="preset-name" title="${this._escapeAttr(p.name)}">${this._escapeAttr(p.name)}</span>
+        <div class="preset-item-actions">
+          <button class="preset-btn preset-apply" data-id="${p.id}" title="適用">▶</button>
+          <button class="preset-btn preset-overwrite" data-id="${p.id}" title="上書き保存">💾</button>
+          <button class="preset-btn preset-rename" data-id="${p.id}" title="名前変更">✎</button>
+          <button class="preset-btn preset-delete" data-id="${p.id}" title="削除">🗑</button>
+        </div>
+      </div>
+    `).join('');
+    const addBtn = mgr.canAdd
+      ? `<button class="preset-btn preset-create" title="現在の装備を新規プリセットとして保存">＋ 新規保存</button>`
+      : `<span class="preset-limit">(最大${mgr.maxPresets}個)</span>`;
+    return `
+      <div class="equip-presets">
+        <div class="preset-bar-head">
+          <span class="preset-bar-title">📂 装備プリセット (${presets.length}/${mgr.maxPresets})</span>
+          ${addBtn}
+        </div>
+        <div class="preset-list">${items || '<span class="preset-empty">プリセット未登録。現在の装備を保存できます。</span>'}</div>
+      </div>
+    `;
+  }
+
+  _escapeAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  _bindPresetEvents() {
+    const bar = this.el.querySelector('.equip-presets');
+    if (!bar) return;
+    bar.querySelector('.preset-create')?.addEventListener('click', () => {
+      const name = prompt('プリセット名を入力:', `セット${(this.presetsManager?.list?.length || 0) + 1}`);
+      if (name === null) return; // キャンセル
+      eventBus.emit('preset:create', { name });
+    });
+    bar.querySelectorAll('.preset-apply').forEach(btn => {
+      btn.addEventListener('click', () => eventBus.emit('preset:apply', { id: btn.dataset.id }));
+    });
+    bar.querySelectorAll('.preset-overwrite').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('このプリセットを現在の装備で上書きしますか?')) {
+          eventBus.emit('preset:overwrite', { id: btn.dataset.id });
+        }
+      });
+    });
+    bar.querySelectorAll('.preset-rename').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = this.presetsManager?.list?.find(x => x.id === btn.dataset.id);
+        const name = prompt('新しいプリセット名:', p?.name || '');
+        if (name === null || name === '') return;
+        eventBus.emit('preset:rename', { id: btn.dataset.id, name });
+      });
+    });
+    bar.querySelectorAll('.preset-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('このプリセットを削除しますか?')) {
+          eventBus.emit('preset:delete', { id: btn.dataset.id });
+        }
+      });
+    });
   }
 
   _renderSummary() {
@@ -419,6 +504,7 @@ export class EquipmentScreen {
   }
 
   destroy() {
+    if (this._unsubPreset) { this._unsubPreset(); this._unsubPreset = null; }
     this.el.remove();
   }
 }

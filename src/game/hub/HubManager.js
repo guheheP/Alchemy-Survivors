@@ -135,12 +135,14 @@ export class HubManager {
         screen.weaponSlots = [...this.weaponSlots];
         screen.armorSlot = this.equippedArmor;
         screen.accessorySlot = this.equippedAccessory;
+        screen.presetsManager = this.presetsManager;
         screen.render();
         this.screens.equip = screen;
         break;
       }
       case 'prep': {
         const screen = new RunPrepScreen(content, () => this.weaponSlots, () => this.equippedArmor, () => this.equippedAccessory, this.inventory, this.savedConsumableUids, this.lastSelectedAreaId);
+        screen.presetsManager = this.presetsManager;
         screen.render();
         this.screens.prep = screen;
         break;

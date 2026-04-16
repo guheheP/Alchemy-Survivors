@@ -15,7 +15,7 @@ const SAVE_KEY = 'alchemy_survivors_save_v1';
 const BACKUP_KEY_PREFIX = 'alchemy_survivors_save_backup_';
 const CLOUD_USER_DATA_KEY = 'save';
 const CLOUD_SAVE_DEBOUNCE_MS = 5000;
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 
 const DEFAULT_STATS = {
   totalRuns: 0,
@@ -97,6 +97,7 @@ export class SaveSystem {
       achievements: extraData.achievements || [],
       hardModeUnlocked: extraData.hardModeUnlocked || [],
       tutorialCompleted: extraData.tutorialCompleted || false,
+      equipmentPresets: extraData.equipmentPresets || [],
     };
   }
 
@@ -234,6 +235,11 @@ export class SaveSystem {
     if (data.version === 2) {
       // v2→v3: フィールド追加無し。クラウド同期対応のためのバージョンバンプ。
       data.version = 3;
+    }
+    if (data.version === 3) {
+      // v3→v4: equipmentPresets フィールド追加
+      data.version = 4;
+      data.equipmentPresets = data.equipmentPresets || [];
     }
     return data;
   }

@@ -82,12 +82,18 @@ export class RunPickupToasts {
     };
     this._activeBatch.set(batchKey, entry);
 
-    // 上限超過の古いトーストを削除 (先頭が古い)
+    // 上限超過の古いトーストを削除 (先頭が古い)。
+    // _dismiss は setTimeout で遅延削除するため、この while ループ中に
+    // 古い要素が DOM に残ったままで無限ループする致命的バグがあった。
+    // → トリム時は即時削除し、大量同時ピックアップ時のフリーズを防ぐ。
     while (this.container.children.length > MAX_TOASTS) {
       const oldest = this.container.firstElementChild;
       if (!oldest) break;
       const k = oldest._batchKey;
-      this._dismiss(oldest, k);
+      const entry = k ? this._activeBatch.get(k) : null;
+      if (entry && entry.dismissTimer) clearTimeout(entry.dismissTimer);
+      if (k) this._activeBatch.delete(k);
+      oldest.remove();
     }
   }
 

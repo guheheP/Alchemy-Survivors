@@ -48,8 +48,9 @@ export class Enemy extends Entity {
     this._dashState = 'idle'; // 'idle' | 'telegraph' | 'dashing'
     this._dashDir = { x: 0, y: 0 };
     this._dashStateTimer = 0;
-    // ノックバック管理: 1 度でも吹き飛ばされたら、その敵の生存中は以後KBを受け付けない
-    this._knockbackUsed = false;
+    // ノックバック管理: 回数に応じてKB距離が減衰 (max(0, 1 - n/7))
+    // 7回目以降は完全無効。盾スタックの永久ロック対策とゲーム性のバランス。
+    this._knockbackCount = 0;
   }
 
   reset() {
@@ -82,22 +83,24 @@ export class Enemy extends Entity {
     this._dashState = 'idle';
     this._dashDir = { x: 0, y: 0 };
     this._dashStateTimer = 0;
-    this._knockbackUsed = false;
+    this._knockbackCount = 0;
   }
 
   /**
-   * ノックバックを試みる。既に1度吹き飛ばされた敵は以後完全無視する (盾スタック等の対策)。
-   * @param {number} dx - 押し出し方向 x (単位ベクトルでなくてもよい)
+   * ノックバックを試みる。KB回数に応じて距離が減衰し、7回目以降は完全無効。
+   * 減衰式: strength × max(0, 1 - count/7)
+   * @param {number} dx - 押し出し方向 x
    * @param {number} dy - 押し出し方向 y
-   * @param {number} dist - sqrt(dx^2 + dy^2) (0 の場合は no-op)
+   * @param {number} dist - sqrt(dx^2 + dy^2)
    * @param {number} strength - 押し出し距離 (px)
    */
   tryKnockback(dx, dy, dist, strength) {
-    if (this._knockbackUsed) return false;
     if (!dist || dist <= 0 || !strength) return false;
-    this.x += (dx / dist) * strength;
-    this.y += (dy / dist) * strength;
-    this._knockbackUsed = true;
+    const decay = Math.max(0, 1 - this._knockbackCount / 7);
+    if (decay <= 0) return false;
+    this.x += (dx / dist) * strength * decay;
+    this.y += (dy / dist) * strength * decay;
+    this._knockbackCount++;
     return true;
   }
 

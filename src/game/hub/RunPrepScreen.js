@@ -78,6 +78,7 @@ export class RunPrepScreen {
         </div>
         <div class="prep-summary">
           <h3>出撃準備</h3>
+          ${this._renderPresetSelect()}
           <div class="prep-info">
             <div class="prep-row">
               <span>ステージ:</span>
@@ -164,6 +165,19 @@ export class RunPrepScreen {
       diffSelect.addEventListener('change', () => {
         this.difficulty = diffSelect.value;
         this.render();
+      });
+    }
+
+    // プリセット切替
+    const presetSelect = this.el.querySelector('.prep-preset-select');
+    if (presetSelect) {
+      presetSelect.addEventListener('change', () => {
+        const id = presetSelect.value;
+        if (!id) return;
+        eventBus.emit('preset:apply', { id });
+        // equipment:changed が発火すると親が再レンダーするので、ここでは再描画のみ
+        setTimeout(() => this.render(), 0);
+        presetSelect.value = '';
       });
     }
 
@@ -295,6 +309,27 @@ export class RunPrepScreen {
       if (!this._isDifficultyAvailable(d)) return d;
     }
     return null;
+  }
+
+  _renderPresetSelect() {
+    const mgr = this.presetsManager;
+    if (!mgr || !mgr.list || mgr.list.length === 0) return '';
+    const options = mgr.list.map(p =>
+      `<option value="${p.id}">${this._escapeAttr(p.name)}</option>`
+    ).join('');
+    return `
+      <div class="prep-preset-row">
+        <label>装備プリセット:</label>
+        <select class="prep-preset-select">
+          <option value="">— 選択 —</option>
+          ${options}
+        </select>
+      </div>
+    `;
+  }
+
+  _escapeAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   _describeBattleEffect(fx) {

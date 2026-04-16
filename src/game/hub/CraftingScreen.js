@@ -609,8 +609,9 @@ export class CraftingScreen {
     const recipe = Recipes[this.selectedRecipeId];
     if (!recipe) return null;
 
-    const totalQ = this.assignedMaterials.reduce((sum, m) => sum + (m?.quality || 0), 0);
-    const avgQ = this.assignedMaterials.length > 0 ? (totalQ / this.assignedMaterials.length) : 0;
+    // 素材の最高品質を採用 (craftItem と同ロジック)
+    const qualities = this.assignedMaterials.filter(m => m).map(m => m.quality || 0);
+    const maxQ = qualities.length > 0 ? Math.max(...qualities) : 0;
 
     let craftBonus = 0;
     for (const mat of this.assignedMaterials) {
@@ -621,7 +622,7 @@ export class CraftingScreen {
       }
     }
     const cap = getCurrentQualityCap();
-    const rawQ = Math.max(0, avgQ + craftBonus);
+    const rawQ = Math.max(0, maxQ + craftBonus);
     const finalQ = Math.floor(Math.min(cap, rawQ));
     const capped = rawQ > cap;
 

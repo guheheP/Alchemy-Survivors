@@ -24,6 +24,7 @@ import { TutorialOverlay } from './ui/TutorialOverlay.js';
 import { initTraitTooltipTap } from './ui/UIHelpers.js';
 import { GameTooltip } from './ui/GameTooltip.js';
 import { RunPickupToasts } from './ui/RunPickupToasts.js';
+import { EquipmentPresetsManager } from './hub/EquipmentPresets.js';
 import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNamePrompt.js';
 import { initPwaRuntime, applyPwaUpdate } from './core/pwaRuntime.js';
 
@@ -41,6 +42,7 @@ class Game {
     this.equippedAccessory = null;
     this.savedConsumableUids = [];
     this.lastSelectedAreaId = null;
+    this.presetsManager = new EquipmentPresetsManager([]);
     this.stats = {
       totalRuns: 0,
       totalKills: 0,
@@ -101,6 +103,69 @@ class Game {
         eventBus.emit('equipment:changed', { weaponSlots: this.weaponSlots, armor: this.equippedArmor, accessory: this.equippedAccessory });
         eventBus.emit('toast', { message: '⚠️ 消費した素材が装備欄から外されました', type: 'warning' });
       }
+      // プリセット内の消失UIDも静かにクリーンアップ
+      this.presetsManager.cleanupRemovedUids(uidSet);
+    });
+
+    // プリセット操作
+    eventBus.on('preset:create', ({ name }) => {
+      const preset = this.presetsManager.createFromCurrent(name, {
+        weaponSlots: this.weaponSlots,
+        armor: this.equippedArmor,
+        accessory: this.equippedAccessory,
+      });
+      if (preset) {
+        eventBus.emit('toast', { message: `✨ プリセット「${preset.name}」を保存しました`, type: 'success' });
+        this._autoSave();
+        eventBus.emit('preset:changed');
+      } else {
+        eventBus.emit('toast', { message: `プリセットは最大${this.presetsManager.maxPresets}個までです`, type: 'error' });
+      }
+    });
+    eventBus.on('preset:overwrite', ({ id }) => {
+      if (this.presetsManager.overwrite(id, {
+        weaponSlots: this.weaponSlots,
+        armor: this.equippedArmor,
+        accessory: this.equippedAccessory,
+      })) {
+        eventBus.emit('toast', { message: '💾 プリセットを上書きしました', type: 'success' });
+        this._autoSave();
+        eventBus.emit('preset:changed');
+      }
+    });
+    eventBus.on('preset:rename', ({ id, name }) => {
+      if (this.presetsManager.rename(id, name)) {
+        this._autoSave();
+        eventBus.emit('preset:changed');
+      }
+    });
+    eventBus.on('preset:delete', ({ id }) => {
+      if (this.presetsManager.remove(id)) {
+        eventBus.emit('toast', { message: '🗑 プリセットを削除しました', type: 'default' });
+        this._autoSave();
+        eventBus.emit('preset:changed');
+      }
+    });
+    eventBus.on('preset:apply', ({ id }) => {
+      const resolved = this.presetsManager.resolve(id, this.inventory);
+      if (!resolved) return;
+      this.weaponSlots = [...resolved.weaponSlots];
+      this.equippedArmor = resolved.armor;
+      this.equippedAccessory = resolved.accessory;
+      eventBus.emit('equipment:changed', {
+        weaponSlots: this.weaponSlots,
+        armor: this.equippedArmor,
+        accessory: this.equippedAccessory,
+      });
+      if (resolved.missingCount > 0) {
+        eventBus.emit('toast', {
+          message: `⚠️ プリセット内の ${resolved.missingCount} 個のアイテムが見つかりません (空スロットで適用)`,
+          type: 'warning',
+        });
+      } else {
+        eventBus.emit('toast', { message: '🔄 プリセットを適用しました', type: 'success' });
+      }
+      this._autoSave();
     });
 
     // レベルアップ選択の橋渡し
@@ -272,6 +337,10 @@ class Game {
         if (saveData.lastSelectedAreaId) {
           this.lastSelectedAreaId = saveData.lastSelectedAreaId;
         }
+        // 装備プリセット復元
+        if (saveData.equipmentPresets) {
+          this.presetsManager = new EquipmentPresetsManager(saveData.equipmentPresets);
+        }
         // 実績復元
         this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
       }
@@ -306,6 +375,7 @@ class Game {
     this.hubManager.equippedAccessory = this.equippedAccessory;
     this.hubManager.savedConsumableUids = [...this.savedConsumableUids];
     this.hubManager.lastSelectedAreaId = this.lastSelectedAreaId;
+    this.hubManager.presetsManager = this.presetsManager;
     this.hubManager.render();
 
     // 自動セーブ
@@ -533,6 +603,7 @@ class Game {
       lastSelectedAreaId: this.lastSelectedAreaId,
       stats: this.stats,
       achievements: this.achievements ? this.achievements.getUnlockedIds() : [],
+      equipmentPresets: this.presetsManager.toJSON(),
     });
   }
 }
