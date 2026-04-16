@@ -331,8 +331,9 @@ class Game {
 
     if (mode === 'continue') {
       const data = this.saveSystem.load();
-      if (data) {
-        const saveData = this.saveSystem.applySaveData(data);
+      // applySaveData はバージョン不一致/破損時に false を返す。その場合は新規ゲーム扱いにフォールバックする
+      const saveData = data ? this.saveSystem.applySaveData(data) : null;
+      if (saveData) {
         this.stats = saveData.stats || this.stats;
         // 装備復元
         if (saveData.restoredEquipment) {
@@ -356,6 +357,16 @@ class Game {
         }
         // 実績復元
         this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
+      } else {
+        // セーブ破損/非対応バージョン: 実績だけでも空で初期化してクラッシュ回避
+        if (data) {
+          console.warn('[Game] Save data is invalid or from an unsupported version. Starting fresh.');
+          eventBus.emit('toast', {
+            message: '⚠️ セーブデータを読み込めませんでした。新規データで開始します。',
+            type: 'warning',
+          });
+        }
+        this.achievements = new AchievementSystem(this.stats, []);
       }
     } else {
       // ニューゲーム: 初期装備（石斧）を武器スロット1に自動装備

@@ -83,7 +83,12 @@ export class LevelUpSystem {
     }
 
     const def = PassiveDefs.find(p => p.id === passiveId);
-    if (!def) return;
+    if (!def) {
+      // 未知のpassiveIdが来た場合でも、pendingLevelUp を解放して以降のレベルアップを詰まらせない
+      this.pendingLevelUp = false;
+      console.warn('[LevelUpSystem] Unknown passiveId:', passiveId);
+      return;
+    }
 
     this.passiveStacks[passiveId] = (this.passiveStacks[passiveId] || 0) + 1;
     this.player.addPassive(def);

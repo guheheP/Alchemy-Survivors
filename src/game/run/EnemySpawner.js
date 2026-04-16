@@ -28,6 +28,9 @@ export class EnemySpawner {
     this.spawnTimer = 0;
     this.elapsed = 0;
     this.modifiers = modifiers; // ハードモード修飾子
+    // update 中の反復用スナップショットバッファ（GC削減のため再利用）
+    // enemy.update 中の DoT/属性コンボで他の敵が連鎖 release されても安全に走査するために使う
+    this._iterBuffer = [];
   }
 
   /** 現在のウェーブ設定を取得 */
@@ -75,9 +78,17 @@ export class EnemySpawner {
     // 遠方敵は AI/物理を走らせずリサイクル（update 前に判定することで画面外敵のCPUを節約）
     const despawnDist = Math.max(cameraWidth, cameraHeight) * 1.5;
     const despawnDistSq = despawnDist * despawnDist;
-    const list = this.pool.activeList;
-    for (let i = list.length - 1; i >= 0; i--) {
-      const enemy = list[i];
+    // 反復中に pool が変異（DoT連鎖死亡による swap-pop 等）してもインデックスが崩れないよう、
+    // 開始時点のアクティブ一覧をスナップショットして走査する。
+    const activeList = this.pool.activeList;
+    const snapshot = this._iterBuffer;
+    snapshot.length = 0;
+    for (let k = 0; k < activeList.length; k++) snapshot.push(activeList[k]);
+
+    for (let i = 0; i < snapshot.length; i++) {
+      const enemy = snapshot[i];
+      // 別の敵の update で連鎖 release された場合はスキップ（プール返却済み）
+      if (!enemy.active) continue;
       const edx = enemy.x - playerX;
       const edy = enemy.y - playerY;
       if (edx * edx + edy * edy > despawnDistSq) {
@@ -86,6 +97,7 @@ export class EnemySpawner {
       }
       enemy.update(dt, playerX, playerY);
     }
+    snapshot.length = 0; // 参照を解放（GC ヒント）
   }
 
   _spawn(playerX, playerY, camW, camH) {

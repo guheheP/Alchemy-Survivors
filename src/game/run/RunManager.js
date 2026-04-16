@@ -132,8 +132,11 @@ export class RunManager {
             if (enemy.takeDamage(damage)) eventBus.emit('enemy:killed', { enemy, x: enemy.x, y: enemy.y, isBoss: enemy.isBoss, color: enemy.color });
           }
         };
-        for (const enemy of this.spawner.enemies) hit(enemy);
-        for (const boss of this.bossSystem.getActiveBosses()) hit(boss);
+        // takeDamage の連鎖で pool が変異するため、スナップショットを取ってから走査する
+        const enemies = this.spawner.enemies.slice();
+        for (const enemy of enemies) hit(enemy);
+        const bosses = this.bossSystem.getActiveBosses();
+        for (const boss of bosses) hit(boss);
       }),
       eventBus.on('player:damaged', ({ damage, sourceX, sourceY }) => {
         eventBus.emit('damageNumber:playerHit', { x: this.player.x, y: this.player.y, damage });
@@ -241,8 +244,11 @@ export class RunManager {
           const dy = enemy.y - y;
           if (dx * dx + dy * dy < r2) enemy.applyDebuff(amount || 0, duration || 5);
         };
-        for (const enemy of this.spawner.enemies) apply(enemy);
-        for (const boss of this.bossSystem.getActiveBosses()) apply(boss);
+        // applyDebuff だけでは pool は変異しないが、今後の拡張 (状態異常付与→combo→死亡) に備えて snapshot
+        const enemies = this.spawner.enemies.slice();
+        for (const enemy of enemies) apply(enemy);
+        const bosses = this.bossSystem.getActiveBosses();
+        for (const boss of bosses) apply(boss);
       }),
       // 毒の感染拡散
       eventBus.on('statusEffect:spread', ({ x, y, radius, source, type, params }) => {
@@ -253,8 +259,12 @@ export class RunManager {
           const dy = enemy.y - y;
           if (dx * dx + dy * dy < r2) enemy.applyStatusEffect(type, params);
         };
-        for (const enemy of this.spawner.enemies) applySpread(enemy);
-        for (const boss of this.bossSystem.getActiveBosses()) applySpread(boss);
+        // applyStatusEffect → _checkCombo → combo:triggered → ComboSystem が takeDamage を走らせて
+        // 敵が死ぬと spawner の pool が swap-pop で変異するため、開始時スナップショットで走査する
+        const enemies = this.spawner.enemies.slice();
+        for (const enemy of enemies) applySpread(enemy);
+        const bosses = this.bossSystem.getActiveBosses();
+        for (const boss of bosses) applySpread(boss);
       }),
       // 風属性の状態異常拡散
       eventBus.on('statusEffect:windSpread', ({ x, y, radius, source, effects }) => {
@@ -269,10 +279,13 @@ export class RunManager {
             }
           }
         };
-        for (const enemy of this.spawner.enemies) applyWind(enemy);
-        for (const boss of this.bossSystem.getActiveBosses()) applyWind(boss);
+        const enemies = this.spawner.enemies.slice();
+        for (const enemy of enemies) applyWind(enemy);
+        const bosses = this.bossSystem.getActiveBosses();
+        for (const boss of bosses) applyWind(boss);
       }),
       eventBus.on('shield:retaliate', ({ x, y, range, knockback, damage }) => {
+        // takeDamage で敵が死ぬと pool が変異するので、スナップショットで走査する
         const allEnemies = [...this.spawner.enemies, ...this.bossSystem.getActiveBosses()];
         for (const enemy of allEnemies) {
           if (!enemy.active) continue;
@@ -497,7 +510,6 @@ export class RunManager {
 
     // 生存ボーナス
     const bonusCount = Math.floor(this.elapsed / GameConfig.gold.survivalInterval);
-    const expectedGoldFromSurvival = bonusCount * GameConfig.gold.survivalBonus;
     if (!this._lastSurvivalBonusCount) this._lastSurvivalBonusCount = 0;
     if (bonusCount > this._lastSurvivalBonusCount) {
       this.goldEarned += GameConfig.gold.survivalBonus;

@@ -205,7 +205,7 @@ export class InventorySystem {
   /** 一括売却 — 売却可能なUIDリストを受け取り、合計goldを返す */
   sellItems(uids, priceFor) {
     let total = 0;
-    let sold = 0;
+    const removedUids = [];
     this.beginBatch();
     try {
       for (const uid of uids) {
@@ -215,15 +215,17 @@ export class InventorySystem {
         const removed = this.removeItem(uid, false);
         if (removed) {
           total += price;
-          sold++;
+          removedUids.push(uid);
         }
       }
     } finally {
       this.endBatch();
     }
+    const sold = removedUids.length;
     if (sold > 0) {
       this.addGold(total);
-      eventBus.emit('inventory:uidsRemoved', { uids });
+      // 実際に削除された UID だけを通知する (ロックで残ったアイテムの装備欄/プリセットを誤って外さないように)
+      eventBus.emit('inventory:uidsRemoved', { uids: removedUids });
       eventBus.emit('inventory:changed');
     }
     return { total, sold };
