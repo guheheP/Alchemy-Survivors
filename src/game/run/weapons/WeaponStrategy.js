@@ -27,6 +27,8 @@ export class WeaponStrategy {
     this.baseCooldown = typeConfig.baseCooldown;
     this.arc = typeConfig.arc;
     this.weaponName = bp.name;
+    // 武器固有のベースクリ率（Blueprintで定義、dagger/特定武器のみ）
+    this.baseCritChance = bp.baseCritChance || 0;
 
     // スキルシステム
     this.skillTier = this._calcSkillTier(bp.baseValue);
@@ -49,10 +51,12 @@ export class WeaponStrategy {
 
   get damage() {
     let dmg = this.baseDamage * (1 + this.player.passives.damageMultiplier) + this.player.baseDamage;
-    // クリティカル判定
+    // クリティカル判定 — プレイヤーのクリ率 + 武器ベースクリ率（上限100%）
     this._lastCrit = false;
-    if (this.player.passives.critChance > 0 && Math.random() < this.player.passives.critChance) {
-      dmg *= 2;
+    const totalCrit = Math.min(1, this.player.passives.critChance + this.baseCritChance);
+    if (totalCrit > 0 && Math.random() < totalCrit) {
+      // critDamage は加算式（初期1.0→×2.0, +0.5で×2.5）
+      dmg *= (1 + this.player.passives.critDamage);
       this._lastCrit = true;
     }
     return dmg;

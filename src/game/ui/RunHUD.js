@@ -502,16 +502,17 @@ export class RunHUD {
 
     if (this._statsExpanded) {
       const crit = (p.critChance * 100).toFixed(0);
+      const critDmg = ((1 + p.critDamage) * 100).toFixed(0);
       const dodge = (p.dodge * 100).toFixed(0);
       const regen = p.regenPerSec.toFixed(1);
       const range = (p.rangeMultiplier * 100).toFixed(0);
       const cd = (p.cooldownReduction * 100).toFixed(0);
       const drop = (p.dropRateBonus * 100).toFixed(0);
       const magnet = (p.magnetMultiplier * 100).toFixed(0);
-      const detailKey = `${crit}|${dodge}|${regen}|${range}|${cd}|${drop}|${magnet}`;
+      const detailKey = `${crit}|${critDmg}|${dodge}|${regen}|${range}|${cd}|${drop}|${magnet}`;
       if (detailKey !== this._lastStatsDetailKey) {
         this._statsDetail.innerHTML =
-          `<div>CRIT: ${crit}%</div>` +
+          `<div>CRIT: ${crit}% (x${(1 + p.critDamage).toFixed(1)})</div>` +
           `<div>DODGE: ${dodge}%</div>` +
           `<div>REGEN: ${regen}/s</div>` +
           `<div>RANGE: +${range}%</div>` +

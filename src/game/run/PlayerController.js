@@ -64,6 +64,7 @@ export class PlayerController extends Entity {
       extraProjectile: 0,
       expMultiplier: 0,
       critChance: 0,
+      critDamage: 1.0, // クリ時の追加倍率 (1.0 = ×2.0)
     };
 
     // 防具・アクセサリ
@@ -249,6 +250,8 @@ export class PlayerController extends Entity {
         if (fx.runDropRate) this.passives.dropRateBonus += fx.runDropRate;
         if (fx.runAttackSpeed) this.passives.cooldownReduction += fx.runAttackSpeed;
         if (fx.runExpBonus) this.passives.expMultiplier += fx.runExpBonus;
+        if (fx.runCritChance) this.passives.critChance += fx.runCritChance;
+        if (fx.runCritDamage) this.passives.critDamage += fx.runCritDamage;
       }
     }
   }
