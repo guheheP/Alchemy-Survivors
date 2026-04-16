@@ -1387,8 +1387,6 @@ export class WeaponStrategy {
     ctx.rotate(Math.PI / 4);
     ctx.globalAlpha = Math.min(1, fx.timer / 0.15);
     ctx.fillStyle = fx.color;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 10;
     ctx.fillRect(-2, -14, 4, 28);
     ctx.restore();
   }
@@ -1402,8 +1400,6 @@ export class WeaponStrategy {
     ctx.save();
     ctx.globalAlpha = (1 - progress) * 0.95;
     ctx.strokeStyle = '#fff';
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 12;
     ctx.lineWidth = 3;
     // ジグザグ
     const segs = 6;
@@ -1428,8 +1424,6 @@ export class WeaponStrategy {
     ctx.save();
     ctx.globalAlpha = progress < 0.9 ? 1 : (1 - progress) * 10;
     ctx.strokeStyle = fx.color;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 16;
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(sx, sy - fallDist - 40);
@@ -1495,8 +1489,6 @@ export class WeaponStrategy {
     const orbs = 6;
     ctx.save();
     ctx.globalAlpha = pct * 0.85;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 10;
     for (let i = 0; i < orbs; i++) {
       const a = rotAngle + (Math.PI * 2 / orbs) * i;
       const ox = sx + Math.cos(a) * fx.radius;
@@ -1526,8 +1518,6 @@ export class WeaponStrategy {
     ctx.translate(sx, sy);
     ctx.rotate(rot);
     ctx.globalAlpha = (1 - pct) * 0.9;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 12;
     for (let i = 0; i < fx.bladeCount; i++) {
       const a = (Math.PI * 2 / fx.bladeCount) * i;
       ctx.save();
@@ -1576,8 +1566,6 @@ export class WeaponStrategy {
     ctx.globalAlpha = (1 - progress) * 0.85;
     ctx.strokeStyle = fx.color;
     ctx.lineWidth = fx.width || 3;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 14;
     ctx.beginPath();
     ctx.arc(sx, sy, r, 0, Math.PI * 2);
     ctx.stroke();
@@ -1600,8 +1588,6 @@ export class WeaponStrategy {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = (1 - progress) * 0.95;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 16;
     // 十字の光
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 3;
@@ -1651,8 +1637,6 @@ export class WeaponStrategy {
     // 中央のコア光線
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 4;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 12;
     ctx.globalAlpha = (1 - progress) * 0.95;
     ctx.beginPath();
     ctx.moveTo(sx, sy - h);
@@ -1673,8 +1657,6 @@ export class WeaponStrategy {
     ctx.globalAlpha = (1 - progress) * 0.9;
     ctx.strokeStyle = fx.color;
     ctx.lineWidth = 3;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 10;
     for (let i = 0; i < count; i++) {
       const a = (Math.PI * 2 / count) * i + progress * 0.3;
       const x1 = sx + Math.cos(a) * 12;
@@ -1702,8 +1684,6 @@ export class WeaponStrategy {
     ctx.globalAlpha = (1 - progress) * 0.9;
     ctx.strokeStyle = fx.color;
     ctx.lineWidth = 2.5;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 14;
 
     // 外周2重リング
     ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
@@ -1787,8 +1767,6 @@ export class WeaponStrategy {
     ctx.globalAlpha = (1 - progress) * 0.85;
     ctx.strokeStyle = fx.color;
     ctx.lineWidth = 3;
-    ctx.shadowColor = fx.color;
-    ctx.shadowBlur = 14;
 
     // 多角形本体
     ctx.beginPath();
