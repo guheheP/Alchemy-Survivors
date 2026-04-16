@@ -39,6 +39,7 @@ class Game {
     this.equippedArmor = null;
     this.equippedAccessory = null;
     this.savedConsumableUids = [];
+    this.lastSelectedAreaId = null;
     this.stats = {
       totalRuns: 0,
       totalKills: 0,
@@ -74,6 +75,7 @@ class Game {
     eventBus.on('result:continue', (data) => this._returnToHub(data));
     eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => { this.weaponSlots = [...weaponSlots]; this.equippedArmor = armor; this.equippedAccessory = accessory; });
     eventBus.on('consumables:selected', ({ uids }) => { this.savedConsumableUids = [...(uids || [])]; });
+    eventBus.on('area:selected', ({ areaId }) => { this.lastSelectedAreaId = areaId || null; });
     eventBus.on('save:request', () => { try { this._autoSave(); } catch (e) { /* ignore */ } });
 
     // インベントリからUIDが消えたら装備欄もクリア（クラフト・売却・消費で発生）
@@ -261,6 +263,10 @@ class Game {
             uid => this.inventory.getItemByUid(uid)
           );
         }
+        // 前回選択したステージを復元
+        if (saveData.lastSelectedAreaId) {
+          this.lastSelectedAreaId = saveData.lastSelectedAreaId;
+        }
         // 実績復元
         this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
       }
@@ -294,6 +300,7 @@ class Game {
     this.hubManager.equippedArmor = this.equippedArmor;
     this.hubManager.equippedAccessory = this.equippedAccessory;
     this.hubManager.savedConsumableUids = [...this.savedConsumableUids];
+    this.hubManager.lastSelectedAreaId = this.lastSelectedAreaId;
     this.hubManager.render();
 
     // 自動セーブ
@@ -312,6 +319,8 @@ class Game {
 
   _startRun({ weaponSlots, areaId, consumables, hardMode }) {
     this.scene = 'run';
+    // 出撃したステージを記憶（次回の出撃準備画面で初期選択）
+    if (areaId) this.lastSelectedAreaId = areaId;
     this._clearUI();
 
     // Canvas表示
@@ -508,6 +517,7 @@ class Game {
       equippedArmorUid: this.equippedArmor?.uid || null,
       equippedAccessoryUid: this.equippedAccessory?.uid || null,
       savedConsumableUids: [...this.savedConsumableUids],
+      lastSelectedAreaId: this.lastSelectedAreaId,
       stats: this.stats,
       achievements: this.achievements ? this.achievements.getUnlockedIds() : [],
     });

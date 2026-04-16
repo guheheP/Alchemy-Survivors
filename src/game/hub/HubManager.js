@@ -32,6 +32,8 @@ export class HubManager {
     this.equippedAccessory = null;
     // 消耗品スロット（UIDで保持、Gameから注入）
     this.savedConsumableUids = [];
+    // 前回選択したステージ（Gameから注入）
+    this.lastSelectedAreaId = null;
 
     this._unsubEquip = eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => {
       this.weaponSlots = [...weaponSlots];
@@ -138,7 +140,7 @@ export class HubManager {
         break;
       }
       case 'prep': {
-        const screen = new RunPrepScreen(content, () => this.weaponSlots, () => this.equippedArmor, () => this.equippedAccessory, this.inventory, this.savedConsumableUids);
+        const screen = new RunPrepScreen(content, () => this.weaponSlots, () => this.equippedArmor, () => this.equippedAccessory, this.inventory, this.savedConsumableUids, this.lastSelectedAreaId);
         screen.render();
         this.screens.prep = screen;
         break;
