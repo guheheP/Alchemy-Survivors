@@ -116,6 +116,8 @@ export class BossEntity extends Enemy {
   }
 
   takeDamage(amount, isCrit = false) {
+    // 脆弱（水属性）: 被ダメージを増幅してから防御計算
+    amount = amount * this._incomingDamageMult();
     const effectiveDmg = Math.max(1, amount - this.defense * 0.3);
     this.hp -= effectiveDmg;
     this.hitFlashTimer = 0.1;

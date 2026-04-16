@@ -39,6 +39,8 @@ export class Enemy extends Entity {
     this._poisonAccum = 0;
     this._freezeTimer = 0;
     this._shockTimer = 0;
+    this._vulnerableTimer = 0;
+    this._vulnerableMult = 0;
     // 挙動パターン
     this.behavior = 'chase';
     this.armorHits = 0;
@@ -72,6 +74,8 @@ export class Enemy extends Entity {
     this._poisonAccum = 0;
     this._freezeTimer = 0;
     this._shockTimer = 0;
+    this._vulnerableTimer = 0;
+    this._vulnerableMult = 0;
     this.behavior = 'chase';
     this.armorHits = 0;
     this._behaviorTimer = 0;
@@ -276,6 +280,8 @@ export class Enemy extends Entity {
       eventBus.emit('enemy:blocked', { x: this.x, y: this.y, remaining: this.armorHits });
       return false;
     }
+    // 脆弱（水属性）: 被ダメージを増幅
+    amount = amount * this._incomingDamageMult();
     this.hp -= amount;
     this.hitFlashTimer = 0.1;
     if (isCrit) this.critFlashTimer = 0.18;
@@ -283,10 +289,15 @@ export class Enemy extends Entity {
     return this.hp <= 0;
   }
 
+  /** 被ダメージ乗算係数（脆弱状態時に1+_vulnerableMult、なければ1.0） */
+  _incomingDamageMult() {
+    return this._vulnerableTimer > 0 ? (1 + this._vulnerableMult) : 1;
+  }
+
   /**
    * 状態異常を適用（refresh-if-stronger方式）
-   * @param {'burn'|'poison'|'freeze'|'shock'} type
-   * @param {{ duration: number, dps?: number, speedMod?: number }} params
+   * @param {'burn'|'poison'|'freeze'|'shock'|'vulnerable'} type
+   * @param {{ duration: number, dps?: number, speedMod?: number, damageMultiplier?: number }} params
    */
   applyStatusEffect(type, params) {
     switch (type) {
@@ -305,6 +316,12 @@ export class Enemy extends Entity {
       case 'shock':
         this._shockTimer = Math.max(this._shockTimer, params.duration);
         break;
+      case 'vulnerable':
+        if (params.duration > this._vulnerableTimer) this._vulnerableTimer = params.duration;
+        if ((params.damageMultiplier || 0) > this._vulnerableMult) {
+          this._vulnerableMult = params.damageMultiplier;
+        }
+        break;
     }
   }
 
@@ -316,7 +333,7 @@ export class Enemy extends Entity {
       this._burnAccum += dt;
       if (this._burnAccum >= 0.5) {
         this._burnAccum -= 0.5;
-        const dmg = this._burnDps * 0.5;
+        const dmg = this._burnDps * 0.5 * this._incomingDamageMult();
         if (dmg > 0 && this.active) {
           this.hp -= dmg;
           eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: dmg, isCrit: false, dotColor: '#f62' });
@@ -334,7 +351,7 @@ export class Enemy extends Entity {
       this._poisonAccum += dt;
       if (this._poisonAccum >= 0.5) {
         this._poisonAccum -= 0.5;
-        const dmg = this._poisonDps * 0.5;
+        const dmg = this._poisonDps * 0.5 * this._incomingDamageMult();
         if (dmg > 0 && this.active) {
           this.hp -= dmg;
           eventBus.emit('enemy:damaged', { x: this.x, y: this.y, damage: dmg, isCrit: false, dotColor: '#6a4' });
@@ -361,6 +378,12 @@ export class Enemy extends Entity {
     // 感電スタン
     if (this._shockTimer > 0) {
       this._shockTimer -= dt;
+    }
+
+    // 脆弱（被ダメージ増加）
+    if (this._vulnerableTimer > 0) {
+      this._vulnerableTimer -= dt;
+      if (this._vulnerableTimer <= 0) this._vulnerableMult = 0;
     }
   }
 

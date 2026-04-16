@@ -125,86 +125,86 @@ export const EnemyDefs = {
 
   // --- 深海 ---
   sea_serpent: {
-    id: 'sea_serpent', name: 'シーサーペント', hp: 175, speed: 55, damage: 21, expValue: 4, radius: 14, color: '#28a',
+    id: 'sea_serpent', name: 'シーサーペント', hp: 350, speed: 55, damage: 21, expValue: 4, radius: 14, color: '#28a',
     preset: '/presets/Bosses/Kraken.json',
   },
   jellyfish: {
-    id: 'jellyfish', name: '電気クラゲ', hp: 70, speed: 35, damage: 15, expValue: 3, radius: 10, color: '#6cf',
+    id: 'jellyfish', name: '電気クラゲ', hp: 140, speed: 35, damage: 15, expValue: 3, radius: 10, color: '#6cf',
     behavior: 'erratic',
     preset: '/presets/RPG_Characters/Slime.json',
   },
   deep_fish: {
-    id: 'deep_fish', name: '深海魚', hp: 122, speed: 75, damage: 15, expValue: 3, radius: 10, color: '#148',
+    id: 'deep_fish', name: '深海魚', hp: 244, speed: 75, damage: 15, expValue: 3, radius: 10, color: '#148',
     behavior: 'glass_cannon',
     preset: '/presets/RPG_Characters/Bird.json',
   },
   coral_guardian: {
-    id: 'coral_guardian', name: '珊瑚の番人', hp: 315, speed: 20, damage: 24, expValue: 5, radius: 20, color: '#f8a',
+    id: 'coral_guardian', name: '珊瑚の番人', hp: 630, speed: 20, damage: 24, expValue: 5, radius: 20, color: '#f8a',
     behavior: 'tank', armorHits: 3,
     preset: '/presets/Bosses/Treant.json',
   },
 
   // --- 竜の巣 ---
   drake: {
-    id: 'drake', name: 'ドレイク', hp: 220, speed: 68, damage: 23, expValue: 6, radius: 14, color: '#a44',
+    id: 'drake', name: 'ドレイク', hp: 550, speed: 68, damage: 23, expValue: 6, radius: 14, color: '#a44',
     preset: '/presets/Bosses/Dragon.json',
   },
   wyvern: {
-    id: 'wyvern', name: 'ワイバーン', hp: 140, speed: 88, damage: 17, expValue: 5, radius: 12, color: '#866',
+    id: 'wyvern', name: 'ワイバーン', hp: 350, speed: 88, damage: 17, expValue: 5, radius: 12, color: '#866',
     behavior: 'glass_cannon',
     preset: '/presets/RPG_Characters/Bat.json',
   },
   dragon_hatchling: {
-    id: 'dragon_hatchling', name: '幼竜', hp: 360, speed: 28, damage: 27, expValue: 8, radius: 20, color: '#c62',
+    id: 'dragon_hatchling', name: '幼竜', hp: 900, speed: 28, damage: 27, expValue: 8, radius: 20, color: '#c62',
     behavior: 'tank', armorHits: 2,
     preset: '/presets/Bosses/Dragon.json',
   },
   fire_wisp: {
-    id: 'fire_wisp', name: '竜火ウィスプ', hp: 56, speed: 105, damage: 9, expValue: 4, radius: 6, color: '#fa4',
+    id: 'fire_wisp', name: '竜火ウィスプ', hp: 140, speed: 105, damage: 9, expValue: 4, radius: 6, color: '#fa4',
     behavior: 'erratic',
     preset: '/presets/RPG_Characters/Bird.json',
   },
 
   // --- 天空 ---
   sky_knight: {
-    id: 'sky_knight', name: '天空騎士', hp: 293, speed: 58, damage: 24, expValue: 7, radius: 14, color: '#aaf',
+    id: 'sky_knight', name: '天空騎士', hp: 879, speed: 58, damage: 24, expValue: 7, radius: 14, color: '#aaf',
     behavior: 'armored', armorHits: 3,
     preset: '/presets/RPG_Characters/Knight.json',
   },
   thunder_hawk: {
-    id: 'thunder_hawk', name: '雷鷹', hp: 126, speed: 105, damage: 17, expValue: 5, radius: 10, color: '#ff6',
+    id: 'thunder_hawk', name: '雷鷹', hp: 378, speed: 105, damage: 17, expValue: 5, radius: 10, color: '#ff6',
     behavior: 'glass_cannon',
     preset: '/presets/RPG_Characters/Bird.json',
   },
   cloud_golem: {
-    id: 'cloud_golem', name: '雲のゴーレム', hp: 450, speed: 18, damage: 30, expValue: 9, radius: 22, color: '#cce',
+    id: 'cloud_golem', name: '雲のゴーレム', hp: 1350, speed: 18, damage: 30, expValue: 9, radius: 22, color: '#cce',
     behavior: 'tank', armorHits: 4,
     preset: '/presets/Bosses/Golem.json',
   },
   wind_spirit: {
-    id: 'wind_spirit', name: '風の精霊', hp: 99, speed: 92, damage: 11, expValue: 4, radius: 8, color: '#afa',
+    id: 'wind_spirit', name: '風の精霊', hp: 297, speed: 92, damage: 11, expValue: 4, radius: 8, color: '#afa',
     behavior: 'erratic',
     preset: '/presets/RPG_Characters/Mage.json',
   },
 
   // --- 時の回廊 ---
   time_phantom: {
-    id: 'time_phantom', name: '時の亡霊', hp: 240, speed: 78, damage: 24, expValue: 7, radius: 12, color: '#a6f',
+    id: 'time_phantom', name: '時の亡霊', hp: 960, speed: 78, damage: 24, expValue: 7, radius: 12, color: '#a6f',
     behavior: 'erratic',
     preset: '/presets/RPG_Characters/Skeleton.json',
   },
   chrono_golem: {
-    id: 'chrono_golem', name: '時空ゴーレム', hp: 650, speed: 22, damage: 33, expValue: 10, radius: 24, color: '#86a',
+    id: 'chrono_golem', name: '時空ゴーレム', hp: 2600, speed: 22, damage: 33, expValue: 10, radius: 24, color: '#86a',
     behavior: 'tank', armorHits: 4,
     preset: '/presets/Bosses/Golem.json',
   },
   paradox_wisp: {
-    id: 'paradox_wisp', name: 'パラドクスウィスプ', hp: 90, speed: 115, damage: 14, expValue: 5, radius: 6, color: '#f6f',
+    id: 'paradox_wisp', name: 'パラドクスウィスプ', hp: 360, speed: 115, damage: 14, expValue: 5, radius: 6, color: '#f6f',
     behavior: 'erratic',
     preset: '/presets/RPG_Characters/Bird.json',
   },
   void_walker: {
-    id: 'void_walker', name: 'ヴォイドウォーカー', hp: 375, speed: 62, damage: 27, expValue: 8, radius: 16, color: '#426',
+    id: 'void_walker', name: 'ヴォイドウォーカー', hp: 1500, speed: 62, damage: 27, expValue: 8, radius: 16, color: '#426',
     behavior: 'dasher',
     preset: '/presets/RPG_Characters/Mage.json',
   },

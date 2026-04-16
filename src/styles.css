@@ -1761,6 +1761,7 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
 .element-poison    { background: rgba(102, 170, 68, 0.22); color: #7c5; border-color: #6a4; }
 .element-lightning { background: rgba(255, 238, 102, 0.18); color: #fe6; border-color: #fc4; }
 .element-wind      { background: rgba(170, 221, 255, 0.18); color: #adf; border-color: #9cf; }
+.element-water     { background: rgba(68, 170, 238, 0.20); color: #6bf; border-color: #6bf; }
 .wh-item-price { display: inline; font-size: 0.7rem; color: #fc4; }
 .wh-detail-price { color: #fc4; margin-left: 8px; }
 .wh-detail-actions { margin-left: auto; }
