@@ -1967,7 +1967,13 @@ export class WeaponStrategy {
     const procChance = Math.min(1, cfg.procChance + procBonus);
     if (!guaranteed && Math.random() >= procChance) return;
 
-    const params = { duration: cfg.duration * powerMult };
+    const params = {
+      duration: cfg.duration * powerMult,
+      // ComboSystem で武器攻撃力基準のダメージ計算に使うため、実ヒットダメージを同梱する。
+      // _ 接頭辞で既存 applyStatusEffect の switch (duration/dps/speedMod/damageMultiplier のみ参照) には読まれず、
+      // combo:triggered の hitParams に載せて ComboSystem._resolveDamageBase('hitDamage') で参照される。
+      _sourceHitDamage: Math.max(0, hitDamage),
+    };
     if (cfg.type === 'burn' || cfg.type === 'poison') {
       // 実ヒットダメージの割合を DoT dps とする。
       // refresh-if-stronger で弱い DoT は強い DoT に上書きされる。
@@ -1987,22 +1993,25 @@ export class WeaponStrategy {
     const effects = [];
     // 拡散強度 (基礎75%) に属性効果量ボーナスを乗算
     const spread = 0.75 * powerMult;
+    // 源の敵が最後に受けた武器ヒットダメージを拡散先にも持ち回す (コンボ基準に利用)
+    const carryDamage = Math.max(0, enemy._lastHitDamage || 0) * spread;
     if (enemy._burnTimer > 0) {
-      effects.push({ type: 'burn', params: { duration: enemy._burnTimer * spread, dps: enemy._burnDps * spread } });
+      effects.push({ type: 'burn', params: { duration: enemy._burnTimer * spread, dps: enemy._burnDps * spread, _sourceHitDamage: carryDamage } });
     }
     if (enemy._poisonTimer > 0) {
-      effects.push({ type: 'poison', params: { duration: enemy._poisonTimer * spread, dps: enemy._poisonDps * spread } });
+      effects.push({ type: 'poison', params: { duration: enemy._poisonTimer * spread, dps: enemy._poisonDps * spread, _sourceHitDamage: carryDamage } });
     }
     if (enemy._freezeTimer > 0) {
-      effects.push({ type: 'freeze', params: { duration: enemy._freezeTimer * spread, speedMod: -20 * powerMult } });
+      effects.push({ type: 'freeze', params: { duration: enemy._freezeTimer * spread, speedMod: -20 * powerMult, _sourceHitDamage: carryDamage } });
     }
     if (enemy._shockTimer > 0) {
-      effects.push({ type: 'shock', params: { duration: 0.2 * powerMult } });
+      effects.push({ type: 'shock', params: { duration: 0.2 * powerMult, _sourceHitDamage: carryDamage } });
     }
     if (enemy._vulnerableTimer > 0) {
       effects.push({ type: 'vulnerable', params: {
         duration: enemy._vulnerableTimer * spread,
         damageMultiplier: enemy._vulnerableMult * spread,
+        _sourceHitDamage: carryDamage,
       } });
     }
     if (effects.length > 0) {
