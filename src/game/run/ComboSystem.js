@@ -42,7 +42,7 @@ export class ComboSystem {
     // 効果適用
     const player = this.ctx.getPlayer?.();
     const powerMult = 1 + (player?.passives?.elementPowerBonus || 0);
-    this._applyEffect(combo, enemy, powerMult);
+    this._applyEffect(combo, enemy, powerMult, hitParams);
 
     // 状態異常消費
     if (combo.consume && combo.consume.length > 0) {
@@ -66,11 +66,11 @@ export class ComboSystem {
     });
   }
 
-  _applyEffect(combo, sourceEnemy, powerMult) {
+  _applyEffect(combo, sourceEnemy, powerMult, hitParams) {
     const eff = combo.effect;
     if (!eff) return;
     const allEnemies = this.ctx.getAllEnemies?.() || [];
-    const baseDamage = this._resolveDamageBase(eff, sourceEnemy);
+    const baseDamage = this._resolveDamageBase(eff, sourceEnemy, hitParams);
     const dmg = baseDamage * (eff.damageMult || 1) * powerMult;
 
     switch (eff.kind) {
@@ -160,12 +160,29 @@ export class ComboSystem {
     }
   }
 
-  /** ダメージ計算基準値を解決 */
-  _resolveDamageBase(eff, enemy) {
+  /**
+   * ダメージ計算基準値を解決。
+   *
+   * 'hitDamage' は「プレイヤーの武器攻撃力」を指す。優先度順に解決する:
+   *   1. hitParams._sourceHitDamage — 今回の status 付与で同梱された武器ダメージ
+   *   2. enemy._lastHitDamage       — 少し前の武器ヒットでキャッシュされた値
+   *   3. DoT DPS × 3                — 武器コンテキストが失われた経路 (DoT tick, 感染拡散)
+   *   4. 固定値 15                   — 安全フロア
+   *
+   * これにより、旧実装が参照していた `enemy.maxHp * 10%` (ボスで過剰スケール) を回避しつつ、
+   * 武器強化・特性による攻撃力向上がコンボ威力にも反映される。
+   */
+  _resolveDamageBase(eff, enemy, hitParams) {
     switch (eff.damageBase) {
-      case 'hitDamage':
-        // enemy.maxHp に対して妥当な相対値 (1%) をフォールバックに
-        return Math.max(10, (enemy.maxHp || 100) * 0.10);
+      case 'hitDamage': {
+        const fromParams = hitParams && typeof hitParams._sourceHitDamage === 'number'
+          ? hitParams._sourceHitDamage : 0;
+        if (fromParams > 0) return fromParams;
+        if (enemy && enemy._lastHitDamage > 0) return enemy._lastHitDamage;
+        const dot = Math.max(enemy?._burnDps || 0, enemy?._poisonDps || 0);
+        if (dot > 0) return dot * 3;
+        return 15;
+      }
       case 'burnDps':
         return (enemy._burnDps || 0) * 3; // 3秒分相当
       case 'poisonDps':

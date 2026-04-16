@@ -53,6 +53,9 @@ export class Enemy extends Entity {
     this._knockbackCount = 0;
     // 属性コンボのクールダウン (同一敵で連続発動を防ぐ)
     this._comboCdTimer = 0;
+    // 最後に受けた武器由来のヒットダメージ (ComboSystem が 'hitDamage' 基準で参照)。
+    // DoT tick や感染拡散では更新されないため、武器攻撃力ベースのコンボ威力を維持する用途。
+    this._lastHitDamage = 0;
   }
 
   reset() {
@@ -87,6 +90,8 @@ export class Enemy extends Entity {
     this._dashStateTimer = 0;
     this._knockbackCount = 0;
     this._comboCdTimer = 0;
+    // プール再利用時に前オーナーの値が残らないようクリア
+    this._lastHitDamage = 0;
   }
 
   /**
@@ -301,6 +306,10 @@ export class Enemy extends Entity {
    * @param {{ duration: number, dps?: number, speedMod?: number, damageMultiplier?: number }} params
    */
   applyStatusEffect(type, params) {
+    // 武器由来のヒットダメージをキャッシュする (ComboSystem が 'hitDamage' 基準で参照)
+    if (params && typeof params._sourceHitDamage === 'number' && params._sourceHitDamage > 0) {
+      this._lastHitDamage = params._sourceHitDamage;
+    }
     switch (type) {
       case 'burn':
         if (params.duration > this._burnTimer) this._burnTimer = params.duration;
