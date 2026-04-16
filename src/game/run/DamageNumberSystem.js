@@ -28,6 +28,10 @@ export class DamageNumberSystem {
       eventBus.on('damageNumber:heal', ({ x, y, value }) => {
         this._spawn(x, y, typeof value === 'string' ? value : `+${Math.floor(value)}`, '#4c4', false);
       }),
+      // 属性コンボ発動時の頭上ポップアップ
+      eventBus.on('combo:fired', ({ combo, x, y }) => {
+        this._spawn(x, y - 25, `${combo.icon} ${combo.displayName}`, combo.color || '#ff8', true);
+      }),
     ];
   }
 

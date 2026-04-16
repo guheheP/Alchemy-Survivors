@@ -83,6 +83,19 @@ class Game {
     eventBus.on('area:selected', ({ areaId }) => { this.lastSelectedAreaId = areaId || null; });
     eventBus.on('save:request', () => { try { this._autoSave(); } catch (e) { /* ignore */ } });
 
+    // 属性コンボ発動時: ラン中の初回のみトーストで教える
+    this._seenCombosThisRun = new Set();
+    eventBus.on('combo:fired', ({ combo }) => {
+      if (!combo || this._seenCombosThisRun.has(combo.id)) return;
+      this._seenCombosThisRun.add(combo.id);
+      eventBus.emit('toast', {
+        message: `${combo.icon} 属性コンボ「${combo.name}」発動!`,
+        type: 'success',
+      });
+    });
+    // ラン終了時にセット解放
+    eventBus.on('run:complete', () => { this._seenCombosThisRun = new Set(); });
+
     // インベントリからUIDが消えたら装備欄もクリア（クラフト・売却・消費で発生）
     eventBus.on('inventory:uidsRemoved', ({ uids }) => {
       const uidSet = new Set(uids);

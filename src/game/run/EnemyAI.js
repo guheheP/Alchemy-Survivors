@@ -51,6 +51,8 @@ export class Enemy extends Entity {
     // ノックバック管理: 回数に応じてKB距離が減衰 (max(0, 1 - n/7))
     // 7回目以降は完全無効。盾スタックの永久ロック対策とゲーム性のバランス。
     this._knockbackCount = 0;
+    // 属性コンボのクールダウン (同一敵で連続発動を防ぐ)
+    this._comboCdTimer = 0;
   }
 
   reset() {
@@ -84,6 +86,7 @@ export class Enemy extends Entity {
     this._dashDir = { x: 0, y: 0 };
     this._dashStateTimer = 0;
     this._knockbackCount = 0;
+    this._comboCdTimer = 0;
   }
 
   /**
@@ -321,10 +324,35 @@ export class Enemy extends Entity {
         }
         break;
     }
+    // 付与直後にコンボ検出 (ComboSystem が eventBus で受ける)
+    this._checkCombo(type, params);
+  }
+
+  /** 新規に type が付いたので、既に付いている他の状態異常と組み合わせたコンボを検出 */
+  _checkCombo(newType, params) {
+    if (this._comboCdTimer > 0) return;
+    // 現在アクティブな状態異常一覧 (自分自身を含む)
+    const active = [];
+    if (this._burnTimer > 0) active.push('burn');
+    if (this._poisonTimer > 0) active.push('poison');
+    if (this._freezeTimer > 0) active.push('freeze');
+    if (this._shockTimer > 0) active.push('shock');
+    if (this._vulnerableTimer > 0) active.push('vulnerable');
+    if (active.length < 2) return;
+
+    // new + other の組み合わせをチェック (複数組成立する可能性あり → 最初の1つだけ発動)
+    for (const other of active) {
+      if (other === newType) continue;
+      const key = [newType, other].sort().join('+');
+      eventBus.emit('combo:triggered', { enemy: this, comboKey: key, newType, otherType: other, hitParams: params });
+      break;
+    }
   }
 
   /** 状態異常のティック処理 */
   updateStatusEffects(dt) {
+    // コンボクールダウン減算
+    if (this._comboCdTimer > 0) this._comboCdTimer -= dt;
     // 燃焼 DoT (1ティック最低2ダメ保証)
     if (this._burnTimer > 0) {
       this._burnTimer -= dt;

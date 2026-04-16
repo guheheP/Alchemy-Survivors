@@ -152,12 +152,27 @@ const ELEMENT_BADGE_DEFS = {
   },
 };
 
+/** 各属性が参加するコンボ一覧 (ツールチップ拡張用) */
+const ELEMENT_COMBO_HINTS = {
+  fire:      '🔥+☣ 毒炎爆発 / 🔥+⚡ 爆発 / 🔥+❄ 蒸気',
+  ice:       '❄+⚡ 粉砕 / ❄+💧 凍結地帯 / ❄+🔥 蒸気 / ❄+☣ 凍結毒',
+  poison:    '☣+🔥 毒炎爆発 / ☣+⚡ 腐食感電 / ☣+❄ 凍結毒',
+  lightning: '⚡+❄ 粉砕 / ⚡+💧 感電爆 / ⚡+🔥 爆発 / ⚡+☣ 腐食感電',
+  water:     '💧+⚡ 感電爆 / 💧+❄ 凍結地帯',
+  wind:      '命中時、対象の状態異常を75%威力で周囲に拡散',
+  none:      '属性状態異常なし（+25%ダメ固定）',
+};
+
 /** 武器属性バッジHTMLを生成。element が未定義なら空文字を返す */
 export function createElementBadgeHTML(element, extra = '') {
   if (!element) return '';
   const def = ELEMENT_BADGE_DEFS[element];
   if (!def) return '';
-  return `<span class="element-badge element-${element} ${extra}" tabindex="0" role="button" aria-label="${def.label}属性: ${def.tooltip}" data-tooltip="${def.tooltip}" data-tooltip-title="${def.label}属性">${def.icon}${def.label}</span>`;
+  const comboHint = ELEMENT_COMBO_HINTS[element];
+  const fullTooltip = comboHint
+    ? `${def.tooltip}\n\n【コンボ】\n${comboHint}`
+    : def.tooltip;
+  return `<span class="element-badge element-${element} ${extra}" tabindex="0" role="button" aria-label="${def.label}属性: ${def.tooltip}" data-tooltip="${fullTooltip}" data-tooltip-title="${def.label}属性">${def.icon}${def.label}</span>`;
 }
 
 // アイテムの画像URL（将来のカスタム画像パス対応）

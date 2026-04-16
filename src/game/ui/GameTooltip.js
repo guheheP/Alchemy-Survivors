@@ -53,6 +53,8 @@ export class GameTooltip {
     }
     const bodyEl = document.createElement('div');
     bodyEl.className = 'game-tooltip-body';
+    // \n を <br> に変換 (textContent のまま改行を反映させるため style に white-space: pre-line も効く)
+    bodyEl.style.whiteSpace = 'pre-line';
     bodyEl.textContent = text;
     this.el.appendChild(bodyEl);
     this.el.classList.add('game-tooltip-visible');

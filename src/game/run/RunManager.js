@@ -21,6 +21,7 @@ import { GameFeelSettings } from '../core/GameFeelSettings.js';
 import { ItemBlueprints } from '../data/items.js';
 import { DifficultyModifiers } from '../data/hardmode.js';
 import { BossSystem } from './BossSystem.js';
+import { ComboSystem } from './ComboSystem.js';
 import { ConsumableSystem } from './ConsumableSystem.js';
 import { DamageNumberSystem } from './DamageNumberSystem.js';
 import { ParticleSystem } from './render/ParticleSystem.js';
@@ -73,6 +74,10 @@ export class RunManager {
     this.drops = new DropSystem(this.area.dropTable, traitPool, qMin, qMax, modifiers ? modifiers.dropRateMultiplier : 1);
     this.levelUp = new LevelUpSystem(this.player, this.weapon);
     this.bossSystem = new BossSystem(areaId, modifiers, difficulty);
+    this.comboSystem = new ComboSystem({
+      getAllEnemies: () => this._allEnemies,
+      getPlayer: () => this.player,
+    });
     this.consumables = consumables.length > 0 ? new ConsumableSystem(this.player, consumables) : null;
     this.damageNumbers = new DamageNumberSystem();
     this.materialCount = 0;
@@ -650,6 +655,7 @@ export class RunManager {
     this.drops.destroy();
     this.levelUp.destroy();
     this.bossSystem.destroy();
+    if (this.comboSystem) this.comboSystem.destroy();
     if (this.weapon && typeof this.weapon.destroy === 'function') this.weapon.destroy();
     if (this.consumables) this.consumables.destroy();
     this.damageNumbers.destroy();
