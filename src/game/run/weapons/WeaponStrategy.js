@@ -780,32 +780,74 @@ export class WeaponStrategy {
       }
     }
 
-    // Tier別の追加演出（上位武器ほど派手に、発動位置はスキルタイプ依存）
-    this._emitSkillFlourish(flourishX, flourishY, color, angle);
+    // Tier別の追加演出（上位武器ほど派手に、発動位置・パターンはスキルタイプ依存）
+    this._emitSkillFlourish(flourishX, flourishY, color, angle, def.type);
 
     eventBus.emit('skill:activated', { name: def.name, color, tier: this.skillTier });
   }
 
   /**
-   * スキルTierと武器種別に応じた追加演出
-   * 武器種別でシグネチャパターンが変わり、Tierで強度がスケールする
+   * スキルタイプに応じたシグネチャフラリッシュを描画
+   * 武器装備枠(equipType)ではなく def.type でディスパッチするため
+   * 「sword装備だが前方突きスキル」の dark_blade/dragon_slayer も正しく前方演出になる
    */
-  _emitSkillFlourish(px, py, color, angle) {
+  _emitSkillFlourish(px, py, color, angle, skillType) {
     const tier = this.skillTier;
     if (tier <= 1) return;
 
-    // --- 武器種別のシグネチャ演出 ---
-    switch (this.equipType) {
-      case 'sword':  this._flourishSword(px, py, color, tier); break;
-      case 'spear':  this._flourishSpear(px, py, color, angle, tier); break;
-      case 'bow':    this._flourishBow(px, py, color, tier); break;
-      case 'staff':  this._flourishStaff(px, py, color, tier); break;
-      case 'dagger': this._flourishDagger(px, py, color, tier); break;
-      case 'shield': this._flourishShield(px, py, color, tier); break;
-      default:       this._flourishDefault(px, py, color, tier);
+    // スキルタイプ別のシグネチャ演出
+    switch (skillType) {
+      // 前方突進/ビーム/扇状
+      case 'multi_thrust':
+      case 'multi_thrust_burn':
+      case 'multi_chain':
+      case 'piercing_shot':
+      case 'arrow_fan':
+        this._flourishForward(px, py, color, angle, tier);
+        break;
+      // 放射AoE (自身中心の爆発/旋回)
+      case 'shockwave':
+      case 'spin_blade':
+      case 'blade_storm':
+      case 'lightning_storm':
+      case 'freeze_zone':
+      case 'burn_zone':
+        this._flourishRadial(px, py, color, tier, skillType);
+        break;
+      // 結界/バリア
+      case 'barrier':
+      case 'barrier_heal':
+      case 'barrier_shockwave':
+      case 'freeze_barrier':
+        this._flourishBarrier(px, py, color, tier, skillType);
+        break;
+      // 群舞連撃
+      case 'flurry':
+        this._flourishFlurry(px, py, color, tier);
+        break;
+      // 矢の雨
+      case 'arrow_rain':
+        this._flourishArrowRain(px, py, color, tier);
+        break;
+      // 連鎖雷
+      case 'chain_lightning':
+        this._flourishChain(px, py, color, tier);
+        break;
+      // 画面全域
+      case 'blade_rain':
+      case 'world_break':
+        this._flourishWide(px, py, color, tier);
+        break;
+      // 遠隔着弾
+      case 'meteor':
+      case 'burn_zone_at':
+        this._flourishRemote(px, py, color, tier);
+        break;
+      default:
+        this._flourishDefault(px, py, color, tier);
     }
 
-    // --- 共通: T3以上で「伝説感」を出す光柱+シェイク ---
+    // --- 共通T3+: 光柱（空間演出の格上げ） ---
     if (tier >= 3) {
       this.effects.push({
         type: 'light_column', x: px, y: py,
@@ -814,7 +856,7 @@ export class WeaponStrategy {
       this._shake(6, 0.25);
     }
 
-    // --- 共通: T4で魔法陣+画面全体フラッシュ+大爆発 ---
+    // --- 共通T4: 魔法陣+画面フラッシュ+大爆発 ---
     if (tier >= 4) {
       this.effects.push({
         type: 'magic_circle', x: px, y: py,
@@ -827,148 +869,125 @@ export class WeaponStrategy {
     }
   }
 
-  /** 剣: 斬撃跡（X字の光スラッシュ） */
-  _flourishSword(px, py, color, tier) {
-    const slashCount = tier === 2 ? 2 : tier === 3 ? 3 : 5;
-    for (let i = 0; i < slashCount; i++) {
-      const a = (Math.PI / slashCount) * i + (i % 2 === 0 ? 0 : Math.PI / 4);
+  /** 前方突進: 前方への光ビーム+側方トレイル+先端衝撃リング */
+  _flourishForward(px, py, color, angle, tier) {
+    const reach = 220 + tier * 40;
+    // メインビーム (貫通するピアスビーム風)
+    this.effects.push({
+      type: 'pierce_beam', x: px, y: py,
+      angle, range: reach, width: 14 + tier * 3,
+      timer: 0.45, maxTimer: 0.45, color,
+    });
+    // 側方の風圧トレイル
+    const sideCount = tier === 2 ? 2 : tier === 3 ? 4 : 6;
+    for (let i = 0; i < sideCount; i++) {
+      const spread = ((i % 2 === 0) ? 1 : -1) * (0.2 + Math.floor(i / 2) * 0.18);
       this.effects.push({
         type: 'slash_trail', x: px, y: py,
-        angle: a, range: 180 + tier * 20,
-        timer: 0.35 + i * 0.05, maxTimer: 0.35 + i * 0.05,
-        color,
+        angle: angle + spread,
+        range: reach * 0.75,
+        timer: 0.3, maxTimer: 0.3, color,
       });
     }
+    // 先端の衝撃リング
+    const tipX = px + Math.cos(angle) * reach * 0.92;
+    const tipY = py + Math.sin(angle) * reach * 0.92;
     this.effects.push({
-      type: 'sparkle_burst', x: px, y: py,
-      range: 30 + tier * 10,
-      timer: 0.4, maxTimer: 0.4, color,
+      type: 'tier_ring', x: tipX, y: tipY,
+      range: 55 + tier * 10, width: 2.5 + tier * 0.8,
+      timer: 0.55, maxTimer: 0.55, color,
     });
+    // T4: 射線上の中間衝撃波
     if (tier >= 4) {
-      // 放射バースト
-      for (let i = 0; i < 8; i++) {
-        const a = (Math.PI * 2 / 8) * i;
+      for (let i = 1; i <= 3; i++) {
+        const t = i / 4;
+        const mx = px + Math.cos(angle) * reach * t;
+        const my = py + Math.sin(angle) * reach * t;
         this.effects.push({
-          type: 'slash_trail', x: px, y: py,
-          angle: a, range: 220,
-          timer: 0.5, maxTimer: 0.5, color: '#fff',
+          type: 'tier_ring', x: mx, y: my,
+          range: 40, width: 3,
+          timer: 0.35 + i * 0.05, maxTimer: 0.35 + i * 0.05, color: '#fff',
         });
       }
     }
-  }
-
-  /** 槍: 貫通光閃（前方・側方への長い光） */
-  _flourishSpear(px, py, color, angle, tier) {
-    const lineCount = tier === 2 ? 1 : tier === 3 ? 3 : 5;
-    for (let i = 0; i < lineCount; i++) {
-      const offset = lineCount > 1 ? (i - (lineCount - 1) / 2) * (tier === 4 ? 0.9 : 0.5) : 0;
-      const a = angle + offset;
-      this.effects.push({
-        type: 'thrust', x: px, y: py,
-        angle: a, range: 250 + tier * 30,
-        width: 18 + tier * 4,
-        timer: 0.4, maxTimer: 0.4, color,
-      });
-      // 先端の衝撃リング
-      const tipX = px + Math.cos(a) * (220 + tier * 30);
-      const tipY = py + Math.sin(a) * (220 + tier * 30);
-      this.effects.push({
-        type: 'tier_ring', x: tipX, y: tipY,
-        range: 40 + tier * 8, width: 2 + tier,
-        timer: 0.5, maxTimer: 0.5, color,
-      });
-    }
+    // 発動点の閃光
     this.effects.push({
       type: 'sparkle_burst', x: px, y: py,
-      range: 24 + tier * 6,
+      range: 22 + tier * 6,
       timer: 0.3, maxTimer: 0.3, color,
     });
   }
 
-  /** 弓: 空から降り注ぐ光の矢雨 */
-  _flourishBow(px, py, color, tier) {
-    const arrowCount = tier === 2 ? 4 : tier === 3 ? 8 : 14;
-    const radius = 130 + tier * 40;
-    for (let i = 0; i < arrowCount; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const r = Math.random() * radius;
-      const tx = px + Math.cos(a) * r;
-      const ty = py + Math.sin(a) * r;
-      this.effects.push({
-        type: 'arrow_drop',
-        x: tx, y: ty - 180, tx, ty,
-        timer: 0.25 + Math.random() * 0.4,
-        maxTimer: 0.6, color,
-      });
-    }
-    // 中央の着弾波（T4のみ）
-    if (tier >= 4) {
+  /** 放射AoE: 多重拡大リング+中心閃光+回転刃(旋回系のみ) */
+  _flourishRadial(px, py, color, tier, skillType) {
+    const ringCount = Math.min(tier, 3);
+    for (let i = 0; i < ringCount; i++) {
       this.effects.push({
         type: 'tier_ring', x: px, y: py,
-        range: 200, width: 5,
-        timer: 0.7, maxTimer: 0.7, color: '#fff',
+        range: 100 + i * 80 + tier * 15,
+        timer: 0.6 + i * 0.12, maxTimer: 0.6 + i * 0.12,
+        color, width: 3 + tier * 0.8,
       });
     }
+    // 中心閃光
     this.effects.push({
-      type: 'tier_ring', x: px, y: py,
-      range: radius, width: 2,
-      timer: 0.8, maxTimer: 0.8, color,
+      type: 'sparkle_burst', x: px, y: py,
+      range: 32 + tier * 10,
+      timer: 0.4, maxTimer: 0.4, color,
     });
-  }
-
-  /** 杖: 神秘的なオーブの渦 */
-  _flourishStaff(px, py, color, tier) {
-    const orbCount = tier === 2 ? 4 : tier === 3 ? 6 : 8;
-    const duration = 0.7;
-    for (let i = 0; i < orbCount; i++) {
-      const a = (Math.PI * 2 / orbCount) * i;
-      const dist = 70 + tier * 20;
-      const ox = px + Math.cos(a) * dist;
-      const oy = py + Math.sin(a) * dist;
+    // 旋回系なら追加の回転刃 (spin_blade, blade_storm)
+    if (skillType === 'spin_blade' || skillType === 'blade_storm') {
       this.effects.push({
-        type: 'orb', x: ox, y: oy,
-        timer: duration, maxTimer: duration, color,
+        type: 'spin_blades', x: px, y: py,
+        bladeCount: 4 + tier * 2, range: 90 + tier * 25,
+        timer: 0.5 + tier * 0.1, maxTimer: 0.5 + tier * 0.1,
+        color, follow: true, spins: tier,
       });
-      // オーブ間を繋ぐ光線
-      if (i > 0 && tier >= 3) {
-        const prev = i - 1;
-        const pa = (Math.PI * 2 / orbCount) * prev;
-        const px2 = px + Math.cos(pa) * dist;
-        const py2 = py + Math.sin(pa) * dist;
-        const lineAngle = Math.atan2(oy - py2, ox - px2);
-        const lineRange = Math.sqrt((ox - px2) ** 2 + (oy - py2) ** 2);
-        this.effects.push({
-          type: 'line', x: px2, y: py2,
-          angle: lineAngle, range: lineRange,
-          timer: duration * 0.8, maxTimer: duration * 0.8, color,
-        });
-      }
     }
-    // 外周の二重輪
-    this.effects.push({
-      type: 'tier_ring', x: px, y: py,
-      range: 70 + tier * 20, width: 2 + tier * 0.5,
-      timer: 0.6, maxTimer: 0.6, color,
-    });
-    if (tier >= 4) {
-      // 二層目のオーブ（外側）
-      for (let i = 0; i < orbCount; i++) {
-        const a = (Math.PI * 2 / orbCount) * i + Math.PI / orbCount;
-        const dist = 140;
-        this.effects.push({
-          type: 'orb',
-          x: px + Math.cos(a) * dist,
-          y: py + Math.sin(a) * dist,
-          timer: 0.6, maxTimer: 0.6, color: '#fff',
-        });
-      }
+    // 雷系/衝撃波系は8方向放射光 (T3+)
+    if (tier >= 3 && (skillType === 'lightning_storm' || skillType === 'shockwave')) {
+      this.effects.push({
+        type: 'radial_rays', x: px, y: py,
+        rayCount: 8 + tier * 2,
+        range: 180 + tier * 25,
+        timer: 0.5, maxTimer: 0.5, color,
+      });
     }
   }
 
-  /** 短剣: 高速の瞬閃群舞 */
-  _flourishDagger(px, py, color, tier) {
-    const flashCount = tier === 2 ? 6 : tier === 3 ? 10 : 16;
-    const radius = 90 + tier * 15;
+  /** 結界/バリア: 多角形結界+外周の光輪 */
+  _flourishBarrier(px, py, color, tier, skillType) {
+    const sides = tier === 2 ? 6 : tier === 3 ? 6 : 8;
+    const layers = tier === 2 ? 1 : tier === 3 ? 2 : 3;
+    for (let l = 0; l < layers; l++) {
+      this.effects.push({
+        type: 'polygon_barrier', x: px, y: py,
+        range: 85 + tier * 20 + l * 25,
+        sides,
+        timer: 0.75 + l * 0.1, maxTimer: 0.75 + l * 0.1,
+        color,
+      });
+    }
+    // 中心閃光
+    this.effects.push({
+      type: 'sparkle_burst', x: px, y: py,
+      range: 40 + tier * 8,
+      timer: 0.4, maxTimer: 0.4, color,
+    });
+    // 衝撃結界 (barrier_shockwave) はT4+相当の追加衝撃波
+    if (skillType === 'barrier_shockwave' || tier >= 4) {
+      this.effects.push({
+        type: 'tier_ring', x: px, y: py,
+        range: 220, width: 5,
+        timer: 0.8, maxTimer: 0.8, color: '#fff',
+      });
+    }
+  }
+
+  /** 群舞連撃 (flurry): 周囲にランダム閃光+高速リング */
+  _flourishFlurry(px, py, color, tier) {
+    const flashCount = tier === 2 ? 6 : tier === 3 ? 12 : 18;
+    const radius = 90 + tier * 20;
     for (let i = 0; i < flashCount; i++) {
       const a = Math.random() * Math.PI * 2;
       const r = 25 + Math.random() * radius;
@@ -977,58 +996,149 @@ export class WeaponStrategy {
       this.effects.push({
         type: 'sparkle_burst',
         x: fx, y: fy,
-        range: 16 + Math.random() * 12,
-        timer: 0.15 + Math.random() * 0.25,
-        maxTimer: 0.35,
-        color,
+        range: 14 + Math.random() * 14,
+        timer: 0.12 + Math.random() * 0.28,
+        maxTimer: 0.35, color,
       });
     }
-    // プレイヤー中心の素早いリング
+    // プレイヤー中心の高速リング(重ね)
+    for (let i = 0; i < Math.min(tier, 3); i++) {
+      this.effects.push({
+        type: 'tier_ring', x: px, y: py,
+        range: radius - i * 20, width: 2,
+        timer: 0.25 + i * 0.05, maxTimer: 0.25 + i * 0.05, color,
+      });
+    }
+  }
+
+  /** 矢の雨 (arrow_rain): 降り注ぐ光の矢 */
+  _flourishArrowRain(px, py, color, tier) {
+    const arrowCount = tier === 2 ? 6 : tier === 3 ? 12 : 20;
+    const radius = 140 + tier * 40;
+    for (let i = 0; i < arrowCount; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * radius;
+      const tx = px + Math.cos(a) * r;
+      const ty = py + Math.sin(a) * r;
+      this.effects.push({
+        type: 'arrow_drop',
+        x: tx, y: ty - 200, tx, ty,
+        timer: 0.25 + Math.random() * 0.45,
+        maxTimer: 0.7, color,
+      });
+    }
+    // 範囲を示す外周輪
     this.effects.push({
       type: 'tier_ring', x: px, y: py,
       range: radius, width: 2,
-      timer: 0.3, maxTimer: 0.3, color,
+      timer: 0.8, maxTimer: 0.8, color,
     });
     if (tier >= 4) {
-      // 二重目の高速リング
       this.effects.push({
         type: 'tier_ring', x: px, y: py,
-        range: radius * 0.6, width: 3,
-        timer: 0.2, maxTimer: 0.2, color: '#fff',
+        range: radius * 0.6, width: 4,
+        timer: 0.6, maxTimer: 0.6, color: '#fff',
       });
     }
   }
 
-  /** 盾: 堅牢な多角形結界 */
-  _flourishShield(px, py, color, tier) {
-    const sides = tier === 2 ? 6 : tier === 3 ? 6 : 8;
-    const layers = tier === 2 ? 1 : tier === 3 ? 2 : 3;
-    for (let l = 0; l < layers; l++) {
+  /** 連鎖雷 (chain_lightning): ランダム点間のジグザグ雷+火花 */
+  _flourishChain(px, py, color, tier) {
+    const boltCount = tier === 2 ? 3 : tier === 3 ? 6 : 10;
+    const spreadR = 120 + tier * 30;
+    // 起点周囲にランダム点を生成し、折れ線でつなぐ
+    const points = [{ x: px, y: py }];
+    for (let i = 0; i < boltCount; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 40 + Math.random() * spreadR;
+      points.push({ x: px + Math.cos(a) * r, y: py + Math.sin(a) * r });
+    }
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const cur = points[i];
+      const a = Math.atan2(cur.y - prev.y, cur.x - prev.x);
+      const r = Math.sqrt((cur.x - prev.x) ** 2 + (cur.y - prev.y) ** 2);
       this.effects.push({
-        type: 'polygon_barrier', x: px, y: py,
-        range: 80 + tier * 20 + l * 25,
-        sides,
-        timer: 0.7 + l * 0.1, maxTimer: 0.7 + l * 0.1,
-        color,
+        type: 'lightning', x: prev.x, y: prev.y,
+        angle: a, range: r,
+        timer: 0.18 + i * 0.03, maxTimer: 0.35, color,
+      });
+      // 折返点の火花
+      this.effects.push({
+        type: 'sparkle_burst', x: cur.x, y: cur.y,
+        range: 16, timer: 0.25, maxTimer: 0.25, color,
       });
     }
-    // 中央の閃光
+    if (tier >= 4) {
+      // 起点の強大な閃光
+      this.effects.push({
+        type: 'sparkle_burst', x: px, y: py,
+        range: 60, timer: 0.45, maxTimer: 0.45, color: '#fff',
+      });
+    }
+  }
+
+  /** 画面全域 (blade_rain/world_break): 全方位放射+多重リング */
+  _flourishWide(px, py, color, tier) {
+    // 全方位放射光
+    this.effects.push({
+      type: 'radial_rays', x: px, y: py,
+      rayCount: 12 + tier * 4,
+      range: 280 + tier * 40,
+      timer: 0.6, maxTimer: 0.6, color,
+    });
+    this.effects.push({
+      type: 'radial_rays', x: px, y: py,
+      rayCount: 8,
+      range: 200,
+      timer: 0.5, maxTimer: 0.5, color: '#fff',
+    });
+    // 多重リング
+    for (let i = 0; i < 4; i++) {
+      this.effects.push({
+        type: 'tier_ring', x: px, y: py,
+        range: 100 + i * 110,
+        timer: 0.6 + i * 0.12, maxTimer: 0.6 + i * 0.12,
+        color, width: 4,
+      });
+    }
+    // 中心大閃光
     this.effects.push({
       type: 'sparkle_burst', x: px, y: py,
-      range: 40 + tier * 8,
-      timer: 0.4, maxTimer: 0.4, color,
+      range: 60 + tier * 12,
+      timer: 0.5, maxTimer: 0.5, color,
     });
-    // T4は外側に衝撃波
-    if (tier >= 4) {
+  }
+
+  /** 遠隔着弾 (meteor/burn_zone_at): 着弾点に光柱+多重リング+放射光 */
+  _flourishRemote(px, py, color, tier) {
+    // 着弾点の多重リング
+    for (let i = 0; i < Math.min(tier, 3); i++) {
       this.effects.push({
         type: 'tier_ring', x: px, y: py,
-        range: 200, width: 5,
-        timer: 0.8, maxTimer: 0.8, color: '#fff',
+        range: 80 + i * 60 + tier * 10,
+        timer: 0.7 + i * 0.12, maxTimer: 0.7 + i * 0.12,
+        color, width: 3 + tier * 0.6,
+      });
+    }
+    // 着弾の閃光
+    this.effects.push({
+      type: 'sparkle_burst', x: px, y: py,
+      range: 42 + tier * 10,
+      timer: 0.45, maxTimer: 0.45, color,
+    });
+    // 8方向の放射光 (T3+)
+    if (tier >= 3) {
+      this.effects.push({
+        type: 'radial_rays', x: px, y: py,
+        rayCount: 8,
+        range: 150 + tier * 20,
+        timer: 0.5, maxTimer: 0.5, color,
       });
     }
   }
 
-  /** デフォルト（equipType不明な場合） */
+  /** デフォルト(未定義のskillType用) */
   _flourishDefault(px, py, color, tier) {
     const ringCount = Math.min(tier, 3);
     for (let i = 0; i < ringCount; i++) {
