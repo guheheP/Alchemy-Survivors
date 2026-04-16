@@ -199,7 +199,7 @@ export class CollectionScreen {
                     runMoveSpeed: '速度', runRegenPerSec: '回復/秒', runDodge: '回避',
                     runDropRate: 'ドロップ', runAttackSpeed: '攻速', runExpBonus: '経験値',
                     runStartInvincible: '開始無敵',
-                    runCritChance: 'クリ率', runCritDamage: 'クリダメ',
+                    runCritChance: '会心率', runCritDamage: '会心ダメ',
                     runElementProc: '属性発動', runElementPower: '属性威力',
                   }[key] || key;
                   runEffects.push(`${label}+${typeof val === 'number' && val < 1 && val > 0 ? fmtPct1(val) + '%' : fmt1(val)}`);

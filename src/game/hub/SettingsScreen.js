@@ -60,7 +60,7 @@ export class SettingsScreen {
         <div class="settings-mute-row">
           <label class="settings-mute-toggle">
             <input type="checkbox" id="settings-hitstop" ${GameFeelSettings.hitStopEnabled ? 'checked' : ''}>
-            <span>ヒットストップ（クリティカル・ボス撃破で一瞬停止）</span>
+            <span>ヒットストップ（会心・ボス撃破で一瞬停止）</span>
           </label>
         </div>
         <div class="settings-mute-row">

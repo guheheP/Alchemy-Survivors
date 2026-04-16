@@ -43,7 +43,7 @@ export class WeaponStrategy {
     this.baseCooldown = typeConfig.baseCooldown;
     this.arc = typeConfig.arc;
     this.weaponName = bp.name;
-    // 武器固有のベースクリ率（Blueprintで定義、dagger/特定武器のみ）
+    // 武器固有のベース会心率（Blueprintで定義、dagger/特定武器のみ）
     this.baseCritChance = bp.baseCritChance || 0;
     // 武器属性（fire/ice/poison/lightning/wind）
     this.element = bp.element || null;
@@ -69,7 +69,7 @@ export class WeaponStrategy {
 
   get damage() {
     let dmg = this.baseDamage * (1 + this.player.passives.damageMultiplier) + this.player.baseDamage;
-    // クリティカル判定 — プレイヤーのクリ率 + 武器ベースクリ率（上限100%）
+    // 会心判定 — プレイヤーの会心率 + 武器ベース会心率（上限100%）
     this._lastCrit = false;
     const totalCrit = Math.min(1, this.player.passives.critChance + this.baseCritChance);
     if (totalCrit > 0 && Math.random() < totalCrit) {

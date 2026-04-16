@@ -140,7 +140,7 @@ export class RunManager {
         // 被弾粒子
         if (x != null && y != null) {
           if (isCrit) {
-            // クリティカル: より強いスパーク + 軽いシェイク + 微ヒットストップ
+            // 会心: より強いスパーク + 軽いシェイク + 微ヒットストップ
             this.particles.emitBurst(x, y, 10, {
               speed: 160, life: 0.32, size: 3, color: '#ffdc6a', shape: 'spark',
             });

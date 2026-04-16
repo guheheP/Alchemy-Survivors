@@ -253,8 +253,8 @@ function buildTraitEffectsHTML(traitName) {
     runDropRate:        v => `ドロップ率 +${fmtPct1(v)}%`,
     runAttackSpeed:     v => `攻撃速度 +${fmtPct1(v)}%`,
     runExpBonus:        v => `経験値 +${fmtPct1(v)}%`,
-    runCritChance:      v => `クリティカル率 +${fmtPct1(v)}%`,
-    runCritDamage:      v => `クリティカルダメージ +${fmtPct1(v)}%`,
+    runCritChance:      v => `会心率 +${fmtPct1(v)}%`,
+    runCritDamage:      v => `会心ダメージ +${fmtPct1(v)}%`,
     runElementProc:     v => `属性発動率 +${fmtPct1(v)}%`,
     runElementPower:    v => `属性効果量 +${fmtPct1(v)}%`,
   };
