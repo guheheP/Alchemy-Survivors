@@ -26,6 +26,9 @@ export class GameTooltip {
     document.addEventListener('pointerenter', (e) => this._onEnter(e), true);
     document.addEventListener('pointerleave', (e) => this._onLeave(e), true);
     document.addEventListener('pointermove', (e) => this._onMove(e));
+    // キーボード/プログラム的フォーカスでも表示（focusin/focusout はバブル可）
+    document.addEventListener('focusin', (e) => this._onEnter(e));
+    document.addEventListener('focusout', (e) => this._onLeave(e));
   }
 
   _onEnter(e) {
@@ -97,11 +100,25 @@ export class GameTooltip {
       return;
     }
 
-    let x = e.clientX + pad;
-    let y = e.clientY + pad;
+    // ポインタ座標が無い場合(focus由来)は対象要素の下辺に配置
+    let anchorX, anchorY;
+    if (typeof e.clientX === 'number' && typeof e.clientY === 'number' && (e.clientX !== 0 || e.clientY !== 0)) {
+      anchorX = e.clientX;
+      anchorY = e.clientY;
+    } else if (this._currentTarget) {
+      const tr = this._currentTarget.getBoundingClientRect();
+      anchorX = tr.left + tr.width / 2;
+      anchorY = tr.bottom;
+    } else {
+      anchorX = vw / 2;
+      anchorY = vh / 2;
+    }
 
-    if (x + rect.width > vw - pad) x = e.clientX - rect.width - pad;
-    if (y + rect.height > vh - pad) y = e.clientY - rect.height - pad;
+    let x = anchorX + pad;
+    let y = anchorY + pad;
+
+    if (x + rect.width > vw - pad) x = anchorX - rect.width - pad;
+    if (y + rect.height > vh - pad) y = anchorY - rect.height - pad;
 
     el.style.left = `${Math.max(pad, x)}px`;
     el.style.top = `${Math.max(pad, y)}px`;

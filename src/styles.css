@@ -1773,6 +1773,11 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
   flex-shrink: 0;
   font-weight: 600;
   letter-spacing: 0.05em;
+  cursor: help;
+  outline: none;
+}
+.element-badge:focus-visible {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.8), 0 0 6px 3px currentColor;
 }
 .element-fire      { background: rgba(255, 102, 34, 0.18); color: #f62; border-color: #f62; }
 .element-ice       { background: rgba(136, 238, 255, 0.18); color: #8ef; border-color: #8ef; }

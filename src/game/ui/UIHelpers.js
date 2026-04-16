@@ -115,13 +115,41 @@ export function createTraitBadgeHTML(traitName, extra = '') {
 
 /** 属性バッジ定義（ラベル/色/説明） */
 const ELEMENT_BADGE_DEFS = {
-  fire:      { label: '炎',  icon: '🔥', tooltip: '燃焼: 継続ダメージを与える' },
-  ice:       { label: '氷',  icon: '❄',  tooltip: '凍結: 移動速度を低下させる' },
-  poison:    { label: '毒',  icon: '☠',  tooltip: '毒: 継続ダメージ + 周囲の敵に感染' },
-  lightning: { label: '雷',  icon: '⚡', tooltip: '感電: 短時間スタン' },
-  wind:      { label: '風',  icon: '💨', tooltip: '風: 状態異常を持つ敵に命中時、周囲に拡散' },
-  water:     { label: '水',  icon: '💧', tooltip: '脆弱: 敵が受けるダメージが15%増加' },
-  none:      { label: '無',  icon: '◇', tooltip: '無属性: 与ダメージ +25%' },
+  fire: {
+    label: '炎',
+    icon: '🔥',
+    tooltip: '命中時に燃焼を付与。3秒間、毎秒そのヒットダメージの10%を継続ダメージ。',
+  },
+  ice: {
+    label: '氷',
+    icon: '❄',
+    tooltip: '命中時に凍結を付与。2秒間、敵の移動速度-40。',
+  },
+  poison: {
+    label: '毒',
+    icon: '☠',
+    tooltip: '命中時に毒を付与。3秒間、毎秒そのヒットダメージの5%継続。周囲の敵に感染拡大。',
+  },
+  lightning: {
+    label: '雷',
+    icon: '⚡',
+    tooltip: '命中時に感電を付与。0.4秒間、敵を行動不能(スタン)にする。',
+  },
+  wind: {
+    label: '風',
+    icon: '💨',
+    tooltip: '命中した敵に状態異常があれば、周囲の敵へ同じ状態異常を拡散する。',
+  },
+  water: {
+    label: '水',
+    icon: '💧',
+    tooltip: '命中時に脆弱化を付与。3秒間、敵が受けるダメージが+15%される。',
+  },
+  none: {
+    label: '無',
+    icon: '◇',
+    tooltip: '特殊な状態異常を付与しない代わりに、最終ダメージが+25%される。',
+  },
 };
 
 /** 武器属性バッジHTMLを生成。element が未定義なら空文字を返す */
@@ -129,7 +157,7 @@ export function createElementBadgeHTML(element, extra = '') {
   if (!element) return '';
   const def = ELEMENT_BADGE_DEFS[element];
   if (!def) return '';
-  return `<span class="element-badge element-${element} ${extra}" data-tooltip="${def.tooltip}" data-tooltip-title="${def.label}属性">${def.icon}${def.label}</span>`;
+  return `<span class="element-badge element-${element} ${extra}" tabindex="0" role="button" aria-label="${def.label}属性: ${def.tooltip}" data-tooltip="${def.tooltip}" data-tooltip-title="${def.label}属性">${def.icon}${def.label}</span>`;
 }
 
 // アイテムの画像URL（将来のカスタム画像パス対応）
