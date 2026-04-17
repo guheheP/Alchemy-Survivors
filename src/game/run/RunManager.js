@@ -250,6 +250,20 @@ export class RunManager {
         const bosses = this.bossSystem.getActiveBosses();
         for (const boss of bosses) apply(boss);
       }),
+      eventBus.on('consumable:status', ({ x, y, radius, type, params }) => {
+        const r2 = radius * radius;
+        const apply = (enemy) => {
+          if (!enemy.active) return;
+          const dx = enemy.x - x;
+          const dy = enemy.y - y;
+          if (dx * dx + dy * dy < r2) enemy.applyStatusEffect(type, params || {});
+        };
+        // applyStatusEffect → combo 判定で敵が死亡する可能性があるので snapshot
+        const enemies = this.spawner.enemies.slice();
+        for (const enemy of enemies) apply(enemy);
+        const bosses = this.bossSystem.getActiveBosses();
+        for (const boss of bosses) apply(boss);
+      }),
       // 毒の感染拡散
       eventBus.on('statusEffect:spread', ({ x, y, radius, source, type, params }) => {
         const r2 = radius * radius;

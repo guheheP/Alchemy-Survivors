@@ -8,6 +8,7 @@ import { ItemBlueprints } from '../data/items.js';
 import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 import { DifficultyMeta, DIFFICULTY_ORDER } from '../data/hardmode.js';
+import { resolveTieredEffects } from '../run/ConsumableSystem.js';
 
 export class RunPrepScreen {
   constructor(container, getWeaponSlots, getArmor, getAccessory, inventory, initialConsumableUids = [], initialAreaId = null) {
@@ -102,7 +103,7 @@ export class RunPrepScreen {
                 ${[0, 1, 2].map(i => {
                   const c = this.selectedConsumables[i];
                   const cBp = c ? ItemBlueprints[c.blueprintId] : null;
-                  const cEffect = cBp?.battleEffect ? this._describeBattleEffect(cBp.battleEffect) : '';
+                  const cEffect = cBp?.battleEffect ? this._describeBattleEffect(cBp.battleEffect, c?.quality) : '';
                   return c
                     ? `<div class="prep-cons-slot filled" data-idx="${i}">
                         <span class="cons-key">${i + 1}</span>
@@ -215,7 +216,7 @@ export class RunPrepScreen {
         ${consumables.length > 0
           ? consumables.map((item, i) => {
               const bp = ItemBlueprints[item.blueprintId];
-              const effectDesc = bp?.battleEffect ? this._describeBattleEffect(bp.battleEffect) : '';
+              const effectDesc = bp?.battleEffect ? this._describeBattleEffect(bp.battleEffect, item?.quality) : '';
               return `<div class="cons-picker-item" data-item-idx="${i}">
                 <span class="cons-picker-name">${item.name} (Q${item.quality})</span>
                 <span class="cons-picker-effect">${effectDesc}</span>
@@ -332,8 +333,32 @@ export class RunPrepScreen {
     return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  _describeBattleEffect(fx) {
-    const statNames = { atk: '攻撃力', def: '防御力', spd: '速度' };
+  _describeBattleEffect(fx, quality) {
+    const statNames = { atk: '攻撃力', def: '防御力', spd: '速度', crit: '会心率', critDmg: '会心ダメ', cooldown: 'CD短縮', elemPower: '属性威力', elemProc: '属性発動率', dodge: '回避', range: '武器範囲', magnet: '磁力', maxHp: '最大HP' };
+    // tier 形式: 現在品質で解決した効果を1行要約
+    if (Array.isArray(fx.tiers)) {
+      const r = resolveTieredEffects(fx, quality || 0);
+      if (!r) return '';
+      const parts = [];
+      if (r.heal) parts.push(`💚HP+${r.heal}`);
+      if (r.percentHeal) parts.push(`💚最大${r.percentHeal}%`);
+      if (r.regen && r.regen.hpPerSec && r.regen.duration) parts.push(`🌿+${r.regen.hpPerSec}/秒×${r.regen.duration}s`);
+      if (r.shield && r.shield.amount) parts.push(`🛡️+${r.shield.amount}HP`);
+      if (r.buffs) {
+        for (const k of Object.keys(r.buffs)) {
+          const b = r.buffs[k];
+          parts.push(`⬆️${statNames[b.stat] || b.stat}+${b.amount}`);
+        }
+      }
+      if (r.damage) parts.push(`💥${r.damage}`);
+      if (r.statusEffect) {
+        const typeLabel = { burn: '🔥', poison: '☠', freeze: '❄', shock: '⚡' }[r.statusEffect.type] || r.statusEffect.type;
+        parts.push(typeLabel);
+      }
+      if (r.vulnerable) parts.push(`💢脆弱+${r.vulnerable.amount}%`);
+      if (r.stun) parts.push(`⚡スタン${r.stun.duration}s`);
+      return parts.join(' ') || '(未解放)';
+    }
     switch (fx.type) {
       case 'heal': return `💚 HP${fx.value}回復`;
       case 'healfull': return `💚 HP全回復`;

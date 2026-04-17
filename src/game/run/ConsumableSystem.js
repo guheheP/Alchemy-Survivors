@@ -47,9 +47,69 @@ function collectConsumableMods(item) {
 // 実クオリティは 0〜999 スケール (Progression.getQualityCap)。
 // 0.05/step だと Q50 で 3.45× となり 回復薬(base 40) が maxHp=100 を余裕で超え
 // 常時 全回復 してしまうため、他ステータス系 (quality/50〜/100) と揃えて 0.01/step に縮小。
+// 注: tiers 形式の battleEffect では使用されない（tier 閾値による加算式に置換）
 function qualityMultiplier(quality) {
   return 1 + Math.max(0, (quality || 1) - 1) * 0.01;
 }
+
+/**
+ * 品質による段階的効果解決。
+ * battleEffect.tiers = [{ minQuality, heal, regen:{hpPerSec,duration}, buffs:[...], percentHeal, damage, statusEffect:{type,dps,duration}, vulnerable:{amount,duration}, stun:{duration}, shield:{amount,duration} }, ...]
+ * item.quality 以上の tier 全てを合成して返す。数値フィールドは加算、オブジェクトは内部数値加算、配列 buffs は stat キーで merge。
+ */
+export function resolveTieredEffects(battleEffect, quality) {
+  if (!battleEffect || !Array.isArray(battleEffect.tiers)) return null;
+  const q = Math.max(0, quality || 0);
+  const out = {};
+  const mergeObj = (destKey, srcObj) => {
+    out[destKey] = out[destKey] || {};
+    for (const k of Object.keys(srcObj)) {
+      const v = srcObj[k];
+      if (typeof v === 'number') out[destKey][k] = (out[destKey][k] || 0) + v;
+      else out[destKey][k] = v; // 文字列などは上書き
+    }
+  };
+  for (const tier of battleEffect.tiers) {
+    if (q < (tier.minQuality || 0)) continue;
+    for (const key of Object.keys(tier)) {
+      if (key === 'minQuality') continue;
+      const val = tier[key];
+      if (key === 'buffs' && Array.isArray(val)) {
+        out.buffs = out.buffs || {};
+        for (const b of val) {
+          if (!b || !b.stat) continue;
+          const cur = out.buffs[b.stat] || { stat: b.stat, amount: 0, duration: 0 };
+          cur.amount += b.amount || 0;
+          cur.duration += b.duration || 0;
+          out.buffs[b.stat] = cur;
+        }
+      } else if (typeof val === 'number') {
+        out[key] = (out[key] || 0) + val;
+      } else if (typeof val === 'object' && val !== null) {
+        mergeObj(key, val);
+      }
+    }
+  }
+  return out;
+}
+
+// バフ stat → player.passives フィールド・単位変換テーブル。
+// unit = amount に掛ける係数（例: 攻撃+20 → damageMultiplier +0.2）。
+const BUFF_STAT_MAP = {
+  atk:       { field: 'damageMultiplier',   unit: 0.01 },
+  def:       { field: 'damageReduction',    unit: 0.1  },
+  spd:       { field: 'moveSpeedMultiplier', unit: 0.01 },
+  crit:      { field: 'critChance',         unit: 0.01 },
+  critDmg:   { field: 'critDamage',         unit: 0.01 },
+  cooldown:  { field: 'cooldownReduction',  unit: 0.01 },
+  elemPower: { field: 'elementPowerBonus',  unit: 0.01 },
+  elemProc:  { field: 'elementProcBonus',   unit: 0.01 },
+  dodge:     { field: 'dodge',              unit: 0.01 },
+  range:     { field: 'rangeMultiplier',    unit: 0.01 },
+  magnet:    { field: 'magnetMultiplier',   unit: 0.01 },
+  maxHp:     { field: 'maxHpFlat',          unit: 1    },
+};
+export function getBuffStatMap() { return BUFF_STAT_MAP; }
 
 export class ConsumableSystem {
   /**
@@ -124,9 +184,14 @@ export class ConsumableSystem {
       this._activeBuffs[i].remaining -= dt;
       if (this._activeBuffs[i].remaining <= 0) {
         const buff = this._activeBuffs[i];
-        if (buff.stat === 'atk') this.player.passives.damageMultiplier -= buff.value;
-        else if (buff.stat === 'def') this.player.passives.damageReduction -= buff.value;
-        else if (buff.stat === 'spd') this.player.passives.moveSpeedMultiplier -= buff.value;
+        const map = BUFF_STAT_MAP[buff.stat];
+        if (map) {
+          this.player.passives[map.field] -= buff.value;
+          // maxHp シールド: 最大HPが減ったら現HPもクランプ
+          if (map.field === 'maxHpFlat') {
+            this.player.hp = Math.min(this.player.hp, this.player.effectiveMaxHp);
+          }
+        }
         this._activeBuffs.splice(i, 1);
         buffChanged = true;
       }
@@ -185,6 +250,14 @@ export class ConsumableSystem {
         this._regenEffects.push({ amount: regenAfter.amount, remaining: regenAfter.duration });
       }
     };
+
+    // tier 形式の battleEffect は専用ハンドラで処理
+    if (Array.isArray(fx.tiers)) {
+      this._applyTieredEffect(slotIndex, fx, slot.item, mods);
+      applyRegenAfter();
+      eventBus.emit('consumable:slotsChanged', { slots: this.getSlotInfo(), buffs: this.getActiveBuffs() });
+      return;
+    }
 
     switch (fx.type) {
       case 'heal': {
@@ -260,6 +333,110 @@ export class ConsumableSystem {
       stat: b.stat,
       remaining: b.remaining,
     }));
+  }
+
+  /**
+   * tiers[] を品質で解決して各効果を適用する。
+   * trait 倍率 (mods) は既存と同様に適用: heal→healMult, damage→damageMult, buff.amount→buffMult, duration系→durationMult
+   */
+  _applyTieredEffect(slotIndex, fx, item, mods) {
+    const resolved = resolveTieredEffects(fx, item?.quality || 0);
+    if (!resolved) return;
+    const target = fx.target || 'ally';
+    const radius = fx.radius || 120;
+    const healMult = 1 + mods.consumableHealMult;
+    const damageMult = 1 + mods.consumableDamageMult;
+    const buffMult = 1 + mods.consumableBuffMult;
+    const durMult = 1 + mods.consumableDurationMult;
+    const player = this.player;
+    let totalHealed = 0;
+
+    // 回復（固定値）
+    if (resolved.heal) {
+      const v = Math.round(resolved.heal * healMult);
+      const before = player.hp;
+      player.hp = Math.min(player.effectiveMaxHp, player.hp + v);
+      totalHealed += player.hp - before;
+    }
+    // 割合回復（最大HPの%）
+    if (resolved.percentHeal) {
+      const pct = resolved.percentHeal / 100;
+      const v = Math.round(player.effectiveMaxHp * pct * healMult);
+      const before = player.hp;
+      player.hp = Math.min(player.effectiveMaxHp, player.hp + v);
+      totalHealed += player.hp - before;
+    }
+    // 持続回復 (HoT)
+    if (resolved.regen && resolved.regen.duration > 0 && resolved.regen.hpPerSec > 0) {
+      this._regenEffects.push({
+        amount: resolved.regen.hpPerSec * healMult,
+        remaining: resolved.regen.duration * durMult,
+      });
+    }
+    // シールド（一時最大HP + 即時チャージ）
+    if (resolved.shield && resolved.shield.amount > 0 && resolved.shield.duration > 0) {
+      const amt = Math.round(resolved.shield.amount * buffMult);
+      const dur = resolved.shield.duration * durMult;
+      player.passives.maxHpFlat += amt;
+      player.hp = Math.min(player.effectiveMaxHp, player.hp + amt);
+      this._activeBuffs.push({ stat: 'maxHp', value: amt, remaining: dur });
+    }
+    // バフ（複数 stat 対応）
+    if (resolved.buffs) {
+      for (const key of Object.keys(resolved.buffs)) {
+        const b = resolved.buffs[key];
+        const map = BUFF_STAT_MAP[b.stat];
+        if (!map || !b.amount || !b.duration) continue;
+        const value = b.amount * buffMult * map.unit;
+        const dur = b.duration * durMult;
+        player.passives[map.field] += value;
+        this._activeBuffs.push({ stat: b.stat, value, remaining: dur });
+      }
+    }
+    // AoE ダメージ
+    if (resolved.damage) {
+      const v = Math.round(resolved.damage * damageMult);
+      eventBus.emit('consumable:aoe', { x: player.x, y: player.y, radius: fx.radius || 100, damage: v });
+    }
+    // 状態異常付与 (敵 AoE)
+    if (resolved.statusEffect && resolved.statusEffect.type) {
+      const se = resolved.statusEffect;
+      eventBus.emit('consumable:status', {
+        x: player.x, y: player.y, radius,
+        type: se.type,
+        params: {
+          duration: (se.duration || 0) * durMult,
+          dps: se.dps || 0,
+          speedMod: se.speedMod,
+          damageMultiplier: se.damageMultiplier,
+        },
+      });
+    }
+    // 脆弱化（被ダメUP）
+    if (resolved.vulnerable && resolved.vulnerable.duration > 0) {
+      eventBus.emit('consumable:status', {
+        x: player.x, y: player.y, radius,
+        type: 'vulnerable',
+        params: {
+          duration: resolved.vulnerable.duration * durMult,
+          damageMultiplier: (resolved.vulnerable.amount || 0) / 100,
+        },
+      });
+    }
+    // スタン
+    if (resolved.stun && resolved.stun.duration > 0) {
+      eventBus.emit('consumable:debuff', {
+        x: player.x, y: player.y, radius: radius,
+        stat: 'spd', amount: -999, duration: resolved.stun.duration * durMult,
+      });
+    }
+
+    eventBus.emit('consumable:used', {
+      slot: slotIndex,
+      type: 'tiered',
+      value: totalHealed > 0 ? totalHealed : undefined,
+      target,
+    });
   }
 
   destroy() {

@@ -10,6 +10,7 @@ import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 import { createElementBadgeHTML } from '../ui/UIHelpers.js';
 import { fmt1, fmtPct1, fmtInt } from '../ui/NumberFormat.js';
+import { resolveTieredEffects } from '../run/ConsumableSystem.js';
 
 export class CraftingScreen {
   constructor(container, inventorySystem, options = {}) {
@@ -694,11 +695,27 @@ export class CraftingScreen {
     const qMult = 1 + Math.max(0, (finalQ || 1) - 1) * 0.01;
 
     const fx = bp.battleEffect;
-    const statNames = { atk: '攻撃力', def: '防御力', spd: '速度' };
+    const statNames = { atk: '攻撃力', def: '防御力', spd: '速度', crit: '会心率', critDmg: '会心ダメ', cooldown: 'CD短縮', elemPower: '属性威力', elemProc: '属性発動率', dodge: '回避', range: '武器範囲', magnet: '磁力', maxHp: '最大HP' };
     const target = fx.target === 'all' ? '味方全体' : (fx.target === 'ally' ? '自己' : '敵');
 
     let html = '';
     html += `<div class="preview-row"><span>対象:</span><span class="preview-val">${target}</span></div>`;
+
+    // tier 形式: 品質閾値による段階効果
+    if (Array.isArray(fx.tiers)) {
+      html += this._renderTieredConsumablePreview(fx, finalQ, mods, statNames);
+      const cdMult = Math.max(0.1, 1 + mods.consumableCooldownMult);
+      const cd = 3.0 * cdMult;
+      html += `<div class="preview-row"><span>🔄 クールダウン:</span><span class="preview-val">${fmt1(cd)}秒${this._effectBadge(mods.consumableCooldownMult, true)}</span></div>`;
+      const uses = fx.uses || 3;
+      html += `<div class="preview-row"><span>🔢 使用回数:</span><span class="preview-val">${uses}回</span></div>`;
+      if (regenAmount > 0 && regenDuration > 0) {
+        html += `<div class="preview-row"><span>🌿 効果後再生:</span><span class="preview-val">+${fmt1(regenAmount)}HP/秒 (${regenDuration}秒)</span></div>`;
+      }
+      const cmp = this._compareConsumable(bp);
+      if (cmp) html += `<div class="preview-compare">${cmp}</div>`;
+      return html;
+    }
 
     switch (fx.type) {
       case 'heal': {
@@ -761,6 +778,115 @@ export class CraftingScreen {
     if (cmp) html += `<div class="preview-compare">${cmp}</div>`;
 
     return html;
+  }
+
+  /**
+   * tier 形式の消耗品プレビュー。
+   * 各 tier を「解放済みチェック」付きで表示し、現在品質での合成結果を最終効果として表示する。
+   */
+  _renderTieredConsumablePreview(fx, finalQ, mods, statNames) {
+    const q = finalQ || 0;
+    let html = '';
+    // tier リスト
+    html += `<div class="preview-row preview-section"><span>📊 品質段階効果:</span></div>`;
+    html += `<div class="tier-list">`;
+    for (const tier of fx.tiers) {
+      const minQ = tier.minQuality || 0;
+      const unlocked = q >= minQ;
+      const icon = unlocked ? '✓' : '🔒';
+      const cls = unlocked ? 'tier-unlocked' : 'tier-locked';
+      const label = this._formatTierDeltas(tier, statNames);
+      html += `<div class="tier-row ${cls}"><span class="tier-q">${icon} Q${minQ}</span><span class="tier-effect">${label}</span></div>`;
+    }
+    html += `</div>`;
+    // 合成結果
+    const resolved = resolveTieredEffects(fx, q);
+    if (resolved) {
+      const lines = this._formatResolvedEffect(resolved, mods, statNames);
+      if (lines.length > 0) {
+        html += `<div class="preview-row preview-section"><span>🧪 合成効果 (Q${q}):</span></div>`;
+        for (const line of lines) {
+          html += `<div class="preview-row tier-resolved-row"><span>${line.label}</span><span class="preview-val">${line.value}</span></div>`;
+        }
+      }
+    }
+    return html;
+  }
+
+  /** 単一 tier の差分を1行テキストにする */
+  _formatTierDeltas(tier, statNames) {
+    const parts = [];
+    if (tier.heal) parts.push(`HP +${tier.heal}`);
+    if (tier.percentHeal) parts.push(`最大HPの${tier.percentHeal}%回復`);
+    if (tier.regen) {
+      const r = tier.regen;
+      const rp = [];
+      if (r.hpPerSec) rp.push(`+${fmt1(r.hpPerSec)}HP/秒`);
+      if (r.duration) rp.push(`${fmt1(r.duration)}秒`);
+      parts.push(`持続回復 ${rp.join(' × ')}`);
+    }
+    if (tier.shield) {
+      const s = tier.shield;
+      parts.push(`シールド +${s.amount || 0}HP (${fmt1(s.duration || 0)}秒)`);
+    }
+    if (Array.isArray(tier.buffs)) {
+      for (const b of tier.buffs) {
+        const name = statNames[b.stat] || b.stat;
+        parts.push(`${name} +${b.amount} (${fmt1(b.duration || 0)}秒)`);
+      }
+    }
+    if (tier.damage) parts.push(`AoEダメ ${tier.damage}`);
+    if (tier.statusEffect) {
+      const s = tier.statusEffect;
+      const typeLabel = { burn: '🔥燃焼', poison: '☠毒', freeze: '❄凍結', shock: '⚡感電' }[s.type] || s.type;
+      const bits = [typeLabel];
+      if (s.dps) bits.push(`${s.dps}DPS`);
+      if (s.duration) bits.push(`${fmt1(s.duration)}秒`);
+      parts.push(bits.join(' '));
+    }
+    if (tier.vulnerable) parts.push(`脆弱化 +${tier.vulnerable.amount || 0}% (${fmt1(tier.vulnerable.duration || 0)}秒)`);
+    if (tier.stun) parts.push(`スタン ${fmt1(tier.stun.duration || 0)}秒`);
+    return parts.join(' / ') || '—';
+  }
+
+  /** 合成効果を行配列で返す (label/value) */
+  _formatResolvedEffect(resolved, mods, statNames) {
+    const lines = [];
+    const healMult = 1 + (mods?.consumableHealMult || 0);
+    const buffMult = 1 + (mods?.consumableBuffMult || 0);
+    const durMult = 1 + (mods?.consumableDurationMult || 0);
+    const dmgMult = 1 + (mods?.consumableDamageMult || 0);
+    if (resolved.heal) lines.push({ label: '💚 固定回復:', value: `+${Math.round(resolved.heal * healMult)} HP` });
+    if (resolved.percentHeal) lines.push({ label: '💚 割合回復:', value: `最大HPの${fmt1(resolved.percentHeal * healMult)}%` });
+    if (resolved.regen && resolved.regen.duration && resolved.regen.hpPerSec) {
+      lines.push({ label: '🌿 持続回復:', value: `+${fmt1(resolved.regen.hpPerSec * healMult)}HP/秒 × ${fmt1(resolved.regen.duration * durMult)}秒` });
+    }
+    if (resolved.shield && resolved.shield.amount && resolved.shield.duration) {
+      lines.push({ label: '🛡️ シールド:', value: `+${Math.round(resolved.shield.amount * buffMult)}HP × ${fmt1(resolved.shield.duration * durMult)}秒` });
+    }
+    if (resolved.buffs) {
+      for (const key of Object.keys(resolved.buffs)) {
+        const b = resolved.buffs[key];
+        const name = statNames[b.stat] || b.stat;
+        lines.push({ label: `⬆️ ${name}:`, value: `+${fmt1(b.amount * buffMult)} (${fmt1(b.duration * durMult)}秒)` });
+      }
+    }
+    if (resolved.damage) lines.push({ label: '💥 ダメージ:', value: `${Math.round(resolved.damage * dmgMult)}` });
+    if (resolved.statusEffect) {
+      const s = resolved.statusEffect;
+      const typeLabel = { burn: '🔥燃焼', poison: '☠毒', freeze: '❄凍結', shock: '⚡感電' }[s.type] || s.type;
+      const bits = [];
+      if (s.dps) bits.push(`${fmt1(s.dps)}DPS`);
+      if (s.duration) bits.push(`${fmt1(s.duration * durMult)}秒`);
+      lines.push({ label: `${typeLabel}:`, value: bits.join(' × ') });
+    }
+    if (resolved.vulnerable && resolved.vulnerable.duration) {
+      lines.push({ label: '💢 脆弱化:', value: `敵被ダメ +${fmt1(resolved.vulnerable.amount)}% × ${fmt1(resolved.vulnerable.duration * durMult)}秒` });
+    }
+    if (resolved.stun && resolved.stun.duration) {
+      lines.push({ label: '⚡ スタン:', value: `${fmt1(resolved.stun.duration * durMult)}秒` });
+    }
+    return lines;
   }
 
   /**
