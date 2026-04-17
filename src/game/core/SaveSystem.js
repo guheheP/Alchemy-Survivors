@@ -15,7 +15,7 @@ const SAVE_KEY = 'alchemy_survivors_save_v1';
 const BACKUP_KEY_PREFIX = 'alchemy_survivors_save_backup_';
 const CLOUD_USER_DATA_KEY = 'save';
 const CLOUD_SAVE_DEBOUNCE_MS = 5000;
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 
 const DEFAULT_STATS = {
   totalRuns: 0,
@@ -98,6 +98,8 @@ export class SaveSystem {
       hardModeUnlocked: extraData.hardModeUnlocked || [],
       tutorialCompleted: extraData.tutorialCompleted || false,
       equipmentPresets: extraData.equipmentPresets || [],
+      // カジノ独立state（実験機能。CASINO_ENABLED=false時は null が書き込まれる）
+      casino: extraData.casino || null,
     };
   }
 
@@ -240,6 +242,11 @@ export class SaveSystem {
       // v3→v4: equipmentPresets フィールド追加
       data.version = 4;
       data.equipmentPresets = data.equipmentPresets || [];
+    }
+    if (data.version === 4) {
+      // v4→v5: casino フィールド追加（実験的カジノ機能）
+      data.version = 5;
+      data.casino = data.casino || null;
     }
     return data;
   }

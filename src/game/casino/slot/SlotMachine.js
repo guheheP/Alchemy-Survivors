@@ -1,0 +1,144 @@
+/**
+ * SlotMachine.js — スロット機械全体の統括
+ *
+ * 1スピンの処理:
+ *   1. BET消費
+ *   2. 内部抽選（SlotEngine.drawFlags）
+ *   3. リール停止形計算（ReelController.computeStopFrame）
+ *   4. 払い戻し判定
+ *   5. ART中のレア小役で上乗せ抽選
+ *   6. 状態遷移（StateMachine.transition）
+ */
+
+import { drawFlags, drawUpsell, drawZenchoResult } from './SlotEngine.js';
+import { computeStopFrame } from './ReelController.js';
+import { transition } from './StateMachine.js';
+import { PAYOUTS, ART_PAYOUTS, BONUS_PAYOUT_PER_GAME } from '../data/payouts.js';
+import { BET_PER_GAME } from '../config.js';
+import { Rng } from '../util/rng.js';
+import { SlotSessionState } from '../state/SlotSessionState.js';
+
+/**
+ * @typedef {Object} SpinResult
+ * @property {boolean} ok
+ * @property {import('./ReelController.js').StopFrame} [frame]
+ * @property {number[]} [stopIndexes]
+ * @property {import('./ReelController.js').Payline|null} [winLine]
+ * @property {{col:number,row:number}[]} [winCells]
+ * @property {number} [payout]
+ * @property {number} [upsellGames]
+ * @property {import('./SlotEngine.js').DrawResult} [flags]
+ * @property {import('./StateMachine.js').TransitionEvent[]} [events]
+ * @property {'NORMAL'|'ZENCHO'|'CZ'|'BONUS_STANDBY'|'BONUS'|'ART'|'TENJOU'} [phase]
+ * @property {string} [error]
+ */
+
+export class SlotMachine {
+  /**
+   * @param {object} opts
+   * @param {() => number} opts.getMedals
+   * @param {(delta: number) => boolean} opts.addMedals
+   * @param {() => (1|2|3|4|5|6)} opts.getSetting
+   * @param {Rng} [opts.rng]
+   */
+  constructor({ getMedals, addMedals, getSetting, rng }) {
+    this.getMedals = getMedals;
+    this.addMedals = addMedals;
+    this.getSetting = getSetting;
+    this.rng = rng || new Rng();
+    this.state = new SlotSessionState();
+  }
+
+  /** @returns {SpinResult} */
+  spin() {
+    if (this.getMedals() < BET_PER_GAME) {
+      return { ok: false, error: 'メダル不足' };
+    }
+
+    this.addMedals(-BET_PER_GAME);
+    this.state.stats.totalBet += BET_PER_GAME;
+    this.state.stats.gamesPlayed++;
+
+    const setting = this.getSetting();
+    const flags = drawFlags(
+      this.state.phase,
+      this.state.standbyBonusKind,
+      this.state.bonusKind,
+      setting,
+      this.rng,
+    );
+    const stopResult = computeStopFrame(
+      flags,
+      this.state.phase,
+      this.state.standbyBonusKind,
+      this.rng,
+    );
+    const { frame, stopIndexes, winLine, winCells, bonusSymbolsAligned, blue7Aligned } = stopResult;
+
+    // 払い戻し
+    const payout = this._calculatePayout(flags, this.state.phase);
+    if (payout > 0) {
+      this.addMedals(payout);
+      this.state.stats.totalPayout += payout;
+    }
+
+    // ART中のレア小役で上乗せ抽選
+    let upsellGames = 0;
+    if (this.state.phase === 'ART' && (flags.smallFlag === 'watermelon' || flags.smallFlag === 'cherry' || flags.smallFlag === 'chance')) {
+      upsellGames = drawUpsell(flags.smallFlag, this.rng);
+      if (upsellGames > 0) {
+        this.state.artGamesRemaining += upsellGames;
+      }
+    }
+
+    // ZENCHO終了時の結果抽選（transitionに渡す）
+    let zenchoResult = null;
+    if (this.state.phase === 'ZENCHO' && this.state.zenchoGamesRemaining <= 1) {
+      zenchoResult = drawZenchoResult(setting, this.rng);
+    }
+
+    // 状態遷移
+    const events = transition(this.state, { flags, bonusSymbolsAligned, blue7Aligned, zenchoResult }, this.rng);
+
+    return {
+      ok: true,
+      frame,
+      stopIndexes,
+      winLine,
+      winCells,
+      payout,
+      upsellGames,
+      flags,
+      events,
+      phase: this.state.phase,
+    };
+  }
+
+  /**
+   * @param {import('./SlotEngine.js').DrawResult} flags
+   * @param {'NORMAL'|'BONUS_STANDBY'|'BONUS'|'ART'} phase
+   * @returns {number}
+   */
+  _calculatePayout(flags, phase) {
+    if (phase === 'BONUS') {
+      const kind = this.state.bonusKind;
+      if (kind === 'big') return BONUS_PAYOUT_PER_GAME.BIG;
+      if (kind === 'reg') return BONUS_PAYOUT_PER_GAME.REG;
+      return 0;
+    }
+
+    // BONUS_STANDBY中はボーナス図柄を強制表示するため、小役払い出しはしない
+    if (phase === 'BONUS_STANDBY') return 0;
+
+    const table = phase === 'ART' ? ART_PAYOUTS : PAYOUTS;
+    switch (flags.smallFlag) {
+      case 'bell':       return table.BELL;
+      case 'watermelon': return table.WATERMELON;
+      case 'cherry':     return table.CHERRY;
+      case 'replay':     return table.REPLAY;
+      case 'chance':     return 0;
+      case 'reachme':    return 0;
+      default:           return 0;
+    }
+  }
+}

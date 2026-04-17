@@ -14,6 +14,7 @@ import { AchievementScreen } from './AchievementScreen.js';
 import { LeaderboardScreen } from './LeaderboardScreen.js';
 import { SettingsScreen } from './SettingsScreen.js';
 import { eventBus } from '../core/EventBus.js';
+import { CASINO_ENABLED, isCasinoVisible, CasinoManager } from '../casino/index.js';
 
 export class HubManager {
   constructor(container, inventorySystem, stats = null, achievementSystem = null) {
@@ -56,6 +57,8 @@ export class HubManager {
       { id: 'prep',         icon: '🚀', label: '出撃準備', short: '出撃' },
       { id: 'warehouse',    icon: '📦', label: '倉庫',     short: '倉庫' },
       { id: 'shop',         icon: '🏪', label: 'ショップ', short: '店' },
+      // カジノタブ（ショップの隣）。isCasinoVisible() が true のときのみ表示
+      ...(isCasinoVisible() ? [{ id: 'casino', icon: '🎰', label: '賭博場', short: '賭博' }] : []),
       { id: 'collection',   icon: '📖', label: '図鑑',     short: '図鑑' },
       { id: 'stats',        icon: '📊', label: '統計',     short: '統計' },
       { id: 'achievements', icon: '🏅', label: '実績',     short: '実績' },
@@ -164,6 +167,15 @@ export class HubManager {
         const screen = new UpgradeShopScreen(content, this.inventory);
         screen.render();
         this.screens.shop = screen;
+        break;
+      }
+      case 'casino': {
+        if (CASINO_ENABLED) {
+          // 疎結合: CasinoManager 自身が画面のライフサイクルを管理する
+          CasinoManager.getInstance().mountLobby(content, this.inventory);
+          // destroy 呼び出し用にダミー登録（次タブ遷移時に既存 screen.destroy が呼ばれる）
+          this.screens.casino = { destroy: () => CasinoManager.getInstance().screen?.destroy() };
+        }
         break;
       }
       case 'collection': {

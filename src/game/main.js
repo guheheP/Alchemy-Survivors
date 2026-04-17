@@ -27,6 +27,7 @@ import { RunPickupToasts } from './ui/RunPickupToasts.js';
 import { EquipmentPresetsManager } from './hub/EquipmentPresets.js';
 import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNamePrompt.js';
 import { initPwaRuntime, applyPwaUpdate } from './core/pwaRuntime.js';
+import { CASINO_ENABLED, CasinoManager } from './casino/index.js';
 
 class Game {
   constructor() {
@@ -329,6 +330,11 @@ class Game {
       }
     });
 
+    // カジノ機能の初期化（CASINO_ENABLED=false なら何もしない）
+    if (CASINO_ENABLED) {
+      CasinoManager.getInstance().init(this.inventory);
+    }
+
     if (mode === 'continue') {
       const data = this.saveSystem.load();
       // applySaveData はバージョン不一致/破損時に false を返す。その場合は新規ゲーム扱いにフォールバックする
@@ -357,6 +363,10 @@ class Game {
         }
         // 実績復元
         this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
+        // カジノstate復元（CASINO_ENABLED=false時はスキップ）
+        if (CASINO_ENABLED) {
+          CasinoManager.getInstance().hydrate(saveData.casino);
+        }
       } else {
         // セーブ破損/非対応バージョン: 実績だけでも空で初期化してクラッシュ回避
         if (data) {
@@ -628,6 +638,7 @@ class Game {
       stats: this.stats,
       achievements: this.achievements ? this.achievements.getUnlockedIds() : [],
       equipmentPresets: this.presetsManager.toJSON(),
+      casino: CASINO_ENABLED ? CasinoManager.getInstance().serialize() : null,
     });
   }
 }
