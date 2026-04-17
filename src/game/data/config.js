@@ -71,7 +71,7 @@ export const GameConfig = {
   // --- 武器種別デフォルト ---
   weaponTypes: {
     sword:  { baseRange: 100, baseCooldown: 0.95, arc: Math.PI * 5 / 4, pattern: 'cleave' },
-    spear:  { baseRange: 150, baseCooldown: 1.1, arc: Math.PI / 8, pattern: 'thrust' },
+    spear:  { baseRange: 150, baseCooldown: 0.9, arc: Math.PI / 8, pattern: 'thrust' },
     bow:    { baseRange: 180, baseCooldown: 0.65, arc: 0, pattern: 'projectile' },
     staff:  { baseRange: 130, baseCooldown: 0.85, arc: Math.PI * 2, pattern: 'orbit' },
     dagger: { baseRange: 60, baseCooldown: 0.30, arc: Math.PI / 3, pattern: 'orbit' },

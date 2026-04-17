@@ -185,7 +185,7 @@ export const ItemBlueprints = {
   },
   silver_dagger: { id: 'silver_dagger', name: '銀の短剣', type: 'equipment', equipType: 'dagger', baseValue: 40, baseCritChance: 0.05, baseDamageMultiplier: 1.5, element: 'none', image: '/art/items/silver_dagger.png' },
   leather_armor: { id: 'leather_armor', name: '革鎧', type: 'equipment', equipType: 'armor', baseValue: 60, image: '/art/items/leather_armor.png' },
-  iron_spear: { id: 'iron_spear', name: '鉄の槍', type: 'equipment', equipType: 'spear', baseValue: 42, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/iron_spear.png' },
+  iron_spear: { id: 'iron_spear', name: '鉄の槍', type: 'equipment', equipType: 'spear', baseValue: 42, baseDamageMultiplier: 1.0, element: 'none', image: '/art/items/iron_spear.png' },
   amber_ring: { id: 'amber_ring', name: '琥珀の指輪', type: 'accessory', baseValue: 65, image: '/art/items/amber_ring.png' },
   bone_charm: { id: 'bone_charm', name: '骨のお守り', type: 'accessory', baseValue: 50, image: '/art/items/bone_charm.png' },
   stamina_drink: {
@@ -283,7 +283,7 @@ export const ItemBlueprints = {
   holy_sword: { id: 'holy_sword', name: '聖剣', type: 'equipment', equipType: 'sword', baseValue: 95, baseDamageMultiplier: 2.5, element: 'none', image: '/art/items/holy_sword.png' },
   dragon_armor: { id: 'dragon_armor', name: '竜鱗の鎧', type: 'equipment', equipType: 'armor', baseValue: 220, image: '/art/items/dragon_armor.png' },
   phoenix_feather_acc: { id: 'phoenix_feather_acc', name: '不死鳥のお守り', type: 'accessory', baseValue: 260, image: '/art/items/phoenix_feather_acc.png' },
-  flame_lance: { id: 'flame_lance', name: '炎の槍', type: 'equipment', equipType: 'spear', baseValue: 88, element: 'fire', image: '/art/items/flame_lance.png' },
+  flame_lance: { id: 'flame_lance', name: '炎の槍', type: 'equipment', equipType: 'spear', baseValue: 88, baseDamageMultiplier: 1.25, element: 'fire', image: '/art/items/flame_lance.png' },
   moonlight_staff: { id: 'moonlight_staff', name: '月光の杖', type: 'equipment', equipType: 'staff', baseValue: 92, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/moonlight_staff.png' },
   silver_mail: { id: 'silver_mail', name: '銀糸の鎧', type: 'equipment', equipType: 'armor', baseValue: 210, image: '/art/items/silver_mail.png' },
   spirit_potion: {
@@ -299,7 +299,7 @@ export const ItemBlueprints = {
       ],
     },
   },
-  thunder_hammer: { id: 'thunder_hammer', name: '雷鳴のハンマー', type: 'equipment', equipType: 'spear', baseValue: 90, element: 'lightning', image: '/art/items/thunder_hammer.png' },
+  thunder_hammer: { id: 'thunder_hammer', name: '雷鳴のハンマー', type: 'equipment', equipType: 'spear', baseValue: 90, baseDamageMultiplier: 1.25, element: 'lightning', image: '/art/items/thunder_hammer.png' },
   cursed_ring: { id: 'cursed_ring', name: '呪いの指輪', type: 'accessory', baseValue: 230, image: '/art/items/cursed_ring.png' },
   lava_shield: { id: 'lava_shield', name: '溶岩の盾', type: 'equipment', equipType: 'shield', baseValue: 45, element: 'fire', image: '/art/items/lava_shield.png' },
   fire_cloak: { id: 'fire_cloak', name: '焔纏いのマント', type: 'equipment', equipType: 'robe', baseValue: 175, image: '/art/items/fire_cloak.png' },
@@ -331,7 +331,7 @@ export const ItemBlueprints = {
   },
 
   // ===== Rank 5: 深海解放 (12種) =====
-  trident: { id: 'trident', name: '海神の三叉槍', type: 'equipment', equipType: 'spear', baseValue: 130, element: 'water', image: '/art/items/trident.png' },
+  trident: { id: 'trident', name: '海神の三叉槍', type: 'equipment', equipType: 'spear', baseValue: 130, baseDamageMultiplier: 1.5, element: 'water', image: '/art/items/trident.png' },
   coral_armor: { id: 'coral_armor', name: '珊瑚の鎧', type: 'equipment', equipType: 'armor', baseValue: 280, image: '/art/items/coral_armor.png' },
   pearl_tiara: { id: 'pearl_tiara', name: '真珠のティアラ', type: 'accessory', baseValue: 360, image: '/art/items/pearl_tiara.png' },
   tidal_bow: { id: 'tidal_bow', name: '潮流の弓', type: 'equipment', equipType: 'bow', baseValue: 125, element: 'water', image: '/art/items/tidal_bow.png' },
@@ -415,7 +415,7 @@ export const ItemBlueprints = {
       ],
     },
   },
-  thunder_spear: { id: 'thunder_spear', name: '雷光の槍', type: 'equipment', equipType: 'spear', baseValue: 165, element: 'lightning', image: '/art/items/thunder_spear.png' },
+  thunder_spear: { id: 'thunder_spear', name: '雷光の槍', type: 'equipment', equipType: 'spear', baseValue: 165, baseDamageMultiplier: 1.75, element: 'lightning', image: '/art/items/thunder_spear.png' },
   cursed_crown: { id: 'cursed_crown', name: '呪王の冠', type: 'accessory', baseValue: 520, image: '/art/items/cursed_crown.png' },
   scale_shield: { id: 'scale_shield', name: '竜鱗の大盾', type: 'equipment', equipType: 'shield', baseValue: 75, element: 'none', image: '/art/items/scale_shield.png' },
 
@@ -442,7 +442,7 @@ export const ItemBlueprints = {
   },
   chaos_ring: { id: 'chaos_ring', name: '混沌の指輪', type: 'accessory', baseValue: 680, image: '/art/items/chaos_ring.png' },
   star_pendant: { id: 'star_pendant', name: '星のペンダント', type: 'accessory', baseValue: 720, image: '/art/items/star_pendant.png' },
-  wind_lance: { id: 'wind_lance', name: '疾風の槍', type: 'equipment', equipType: 'spear', baseValue: 215, element: 'wind', image: '/art/items/wind_lance.png' },
+  wind_lance: { id: 'wind_lance', name: '疾風の槍', type: 'equipment', equipType: 'spear', baseValue: 215, baseDamageMultiplier: 2.0, element: 'wind', image: '/art/items/wind_lance.png' },
   phoenix_bow: { id: 'phoenix_bow', name: '不死鳥の弓', type: 'equipment', equipType: 'bow', baseValue: 215, baseCritChance: 0.05, element: 'fire', image: '/art/items/phoenix_bow.png' },
 
   // ===== Rank 8: 最終レシピ (10種) =====

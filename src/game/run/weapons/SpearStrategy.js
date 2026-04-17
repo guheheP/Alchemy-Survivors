@@ -2,12 +2,49 @@
  * SpearStrategy — 長槍突進貫通 (オートエイム)
  * 最も近い敵に向かって突き出す直線攻撃、通過した全敵にダメージ
  * 貫通数無制限、射程が長い
+ *
+ * extraProjectile パッシブ対応: +1 ごとに同方向へ 0.08 秒間隔で連続突きを追加。
+ * 2本目以降は update() のタイマーで遅延実行し、毎回最寄り敵を再計算して狙いを追従する。
  */
 
 import { WeaponStrategy } from './WeaponStrategy.js';
 
+const THRUST_INTERVAL = 0.08; // 連続突きの間隔(秒)
+
 export class SpearStrategy extends WeaponStrategy {
+  constructor(player, weaponItem) {
+    super(player, weaponItem);
+    this._pendingThrusts = []; // { timer: number }
+  }
+
   attack(enemies) {
+    const extra = this.player?.passives?.extraProjectile || 0;
+    const total = 1 + extra;
+    // 1本目は即時
+    this._performThrust(enemies);
+    // 2本目以降は遅延キューへ
+    for (let i = 1; i < total; i++) {
+      this._pendingThrusts.push({ timer: THRUST_INTERVAL * i });
+    }
+  }
+
+  update(dt, enemies) {
+    super.update(dt, enemies);
+    if (this._pendingThrusts.length === 0) return;
+    // 逆順で走査して splice を安全に
+    for (let i = this._pendingThrusts.length - 1; i >= 0; i--) {
+      const p = this._pendingThrusts[i];
+      p.timer -= dt;
+      if (p.timer <= 0) {
+        // 遅延実行時は最新の敵リストを使う (敵の死亡や新規湧きに追従)
+        this._performThrust(this._enemies || enemies);
+        this._pendingThrusts.splice(i, 1);
+      }
+    }
+  }
+
+  _performThrust(enemies) {
+    if (!enemies) return;
     const px = this.player.x;
     const py = this.player.y;
     const range = this.range;

@@ -70,7 +70,7 @@ export const PassiveDefs = [
   {
     id: 'extra_projectile',
     name: '追加射出+1',
-    description: '弓・杖の射出数を+1',
+    description: '弓・杖・槍・短剣の射出数を+1',
     icon: '🔱',
     maxStacks: 3,
     effect: { stat: 'extraProjectile', value: 1 },
