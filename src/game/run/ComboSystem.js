@@ -39,10 +39,10 @@ export class ComboSystem {
     const fxX = enemy.x;
     const fxY = enemy.y;
 
-    // 効果適用
+    // 効果適用 — 発生ダメージ合計を取得してコンボ演出に渡す
     const player = this.ctx.getPlayer?.();
     const powerMult = 1 + (player?.passives?.elementPowerBonus || 0);
-    this._applyEffect(combo, enemy, powerMult, hitParams);
+    const totalDamage = this._applyEffect(combo, enemy, powerMult, hitParams);
 
     // 状態異常消費
     if (combo.consume && combo.consume.length > 0) {
@@ -58,20 +58,22 @@ export class ComboSystem {
     // 演出 (キャプチャ済み座標を使用)
     this._emitFx(combo, fxX, fxY);
 
-    // UI 通知
+    // UI 通知（ダメージ集計は整数化してから渡す）
     eventBus.emit('combo:fired', {
       combo,
       x: fxX,
       y: fxY,
+      totalDamage: Math.max(0, Math.round(totalDamage || 0)),
     });
   }
 
   _applyEffect(combo, sourceEnemy, powerMult, hitParams) {
     const eff = combo.effect;
-    if (!eff) return;
+    if (!eff) return 0;
     const allEnemies = this.ctx.getAllEnemies?.() || [];
     const baseDamage = this._resolveDamageBase(eff, sourceEnemy, hitParams);
     const dmg = baseDamage * (eff.damageMult || 1) * powerMult;
+    let totalDealt = 0;
 
     switch (eff.kind) {
       case 'aoe_damage': {
@@ -88,6 +90,10 @@ export class ComboSystem {
           const tx = target.x;
           const ty = target.y;
           if (dmg > 0) {
+            // 被ダメ乗算（vulnerable 等）を合算後ダメージに反映させるため、
+            // targetの _incomingDamageMult を使って実効ダメを集計
+            const effectiveDmg = dmg * (typeof target._incomingDamageMult === 'function' ? target._incomingDamageMult() : 1);
+            totalDealt += effectiveDmg;
             if (target.takeDamage(dmg)) {
               eventBus.emit('enemy:killed', { enemy: target, x: tx, y: ty, isBoss: target.isBoss, color: target.color });
             }
@@ -124,6 +130,8 @@ export class ComboSystem {
           const nextX = next.x;
           const nextY = next.y;
           if (dmg > 0) {
+            const effectiveDmg = dmg * (typeof next._incomingDamageMult === 'function' ? next._incomingDamageMult() : 1);
+            totalDealt += effectiveDmg;
             if (next.takeDamage(dmg)) {
               eventBus.emit('enemy:killed', { enemy: next, x: nextX, y: nextY, isBoss: next.isBoss, color: next.color });
             }
@@ -158,6 +166,7 @@ export class ComboSystem {
         if (eff.appliesStatus) this._applyStatusToTarget(sourceEnemy, eff.appliesStatus, sourceEnemy, powerMult);
         break;
     }
+    return totalDealt;
   }
 
   /**
