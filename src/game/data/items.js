@@ -183,7 +183,7 @@ export const ItemBlueprints = {
       ],
     },
   },
-  silver_dagger: { id: 'silver_dagger', name: '銀の短剣', type: 'equipment', equipType: 'dagger', baseValue: 40, baseCritChance: 0.05, baseDamageMultiplier: 1.5, element: 'none', image: '/art/items/silver_dagger.png' },
+  silver_dagger: { id: 'silver_dagger', name: '銀の短剣', type: 'equipment', equipType: 'dagger', baseValue: 40, baseCritChance: 0.05, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/silver_dagger.png' },
   leather_armor: { id: 'leather_armor', name: '革鎧', type: 'equipment', equipType: 'armor', baseValue: 60, image: '/art/items/leather_armor.png' },
   iron_spear: { id: 'iron_spear', name: '鉄の槍', type: 'equipment', equipType: 'spear', baseValue: 42, baseDamageMultiplier: 1.0, element: 'none', image: '/art/items/iron_spear.png' },
   amber_ring: { id: 'amber_ring', name: '琥珀の指輪', type: 'accessory', baseValue: 65, image: '/art/items/amber_ring.png' },
@@ -353,7 +353,7 @@ export const ItemBlueprints = {
   void_amulet: { id: 'void_amulet', name: '虚空のアミュレット', type: 'accessory', baseValue: 390, image: '/art/items/void_amulet.png' },
   frost_blade: { id: 'frost_blade', name: '凍てつく刃', type: 'equipment', equipType: 'sword', baseValue: 122, baseDamageMultiplier: 2.0, element: 'ice', image: '/art/items/frost_blade.png' },
   elder_staff: { id: 'elder_staff', name: '長老樹の杖', type: 'equipment', equipType: 'staff', baseValue: 120, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/elder_staff.png' },
-  sea_serpent_whip: { id: 'sea_serpent_whip', name: '海竜の鞭', type: 'equipment', equipType: 'dagger', baseValue: 128, baseCritChance: 0.08, baseDamageMultiplier: 1.2, element: 'water', image: '/art/items/sea_serpent_whip.png' },
+  sea_serpent_whip: { id: 'sea_serpent_whip', name: '海竜の鞭', type: 'equipment', equipType: 'dagger', baseValue: 128, baseCritChance: 0.08, baseDamageMultiplier: 1.0, element: 'water', image: '/art/items/sea_serpent_whip.png' },
   lotus_perfume: {
     id: 'lotus_perfume', name: '黒蓮の香水', type: 'consumable', baseValue: 180, image: '/art/items/lotus_perfume.png',
     battleEffect: {
