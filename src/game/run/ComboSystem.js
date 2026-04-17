@@ -74,6 +74,9 @@ export class ComboSystem {
     const baseDamage = this._resolveDamageBase(eff, sourceEnemy, hitParams);
     const dmg = baseDamage * (eff.damageMult || 1) * powerMult;
     let totalDealt = 0;
+    // 密集敵群で同フレームに複数のコンボが並列トリガーした際、同一被害敵への
+    // 重ね被弾を抑える免疫ウィンドウ (秒)。トリガー自体は許容し、被ダメだけキャップ。
+    const COMBO_HIT_IMMUNITY = 0.15;
 
     switch (eff.kind) {
       case 'aoe_damage': {
@@ -89,11 +92,12 @@ export class ComboSystem {
           // takeDamage で死亡 → pool.release → reset で target.x/y がクリアされる前に値を控える
           const tx = target.x;
           const ty = target.y;
-          if (dmg > 0) {
+          if (dmg > 0 && (target._comboHitImmunityTimer || 0) <= 0) {
             // 被ダメ乗算（vulnerable 等）を合算後ダメージに反映させるため、
             // targetの _incomingDamageMult を使って実効ダメを集計
             const effectiveDmg = dmg * (typeof target._incomingDamageMult === 'function' ? target._incomingDamageMult() : 1);
             totalDealt += effectiveDmg;
+            target._comboHitImmunityTimer = COMBO_HIT_IMMUNITY;
             if (target.takeDamage(dmg)) {
               eventBus.emit('enemy:killed', { enemy: target, x: tx, y: ty, isBoss: target.isBoss, color: target.color });
             }
@@ -129,9 +133,10 @@ export class ComboSystem {
           // takeDamage で死ぬと pool.release → reset で next.x/y が (0,0) になるため先に記憶
           const nextX = next.x;
           const nextY = next.y;
-          if (dmg > 0) {
+          if (dmg > 0 && (next._comboHitImmunityTimer || 0) <= 0) {
             const effectiveDmg = dmg * (typeof next._incomingDamageMult === 'function' ? next._incomingDamageMult() : 1);
             totalDealt += effectiveDmg;
+            next._comboHitImmunityTimer = COMBO_HIT_IMMUNITY;
             if (next.takeDamage(dmg)) {
               eventBus.emit('enemy:killed', { enemy: next, x: nextX, y: nextY, isBoss: next.isBoss, color: next.color });
             }
