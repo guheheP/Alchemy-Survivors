@@ -153,19 +153,6 @@ export const ItemBlueprints = {
   },
   stone_axe: { id: 'stone_axe', name: '石斧', type: 'equipment', equipType: 'sword', baseValue: 28, baseDamageMultiplier: 2.0, image: '/art/items/stone_axe.png' },
   clay_pot: { id: 'clay_pot', name: '粘土の壺', type: 'accessory', baseValue: 22, image: '/art/items/clay_pot.png' },
-  antidote_basic: {
-    id: 'antidote_basic', name: '毒消し薬', type: 'consumable', baseValue: 20, image: '/art/items/antidote.png',
-    battleEffect: {
-      target: 'ally',
-      tiers: [
-        { minQuality: 0,   buffs: [{ stat: 'def', amount: 5, duration: 15 }] },
-        { minQuality: 40,  buffs: [{ stat: 'def', amount: 5, duration: 5 }] },
-        { minQuality: 70,  heal: 10 },
-        { minQuality: 100, buffs: [{ stat: 'dodge', amount: 10, duration: 15 }] },
-        { minQuality: 150, regen: { hpPerSec: 2, duration: 8 } },
-      ],
-    },
-  },
   mud_ball: {
     id: 'mud_ball', name: '泥団子', type: 'consumable', baseValue: 8, image: '/art/items/mud_ball.png',
     battleEffect: {
@@ -188,11 +175,11 @@ export const ItemBlueprints = {
     battleEffect: {
       target: 'ally',
       tiers: [
-        { minQuality: 0,   buffs: [{ stat: 'def', amount: 10, duration: 15 }] },
-        { minQuality: 50,  regen: { hpPerSec: 3, duration: 5 } },
-        { minQuality: 80,  buffs: [{ stat: 'dodge', amount: 10, duration: 15 }] },
-        { minQuality: 120, buffs: [{ stat: 'def', amount: 10, duration: 10 }] },
-        { minQuality: 170, heal: 30 },
+        { minQuality: 0,   buffs: [{ stat: 'def', amount: 5, duration: 15 }] },
+        { minQuality: 40,  buffs: [{ stat: 'def', amount: 5, duration: 5 }] },
+        { minQuality: 80,  regen: { hpPerSec: 2, duration: 6 } },
+        { minQuality: 120, buffs: [{ stat: 'dodge', amount: 15, duration: 15 }] },
+        { minQuality: 170, heal: 30, buffs: [{ stat: 'def', amount: 0, duration: 5 }] },
       ],
     },
   },
@@ -512,7 +499,7 @@ export const Recipes = {
   herb_tea: { id: 'r_herb_tea', targetId: 'herb_tea', materials: ['@herb_type', 'flower_petal'], unlocked: true },
   stone_axe: { id: 'r_stone_axe', targetId: 'stone_axe', materials: ['@stone_type', 'wood'], unlocked: true },
   clay_pot: { id: 'r_clay_pot', targetId: 'clay_pot', materials: ['clay', 'sand'], unlocked: true },
-  antidote_basic: { id: 'r_antidote_basic', targetId: 'antidote_basic', materials: ['bug_shell', 'slime_jelly'], unlocked: true },
+  antidote: { id: 'r_antidote', targetId: 'antidote', materials: ['bug_shell', 'slime_jelly'], unlocked: true },
   mud_ball: { id: 'r_mud_ball', targetId: 'mud_ball', materials: ['clay', 'slime_jelly'], unlocked: true },
   // 素材レシピ (Rank 1)
   plywood: { id: 'r_plywood', targetId: 'plywood', materials: ['wood', 'wood'], unlocked: true, isMaterialRecipe: true },
@@ -520,7 +507,6 @@ export const Recipes = {
 
   // --- Rank 2 解放 ---
   sword: { id: 'r_sword', targetId: 'sword', materials: ['@ore_type', '@wood_type'], unlocked: false },
-  antidote: { id: 'r_antidote', targetId: 'antidote', materials: ['herb', 'poison_herb'], unlocked: false },
   silver_dagger: { id: 'r_silver_dagger', targetId: 'silver_dagger', materials: ['silver_ore', 'bone'], unlocked: false },
   leather_armor: { id: 'r_leather_armor', targetId: 'leather_armor', materials: ['@cloth_type', '@ore_type'], unlocked: false },
   iron_spear: { id: 'r_iron_spear', targetId: 'iron_spear', materials: ['iron_ore', '@wood_type'], unlocked: false },
