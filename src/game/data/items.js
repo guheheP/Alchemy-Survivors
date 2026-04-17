@@ -138,39 +138,159 @@ export const ItemBlueprints = {
     },
   },
   wooden_bow: { id: 'wooden_bow', name: '木の弓', type: 'equipment', equipType: 'bow', baseValue: 30, image: '/art/items/wooden_bow.png' },
-  herb_tea: { id: 'herb_tea', name: 'ハーブティー', type: 'consumable', baseValue: 12, image: '/art/items/herb_tea.png', battleEffect: { type: 'heal', target: 'ally', value: 20 } },
+  herb_tea: {
+    id: 'herb_tea', name: 'ハーブティー', type: 'consumable', baseValue: 12, image: '/art/items/herb_tea.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   heal: 15 },
+        { minQuality: 40,  regen: { hpPerSec: 1, duration: 5 } },
+        { minQuality: 70,  heal: 10 },
+        { minQuality: 100, regen: { duration: 3 } },
+        { minQuality: 150, buffs: [{ stat: 'spd', amount: 15, duration: 10 }] },
+      ],
+    },
+  },
   stone_axe: { id: 'stone_axe', name: '石斧', type: 'equipment', equipType: 'sword', baseValue: 28, baseDamageMultiplier: 2.0, image: '/art/items/stone_axe.png' },
   clay_pot: { id: 'clay_pot', name: '粘土の壺', type: 'accessory', baseValue: 22, image: '/art/items/clay_pot.png' },
-  antidote_basic: { id: 'antidote_basic', name: '毒消し薬', type: 'consumable', baseValue: 20, image: '/art/items/antidote.png', battleEffect: { type: 'buff', target: 'ally', stat: 'def', amount: 5, duration: 15 } },
-  mud_ball: { id: 'mud_ball', name: '泥団子', type: 'consumable', baseValue: 8, image: '/art/items/mud_ball.png', battleEffect: { type: 'debuff', target: 'enemy', stat: 'spd', amount: -10, duration: 10 } },
+  antidote_basic: {
+    id: 'antidote_basic', name: '毒消し薬', type: 'consumable', baseValue: 20, image: '/art/items/antidote.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   buffs: [{ stat: 'def', amount: 5, duration: 15 }] },
+        { minQuality: 40,  buffs: [{ stat: 'def', amount: 5, duration: 5 }] },
+        { minQuality: 70,  heal: 10 },
+        { minQuality: 100, buffs: [{ stat: 'dodge', amount: 10, duration: 15 }] },
+        { minQuality: 150, regen: { hpPerSec: 2, duration: 8 } },
+      ],
+    },
+  },
+  mud_ball: {
+    id: 'mud_ball', name: '泥団子', type: 'consumable', baseValue: 8, image: '/art/items/mud_ball.png',
+    battleEffect: {
+      target: 'enemy',
+      tiers: [
+        { minQuality: 0,   statusEffect: { type: 'freeze', duration: 1, speedMod: -20 } },
+        { minQuality: 40,  statusEffect: { duration: 1 } },
+        { minQuality: 70,  vulnerable: { amount: 15, duration: 8 } },
+        { minQuality: 100, damage: 20 },
+        { minQuality: 150, statusEffect: { duration: 2 } },
+      ],
+    },
+  },
 
   // ===== Rank 2: 洞窟解放 (10種) =====
   fire_sword: { id: 'fire_sword', name: '炎の剣', type: 'equipment', equipType: 'sword', baseValue: 45, baseDamageMultiplier: 2.0, element: 'fire', image: '/art/items/fire_sword.png' },
   ice_shield: { id: 'ice_shield', name: '氷の盾', type: 'equipment', equipType: 'shield', baseValue: 30, element: 'ice', image: '/art/items/ice_shield.png' },
-  antidote: { id: 'antidote', name: '解毒薬', type: 'consumable', baseValue: 30, image: '/art/items/antidote.png', battleEffect: { type: 'buff', target: 'ally', stat: 'def', amount: 10, duration: 20 } },
+  antidote: {
+    id: 'antidote', name: '解毒薬', type: 'consumable', baseValue: 30, image: '/art/items/antidote.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   buffs: [{ stat: 'def', amount: 10, duration: 15 }] },
+        { minQuality: 50,  regen: { hpPerSec: 3, duration: 5 } },
+        { minQuality: 80,  buffs: [{ stat: 'dodge', amount: 10, duration: 15 }] },
+        { minQuality: 120, buffs: [{ stat: 'def', amount: 10, duration: 10 }] },
+        { minQuality: 170, heal: 30 },
+      ],
+    },
+  },
   silver_dagger: { id: 'silver_dagger', name: '銀の短剣', type: 'equipment', equipType: 'dagger', baseValue: 40, baseCritChance: 0.05, baseDamageMultiplier: 1.5, element: 'none', image: '/art/items/silver_dagger.png' },
   leather_armor: { id: 'leather_armor', name: '革鎧', type: 'equipment', equipType: 'armor', baseValue: 60, image: '/art/items/leather_armor.png' },
   iron_spear: { id: 'iron_spear', name: '鉄の槍', type: 'equipment', equipType: 'spear', baseValue: 42, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/iron_spear.png' },
   amber_ring: { id: 'amber_ring', name: '琥珀の指輪', type: 'accessory', baseValue: 65, image: '/art/items/amber_ring.png' },
   bone_charm: { id: 'bone_charm', name: '骨のお守り', type: 'accessory', baseValue: 50, image: '/art/items/bone_charm.png' },
-  stamina_drink: { id: 'stamina_drink', name: 'スタミナドリンク', type: 'consumable', baseValue: 25, image: '/art/items/stamina_drink.png', battleEffect: { type: 'buff', target: 'ally', stat: 'spd', amount: 30, duration: 15 } },
+  stamina_drink: {
+    id: 'stamina_drink', name: 'スタミナドリンク', type: 'consumable', baseValue: 25, image: '/art/items/stamina_drink.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   buffs: [{ stat: 'spd', amount: 20, duration: 15 }] },
+        { minQuality: 50,  buffs: [{ stat: 'cooldown', amount: 10, duration: 15 }] },
+        { minQuality: 80,  buffs: [{ stat: 'spd', amount: 10, duration: 0 }] },
+        { minQuality: 120, buffs: [{ stat: 'spd', amount: 0, duration: 5 }, { stat: 'dodge', amount: 10, duration: 15 }] },
+        { minQuality: 170, buffs: [{ stat: 'magnet', amount: 30, duration: 15 }] },
+      ],
+    },
+  },
   iron_helm: { id: 'iron_helm', name: '鉄兜', type: 'equipment', equipType: 'armor', baseValue: 48, image: '/art/items/iron_helm.png' },
-  iron_spike: { id: 'iron_spike', name: '鉄の棘', type: 'consumable', baseValue: 22, image: '/art/items/iron_spike.png', battleEffect: { type: 'damage', target: 'enemy', value: 35 } },
+  iron_spike: {
+    id: 'iron_spike', name: '鉄の棘', type: 'consumable', baseValue: 22, image: '/art/items/iron_spike.png',
+    battleEffect: {
+      target: 'enemy',
+      tiers: [
+        { minQuality: 0,   damage: 25 },
+        { minQuality: 40,  damage: 15 },
+        { minQuality: 70,  stun: { duration: 2 } },
+        { minQuality: 100, statusEffect: { type: 'burn', dps: 5, duration: 5 } },
+        { minQuality: 150, damage: 30, vulnerable: { amount: 20, duration: 5 } },
+      ],
+    },
+  },
 
   // ===== Rank 3: 森解放 (12種) =====
   mage_staff: { id: 'mage_staff', name: '魔法の杖', type: 'equipment', equipType: 'staff', baseValue: 62, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/mage_staff.png' },
   chainmail: { id: 'chainmail', name: '鎖帷子', type: 'equipment', equipType: 'armor', baseValue: 100, image: '/art/items/chainmail.png' },
-  elixir: { id: 'elixir', name: '万能薬', type: 'consumable', baseValue: 75, image: '/art/items/elixir.png', battleEffect: { type: 'heal', target: 'ally', value: 90 } },
+  elixir: {
+    id: 'elixir', name: '万能薬', type: 'consumable', baseValue: 75, image: '/art/items/elixir.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   heal: 50 },
+        { minQuality: 50,  heal: 30 },
+        { minQuality: 80,  percentHeal: 15 },
+        { minQuality: 120, regen: { hpPerSec: 4, duration: 5 } },
+        { minQuality: 170, buffs: [{ stat: 'atk', amount: 10, duration: 15 }, { stat: 'def', amount: 5, duration: 15 }] },
+      ],
+    },
+  },
   wind_bow: { id: 'wind_bow', name: '風の弓', type: 'equipment', equipType: 'bow', baseValue: 60, element: 'wind', image: '/art/items/wind_bow.png' },
   spirit_robe: { id: 'spirit_robe', name: '精霊のローブ', type: 'equipment', equipType: 'robe', baseValue: 110, image: '/art/items/spirit_robe.png' },
-  strength_potion: { id: 'strength_potion', name: '力の薬', type: 'consumable', baseValue: 55, image: '/art/items/strength_potion.png', battleEffect: { type: 'buff', target: 'ally', stat: 'atk', amount: 20, duration: 20 } },
+  strength_potion: {
+    id: 'strength_potion', name: '力の薬', type: 'consumable', baseValue: 55, image: '/art/items/strength_potion.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   buffs: [{ stat: 'atk', amount: 20, duration: 15 }] },
+        { minQuality: 50,  buffs: [{ stat: 'atk', amount: 10, duration: 0 }] },
+        { minQuality: 80,  buffs: [{ stat: 'crit', amount: 15, duration: 15 }] },
+        { minQuality: 120, buffs: [{ stat: 'atk', amount: 0, duration: 10 }] },
+        { minQuality: 170, buffs: [{ stat: 'critDmg', amount: 30, duration: 15 }] },
+      ],
+    },
+  },
   spider_cloak: { id: 'spider_cloak', name: '蜘蛛糸のマント', type: 'equipment', equipType: 'robe', baseValue: 85, image: '/art/items/spider_cloak.png' },
   crystal_orb: { id: 'crystal_orb', name: '水晶の宝珠', type: 'accessory', baseValue: 130, image: '/art/items/crystal_orb.png' },
   dark_blade: { id: 'dark_blade', name: '暗黒の刃', type: 'equipment', equipType: 'sword', baseValue: 58, baseCritChance: 0.03, baseDamageMultiplier: 2.0, element: 'poison', image: '/art/items/dark_blade.png' },
   fairy_necklace: { id: 'fairy_necklace', name: '妖精のネックレス', type: 'accessory', baseValue: 100, image: '/art/items/fairy_necklace.png' },
   poison_dagger: { id: 'poison_dagger', name: '毒塗りの短剣', type: 'equipment', equipType: 'dagger', baseValue: 60, baseCritChance: 0.06, baseDamageMultiplier: 1.2, element: 'poison', image: '/art/items/poison_dagger.png' },
-  magic_ink: { id: 'magic_ink', name: '魔法のインク', type: 'consumable', baseValue: 40, image: '/art/items/magic_ink.png', battleEffect: { type: 'debuff', target: 'enemy', stat: 'spd', amount: -15, duration: 15 } },
-  weakness_draught: { id: 'weakness_draught', name: '弱体化の薬', type: 'consumable', baseValue: 60, image: '/art/items/weakness_draught.png', battleEffect: { type: 'debuff', target: 'enemy', stat: 'atk', amount: -20, duration: 20 } },
+  magic_ink: {
+    id: 'magic_ink', name: '魔法のインク', type: 'consumable', baseValue: 40, image: '/art/items/magic_ink.png',
+    battleEffect: {
+      target: 'enemy',
+      tiers: [
+        { minQuality: 0,   statusEffect: { type: 'freeze', duration: 2, speedMod: -40 } },
+        { minQuality: 50,  statusEffect: { type: 'shock', duration: 3 } },
+        { minQuality: 80,  vulnerable: { amount: 20, duration: 10 } },
+        { minQuality: 120, statusEffect: { duration: 3 } },
+        { minQuality: 170, damage: 50 },
+      ],
+    },
+  },
+  weakness_draught: {
+    id: 'weakness_draught', name: '弱体化の薬', type: 'consumable', baseValue: 60, image: '/art/items/weakness_draught.png',
+    battleEffect: {
+      target: 'enemy',
+      tiers: [
+        { minQuality: 0,   vulnerable: { amount: 25, duration: 12 } },
+        { minQuality: 50,  vulnerable: { duration: 5 } },
+        { minQuality: 80,  vulnerable: { amount: 15 } },
+        { minQuality: 120, statusEffect: { type: 'poison', dps: 6, duration: 8 } },
+        { minQuality: 170, statusEffect: { duration: 4 } },
+      ],
+    },
+  },
 
   // ===== Rank 4: 火山解放 (12種) =====
   holy_sword: { id: 'holy_sword', name: '聖剣', type: 'equipment', equipType: 'sword', baseValue: 95, baseDamageMultiplier: 2.5, element: 'none', image: '/art/items/holy_sword.png' },
@@ -179,39 +299,135 @@ export const ItemBlueprints = {
   flame_lance: { id: 'flame_lance', name: '炎の槍', type: 'equipment', equipType: 'spear', baseValue: 88, element: 'fire', image: '/art/items/flame_lance.png' },
   moonlight_staff: { id: 'moonlight_staff', name: '月光の杖', type: 'equipment', equipType: 'staff', baseValue: 92, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/moonlight_staff.png' },
   silver_mail: { id: 'silver_mail', name: '銀糸の鎧', type: 'equipment', equipType: 'armor', baseValue: 210, image: '/art/items/silver_mail.png' },
-  spirit_potion: { id: 'spirit_potion', name: '霊薬', type: 'consumable', baseValue: 120, image: '/art/items/spirit_potion.png', battleEffect: { type: 'buff', target: 'ally', stat: 'def', amount: 15, duration: 20 } },
+  spirit_potion: {
+    id: 'spirit_potion', name: '霊薬', type: 'consumable', baseValue: 120, image: '/art/items/spirit_potion.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   buffs: [{ stat: 'def', amount: 15, duration: 20 }] },
+        { minQuality: 60,  shield: { amount: 40, duration: 15 } },
+        { minQuality: 100, buffs: [{ stat: 'def', amount: 10, duration: 5 }] },
+        { minQuality: 150, buffs: [{ stat: 'dodge', amount: 20, duration: 15 }] },
+        { minQuality: 220, percentHeal: 20 },
+      ],
+    },
+  },
   thunder_hammer: { id: 'thunder_hammer', name: '雷鳴のハンマー', type: 'equipment', equipType: 'spear', baseValue: 90, element: 'lightning', image: '/art/items/thunder_hammer.png' },
   cursed_ring: { id: 'cursed_ring', name: '呪いの指輪', type: 'accessory', baseValue: 230, image: '/art/items/cursed_ring.png' },
   lava_shield: { id: 'lava_shield', name: '溶岩の盾', type: 'equipment', equipType: 'shield', baseValue: 45, element: 'fire', image: '/art/items/lava_shield.png' },
   fire_cloak: { id: 'fire_cloak', name: '焔纏いのマント', type: 'equipment', equipType: 'robe', baseValue: 175, image: '/art/items/fire_cloak.png' },
-  enchant_scroll: { id: 'enchant_scroll', name: '付呪の巻物', type: 'consumable', baseValue: 140, image: '/art/items/enchant_scroll.png', battleEffect: { type: 'debuff', target: 'enemy', stat: 'def', amount: -15, duration: 20 } },
-  thunder_bomb: { id: 'thunder_bomb', name: '雷鳴の爆弾', type: 'consumable', baseValue: 100, image: '/art/items/thunder_bomb.png', battleEffect: { type: 'stun', target: 'enemy', duration: 8 } },
+  enchant_scroll: {
+    id: 'enchant_scroll', name: '付呪の巻物', type: 'consumable', baseValue: 140, image: '/art/items/enchant_scroll.png',
+    battleEffect: {
+      target: 'enemy',
+      tiers: [
+        { minQuality: 0,   vulnerable: { amount: 30, duration: 15 } },
+        { minQuality: 60,  statusEffect: { type: 'burn', dps: 8, duration: 6 } },
+        { minQuality: 100, vulnerable: { amount: 15, duration: 5 } },
+        { minQuality: 150, damage: 80 },
+        { minQuality: 220, statusEffect: { type: 'shock', duration: 5 } },
+      ],
+    },
+  },
+  thunder_bomb: {
+    id: 'thunder_bomb', name: '雷鳴の爆弾', type: 'consumable', baseValue: 100, image: '/art/items/thunder_bomb.png',
+    battleEffect: {
+      target: 'enemy',
+      tiers: [
+        { minQuality: 0,   stun: { duration: 4 } },
+        { minQuality: 60,  damage: 60 },
+        { minQuality: 100, statusEffect: { type: 'shock', duration: 4 } },
+        { minQuality: 150, stun: { duration: 4 } },
+        { minQuality: 220, damage: 60, vulnerable: { amount: 25, duration: 10 } },
+      ],
+    },
+  },
 
   // ===== Rank 5: 深海解放 (12種) =====
   trident: { id: 'trident', name: '海神の三叉槍', type: 'equipment', equipType: 'spear', baseValue: 130, element: 'water', image: '/art/items/trident.png' },
   coral_armor: { id: 'coral_armor', name: '珊瑚の鎧', type: 'equipment', equipType: 'armor', baseValue: 280, image: '/art/items/coral_armor.png' },
   pearl_tiara: { id: 'pearl_tiara', name: '真珠のティアラ', type: 'accessory', baseValue: 360, image: '/art/items/pearl_tiara.png' },
   tidal_bow: { id: 'tidal_bow', name: '潮流の弓', type: 'equipment', equipType: 'bow', baseValue: 125, element: 'water', image: '/art/items/tidal_bow.png' },
-  deep_elixir: { id: 'deep_elixir', name: '深海の霊薬', type: 'consumable', baseValue: 200, image: '/art/items/deep_elixir.png', battleEffect: { type: 'heal', target: 'all', value: 60 } },
+  deep_elixir: {
+    id: 'deep_elixir', name: '深海の霊薬', type: 'consumable', baseValue: 200, image: '/art/items/deep_elixir.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   heal: 80 },
+        { minQuality: 80,  percentHeal: 15 },
+        { minQuality: 150, regen: { hpPerSec: 5, duration: 8 } },
+        { minQuality: 250, heal: 40 },
+        { minQuality: 400, shield: { amount: 60, duration: 20 } },
+      ],
+    },
+  },
   mithril_sword: { id: 'mithril_sword', name: 'ミスリルの剣', type: 'equipment', equipType: 'sword', baseValue: 130, baseDamageMultiplier: 2.5, element: 'none', image: '/art/items/mithril_sword.png' },
   mithril_shield: { id: 'mithril_shield', name: 'ミスリルの盾', type: 'equipment', equipType: 'shield', baseValue: 60, element: 'none', image: '/art/items/mithril_shield.png' },
   void_amulet: { id: 'void_amulet', name: '虚空のアミュレット', type: 'accessory', baseValue: 390, image: '/art/items/void_amulet.png' },
   frost_blade: { id: 'frost_blade', name: '凍てつく刃', type: 'equipment', equipType: 'sword', baseValue: 122, baseDamageMultiplier: 2.0, element: 'ice', image: '/art/items/frost_blade.png' },
   elder_staff: { id: 'elder_staff', name: '長老樹の杖', type: 'equipment', equipType: 'staff', baseValue: 120, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/elder_staff.png' },
   sea_serpent_whip: { id: 'sea_serpent_whip', name: '海竜の鞭', type: 'equipment', equipType: 'dagger', baseValue: 128, baseCritChance: 0.08, baseDamageMultiplier: 1.2, element: 'water', image: '/art/items/sea_serpent_whip.png' },
-  lotus_perfume: { id: 'lotus_perfume', name: '黒蓮の香水', type: 'consumable', baseValue: 180, image: '/art/items/lotus_perfume.png', battleEffect: { type: 'buff', target: 'all', stat: 'spd', amount: 25, duration: 20 } },
-  revival_herb: { id: 'revival_herb', name: '蘇生草', type: 'consumable', baseValue: 250, image: '/art/items/revival_herb.png', battleEffect: { type: 'heal', target: 'ally', value: 150 } },
+  lotus_perfume: {
+    id: 'lotus_perfume', name: '黒蓮の香水', type: 'consumable', baseValue: 180, image: '/art/items/lotus_perfume.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   buffs: [{ stat: 'spd', amount: 25, duration: 20 }] },
+        { minQuality: 80,  buffs: [{ stat: 'cooldown', amount: 15, duration: 20 }] },
+        { minQuality: 150, buffs: [{ stat: 'magnet', amount: 40, duration: 20 }] },
+        { minQuality: 250, buffs: [{ stat: 'dodge', amount: 20, duration: 20 }] },
+        { minQuality: 400, buffs: [{ stat: 'spd', amount: 15, duration: 0 }] },
+      ],
+    },
+  },
+  revival_herb: {
+    id: 'revival_herb', name: '蘇生草', type: 'consumable', baseValue: 250, image: '/art/items/revival_herb.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   heal: 80 },
+        { minQuality: 80,  heal: 40 },
+        { minQuality: 150, percentHeal: 30 },
+        { minQuality: 250, regen: { hpPerSec: 6, duration: 10 } },
+        { minQuality: 400, shield: { amount: 80, duration: 20 } },
+      ],
+    },
+  },
 
   // ===== Rank 6: 竜の巣解放 (12種) =====
   dragon_slayer: { id: 'dragon_slayer', name: '竜殺しの大剣', type: 'equipment', equipType: 'sword', baseValue: 175, baseDamageMultiplier: 2.5, element: 'none', image: '/art/items/dragon_slayer.png' },
   storm_cloak: { id: 'storm_cloak', name: '嵐のマント', type: 'equipment', equipType: 'robe', baseValue: 380, image: '/art/items/storm_cloak.png' },
   ancient_crown: { id: 'ancient_crown', name: '古代王の冠', type: 'accessory', baseValue: 600, image: '/art/items/ancient_crown.png' },
-  sage_stone: { id: 'sage_stone', name: '賢者の石', type: 'consumable', baseValue: 350, image: '/art/items/sage_stone.png', battleEffect: { type: 'heal', target: 'all', value: 100 } },
+  sage_stone: {
+    id: 'sage_stone', name: '賢者の石', type: 'consumable', baseValue: 350, image: '/art/items/sage_stone.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   heal: 60 },
+        { minQuality: 80,  percentHeal: 20 },
+        { minQuality: 150, buffs: [{ stat: 'critDmg', amount: 50, duration: 15 }] },
+        { minQuality: 250, regen: { hpPerSec: 8, duration: 10 } },
+        { minQuality: 400, buffs: [{ stat: 'elemPower', amount: 30, duration: 15 }] },
+      ],
+    },
+  },
   mystic_amulet: { id: 'mystic_amulet', name: '神秘のアミュレット', type: 'accessory', baseValue: 580, image: '/art/items/mystic_amulet.png' },
   dragon_bow: { id: 'dragon_bow', name: '竜骨の弓', type: 'equipment', equipType: 'bow', baseValue: 160, baseCritChance: 0.04, element: 'fire', image: '/art/items/dragon_bow.png' },
   phoenix_robe: { id: 'phoenix_robe', name: '不死鳥のローブ', type: 'equipment', equipType: 'robe', baseValue: 410, image: '/art/items/phoenix_robe.png' },
   void_blade: { id: 'void_blade', name: '虚無の剣', type: 'equipment', equipType: 'sword', baseValue: 170, baseCritChance: 0.04, baseDamageMultiplier: 2.0, element: 'poison', image: '/art/items/void_blade.png' },
-  dragon_potion: { id: 'dragon_potion', name: '竜の血薬', type: 'consumable', baseValue: 300, image: '/art/items/dragon_potion.png', battleEffect: { type: 'buff', target: 'all', stat: 'atk', amount: 30, duration: 20 } },
+  dragon_potion: {
+    id: 'dragon_potion', name: '竜の血薬', type: 'consumable', baseValue: 300, image: '/art/items/dragon_potion.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   buffs: [{ stat: 'atk', amount: 30, duration: 15 }] },
+        { minQuality: 80,  buffs: [{ stat: 'crit', amount: 20, duration: 15 }] },
+        { minQuality: 150, buffs: [{ stat: 'atk', amount: 20, duration: 0 }] },
+        { minQuality: 250, buffs: [{ stat: 'critDmg', amount: 50, duration: 15 }] },
+        { minQuality: 400, buffs: [{ stat: 'range', amount: 30, duration: 15 }] },
+      ],
+    },
+  },
   thunder_spear: { id: 'thunder_spear', name: '雷光の槍', type: 'equipment', equipType: 'spear', baseValue: 165, element: 'lightning', image: '/art/items/thunder_spear.png' },
   cursed_crown: { id: 'cursed_crown', name: '呪王の冠', type: 'accessory', baseValue: 520, image: '/art/items/cursed_crown.png' },
   scale_shield: { id: 'scale_shield', name: '竜鱗の大盾', type: 'equipment', equipType: 'shield', baseValue: 75, element: 'none', image: '/art/items/scale_shield.png' },
@@ -224,7 +440,19 @@ export const ItemBlueprints = {
   aether_staff: { id: 'aether_staff', name: 'エーテルの杖', type: 'equipment', equipType: 'staff', baseValue: 210, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/aether_staff.png' },
   sky_bow: { id: 'sky_bow', name: '天翔ける弓', type: 'equipment', equipType: 'bow', baseValue: 205, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/sky_bow.png' },
   rainbow_robe: { id: 'rainbow_robe', name: '虹のローブ', type: 'equipment', equipType: 'robe', baseValue: 530, image: '/art/items/rainbow_robe.png' },
-  divine_elixir: { id: 'divine_elixir', name: '神酒', type: 'consumable', baseValue: 400, image: '/art/items/divine_elixir.png', battleEffect: { type: 'heal', target: 'ally', value: 200 } },
+  divine_elixir: {
+    id: 'divine_elixir', name: '神酒', type: 'consumable', baseValue: 400, image: '/art/items/divine_elixir.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   heal: 100 },
+        { minQuality: 80,  percentHeal: 25 },
+        { minQuality: 150, regen: { hpPerSec: 10, duration: 10 } },
+        { minQuality: 250, shield: { amount: 100, duration: 30 } },
+        { minQuality: 400, buffs: [{ stat: 'atk', amount: 30, duration: 20 }, { stat: 'def', amount: 20, duration: 20 }] },
+      ],
+    },
+  },
   chaos_ring: { id: 'chaos_ring', name: '混沌の指輪', type: 'accessory', baseValue: 680, image: '/art/items/chaos_ring.png' },
   star_pendant: { id: 'star_pendant', name: '星のペンダント', type: 'accessory', baseValue: 720, image: '/art/items/star_pendant.png' },
   wind_lance: { id: 'wind_lance', name: '疾風の槍', type: 'equipment', equipType: 'spear', baseValue: 215, element: 'wind', image: '/art/items/wind_lance.png' },
@@ -238,7 +466,24 @@ export const ItemBlueprints = {
   primordial_crown: { id: 'primordial_crown', name: '始原の冠', type: 'accessory', baseValue: 1100, image: '/art/items/primordial_crown.png' },
   eternity_ring: { id: 'eternity_ring', name: '永遠の指輪', type: 'accessory', baseValue: 1050, image: '/art/items/eternity_ring.png' },
   cosmos_bow: { id: 'cosmos_bow', name: '星界弓コスモス', type: 'equipment', equipType: 'bow', baseValue: 275, baseCritChance: 0.05, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/cosmos_bow.png' },
-  panacea: { id: 'panacea', name: '万象の霊薬', type: 'consumable', baseValue: 600, image: '/art/items/panacea.png', battleEffect: { type: 'healfull', target: 'all' } },
+  panacea: {
+    id: 'panacea', name: '万象の霊薬', type: 'consumable', baseValue: 600, image: '/art/items/panacea.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   percentHeal: 60 },
+        { minQuality: 80,  percentHeal: 20 },
+        { minQuality: 150, percentHeal: 20 },
+        { minQuality: 250, shield: { amount: 150, duration: 30 } },
+        { minQuality: 400, buffs: [
+          { stat: 'atk', amount: 15, duration: 20 },
+          { stat: 'def', amount: 15, duration: 20 },
+          { stat: 'spd', amount: 15, duration: 20 },
+          { stat: 'crit', amount: 15, duration: 20 },
+        ] },
+      ],
+    },
+  },
   oblivion_shield: { id: 'oblivion_shield', name: '忘却の盾', type: 'equipment', equipType: 'shield', baseValue: 120, element: 'none', image: '/art/items/oblivion_shield.png' },
   astral_robe: { id: 'astral_robe', name: '星衣アストラル', type: 'equipment', equipType: 'robe', baseValue: 860, image: '/art/items/astral_robe.png' },
 
