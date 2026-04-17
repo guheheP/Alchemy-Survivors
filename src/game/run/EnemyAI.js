@@ -300,7 +300,10 @@ export class Enemy extends Entity {
 
   /** 被ダメージ乗算係数（脆弱状態時に1+_vulnerableMult、なければ1.0） */
   _incomingDamageMult() {
-    return this._vulnerableTimer > 0 ? (1 + this._vulnerableMult) : 1;
+    if (this._vulnerableTimer <= 0) return 1;
+    // NaN/非有限値の伝播防止: _vulnerableMult が何らかで不正値になってもダメ計算が壊れないよう防御
+    const m = Number(this._vulnerableMult);
+    return 1 + (Number.isFinite(m) ? Math.max(0, m) : 0);
   }
 
   /**
