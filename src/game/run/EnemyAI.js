@@ -340,7 +340,10 @@ export class Enemy extends Entity {
         break;
     }
     // 付与直後にコンボ検出 (ComboSystem が eventBus で受ける)
-    this._checkCombo(type, params);
+    // ただし、コンボ発動内で付与されたもの(_fromCombo)は再帰的な combo:triggered を避けるためスキップ
+    if (!params || !params._fromCombo) {
+      this._checkCombo(type, params);
+    }
   }
 
   /** 新規に type が付いたので、既に付いている他の状態異常と組み合わせたコンボを検出 */

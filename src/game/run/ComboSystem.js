@@ -241,6 +241,11 @@ export class ComboSystem {
       params.dps = (sourceEnemy._burnDps || 10) * statusDef.params.dpsMult * powerMult;
       delete params.dpsMult;
     }
+    // コンボ由来の付与は付与先で _checkCombo を回さない。
+    // そうでないと burn+poison の WILDFIRE 等が周囲敵(既にburn持ち)に poison を撒いて
+    // → 各敵で WILDFIRE 再発動 → さらに poison を撒く、と同期再帰し
+    // EventBus の max emit depth を超える。
+    params._fromCombo = true;
     target.applyStatusEffect(statusDef.type, params);
   }
 
