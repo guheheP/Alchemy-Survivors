@@ -1658,6 +1658,14 @@ button.slot-assigned:hover { background: rgba(240,192,96,0.1); border-color: #f0
   padding: 0.05rem 0.3rem; border-radius: 3px;
   background: rgba(240,192,96,0.15); color: #f0c060; border: 1px solid rgba(240,192,96,0.3);
 }
+.preview-section { font-weight: 700; color: #ccc; margin-top: 0.4rem; border-top: 1px dashed #333; padding-top: 0.3rem; }
+.tier-list { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.15rem 0 0.3rem; }
+.tier-row { display: flex; justify-content: flex-start; gap: 0.5rem; font-size: 0.78rem; padding: 0.15rem 0.4rem; border-radius: 3px; }
+.tier-row .tier-q { min-width: 3.5rem; font-weight: 700; }
+.tier-row .tier-effect { color: inherit; }
+.tier-row.tier-unlocked { background: rgba(80,200,120,0.10); color: #9f9; }
+.tier-row.tier-locked { background: rgba(120,120,120,0.08); color: #777; }
+.tier-resolved-row .preview-val { color: #6cf; }
 .preview-dual-section {
   margin-top: 0.45rem; padding: 0.45rem 0.55rem;
   border-radius: 6px;

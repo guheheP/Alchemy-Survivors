@@ -124,7 +124,19 @@ export const ItemBlueprints = {
   // ===== Rank 1: 初期レシピ (8種) =====
   sword: { id: 'sword', name: '鉄の剣', type: 'equipment', equipType: 'sword', baseValue: 32, baseDamageMultiplier: 2.0, image: '/art/items/sword.png' },
   shield: { id: 'shield', name: '木の盾', type: 'equipment', equipType: 'shield', baseValue: 15, image: '/art/items/shield.png' },
-  potion: { id: 'potion', name: '回復薬', type: 'consumable', baseValue: 18, image: '/art/items/potion.png', battleEffect: { type: 'heal', target: 'ally', value: 40 } },
+  potion: {
+    id: 'potion', name: '回復薬', type: 'consumable', baseValue: 18, image: '/art/items/potion.png',
+    battleEffect: {
+      target: 'ally',
+      tiers: [
+        { minQuality: 0,   heal: 20 },
+        { minQuality: 50,  heal: 10 },
+        { minQuality: 80,  regen: { hpPerSec: 2, duration: 5 } },
+        { minQuality: 100, regen: { duration: 5 } },
+        { minQuality: 150, percentHeal: 25 },
+      ],
+    },
+  },
   wooden_bow: { id: 'wooden_bow', name: '木の弓', type: 'equipment', equipType: 'bow', baseValue: 30, image: '/art/items/wooden_bow.png' },
   herb_tea: { id: 'herb_tea', name: 'ハーブティー', type: 'consumable', baseValue: 12, image: '/art/items/herb_tea.png', battleEffect: { type: 'heal', target: 'ally', value: 20 } },
   stone_axe: { id: 'stone_axe', name: '石斧', type: 'equipment', equipType: 'sword', baseValue: 28, baseDamageMultiplier: 2.0, image: '/art/items/stone_axe.png' },
