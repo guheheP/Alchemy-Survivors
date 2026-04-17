@@ -53,6 +53,8 @@ export class Enemy extends Entity {
     this._knockbackCount = 0;
     // 属性コンボのクールダウン (同一敵で連続発動を防ぐ)
     this._comboCdTimer = 0;
+    // コンボAoE被ダメージ免疫ウィンドウ — 密集敵群での同時発動による多重被弾を防ぐ
+    this._comboHitImmunityTimer = 0;
     // 最後に受けた武器由来のヒットダメージ (ComboSystem が 'hitDamage' 基準で参照)。
     // DoT tick や感染拡散では更新されないため、武器攻撃力ベースのコンボ威力を維持する用途。
     this._lastHitDamage = 0;
@@ -90,6 +92,7 @@ export class Enemy extends Entity {
     this._dashStateTimer = 0;
     this._knockbackCount = 0;
     this._comboCdTimer = 0;
+    this._comboHitImmunityTimer = 0;
     // プール再利用時に前オーナーの値が残らないようクリア
     this._lastHitDamage = 0;
   }
@@ -362,6 +365,7 @@ export class Enemy extends Entity {
   updateStatusEffects(dt) {
     // コンボクールダウン減算
     if (this._comboCdTimer > 0) this._comboCdTimer -= dt;
+    if (this._comboHitImmunityTimer > 0) this._comboHitImmunityTimer -= dt;
     // 燃焼 DoT (1ティック最低2ダメ保証)
     if (this._burnTimer > 0) {
       this._burnTimer -= dt;

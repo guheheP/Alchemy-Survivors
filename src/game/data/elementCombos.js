@@ -45,7 +45,7 @@ export const ElementCombos = {
       // 毒を周囲に拡散 (半減)
       appliesStatus: { type: 'poison', params: { duration: 2.0, dpsMult: 0.5 } },
     },
-    consume: ['burn'], // 炎は消費、毒は残す
+    consume: ['burn', 'poison'], // 両方消費（毒残存による再発動ループ防止）
     cooldown: 1.5,
     fx: { shockwave: true, burst: 20, shake: 4, flash: true },
   },
@@ -85,7 +85,7 @@ export const ElementCombos = {
       chainCount: 4,
       appliesStatus: { type: 'shock', params: { duration: 0.3 } },
     },
-    consume: [], // 残す (連鎖を誘発し続ける)
+    consume: ['shock'], // 感電消費（chain で shock 拡散 + vulnerable 存続での自己再発動防止、vulnerable は残す）
     cooldown: 1.8,
     fx: { burst: 15, shake: 3 },
   },
@@ -103,7 +103,7 @@ export const ElementCombos = {
       radius: 100,
       appliesStatus: { type: 'freeze', params: { duration: 1.5, speedMod: -60 } },
     },
-    consume: [], // 両方残す (氷水ビルドが続く)
+    consume: ['freeze'], // 凍結消費（freeze 拡散 + vulnerable 存続での再発動ループ防止、vulnerable は残す）
     cooldown: 2.5,
     fx: { shockwave: true, burst: 12, shake: 2 },
   },
@@ -178,7 +178,7 @@ export const ElementCombos = {
       // 周囲の敵に毒拡散
       appliesStatus: { type: 'poison', params: { duration: 3.0, dpsMult: 0.6 } },
     },
-    consume: [], // 両方残す (毒結晶化)
+    consume: ['poison'], // 毒消費（毒拡散による再発動ループ防止、凍結は残して結晶化の味を保つ）
     cooldown: 2.2,
     fx: { shockwave: true, burst: 14, shake: 3 },
   },

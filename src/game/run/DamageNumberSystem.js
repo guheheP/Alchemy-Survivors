@@ -11,6 +11,7 @@ const FLOAT_SPEED = 60; // px/sec upward
 const COMBO_DURATION = 1.4;
 const COMBO_FLOAT_SPEED = 35;
 const COMBO_INITIAL_OFFSET = 60; // 敵中心からの初期オフセット (px)
+const COMBO_COUNTUP_DURATION = 0.35; // ダメージ値が 0→最終値 に到達するまでの秒数
 
 export class DamageNumberSystem {
   constructor() {
@@ -32,8 +33,8 @@ export class DamageNumberSystem {
         this._spawn(x, y, typeof value === 'string' ? value : `+${Math.floor(value)}`, '#4c4', false);
       }),
       // 属性コンボ発動時のポップアップ (敵の十分上に表示、長く残る)
-      eventBus.on('combo:fired', ({ combo, x, y }) => {
-        this._spawnCombo(x, y, combo);
+      eventBus.on('combo:fired', ({ combo, x, y, totalDamage }) => {
+        this._spawnCombo(x, y, combo, totalDamage || 0);
       }),
     ];
   }
@@ -55,8 +56,8 @@ export class DamageNumberSystem {
     });
   }
 
-  /** 属性コンボ専用ポップアップ */
-  _spawnCombo(worldX, worldY, combo) {
+  /** 属性コンボ専用ポップアップ (ダメージ値をカウントアップで表示) */
+  _spawnCombo(worldX, worldY, combo, totalDamage) {
     if (this.numbers.length >= MAX_NUMBERS) {
       this.numbers[0] = this.numbers[this.numbers.length - 1];
       this.numbers.pop();
@@ -69,6 +70,10 @@ export class DamageNumberSystem {
       isCrit: false,
       timer: COMBO_DURATION,
       kind: 'combo',
+      // ダメージ演出: 0→totalDamage までカウントアップ
+      damageTarget: Math.round(totalDamage || 0),
+      damageDisplay: 0,
+      countupElapsed: 0,
     });
   }
 
@@ -79,6 +84,13 @@ export class DamageNumberSystem {
       n.timer -= dt;
       const speed = n.kind === 'combo' ? COMBO_FLOAT_SPEED : FLOAT_SPEED;
       n.y -= speed * dt;
+      // コンボダメージのカウントアップ進行 (easeOutCubic)
+      if (n.kind === 'combo' && n.damageTarget > 0 && n.damageDisplay < n.damageTarget) {
+        n.countupElapsed += dt;
+        const t = Math.min(1, n.countupElapsed / COMBO_COUNTUP_DURATION);
+        const eased = 1 - Math.pow(1 - t, 3);
+        n.damageDisplay = Math.round(n.damageTarget * eased);
+      }
       if (n.timer <= 0) {
         const last = this.numbers.length - 1;
         if (i !== last) this.numbers[i] = this.numbers[last];
@@ -105,6 +117,7 @@ export class DamageNumberSystem {
         const popPhase = Math.min(1, t / 0.1);
         const scale = 1 + (1 - popPhase) * 0.3;
         ctx.globalAlpha = alpha;
+        // 上段: コンボ名
         ctx.font = `bold ${Math.round(22 * scale)}px monospace`;
         ctx.lineWidth = 4;
         ctx.strokeStyle = 'rgba(0,0,0,0.75)';
@@ -113,6 +126,17 @@ export class DamageNumberSystem {
         ctx.strokeText(n.text, sx, sy);
         ctx.fillStyle = n.color;
         ctx.fillText(n.text, sx, sy);
+        // 下段: ダメージ値（カウントアップ中、ダメージ>0 の場合のみ表示）
+        if (n.damageTarget > 0) {
+          const dmgText = String(n.damageDisplay);
+          const dmgScale = 1 + (1 - popPhase) * 0.4; // 数値側はやや大きめにポップ
+          ctx.font = `bold ${Math.round(30 * dmgScale)}px monospace`;
+          ctx.lineWidth = 5;
+          // 数値は name より一段下 (26px × scale 相当)
+          const dyOffset = Math.round(28 * scale);
+          ctx.strokeText(dmgText, sx, sy + dyOffset);
+          ctx.fillText(dmgText, sx, sy + dyOffset);
+        }
       } else if (n.isCrit) {
         const alpha = Math.min(1, n.timer / (FLOAT_DURATION * 0.3));
         ctx.globalAlpha = alpha;

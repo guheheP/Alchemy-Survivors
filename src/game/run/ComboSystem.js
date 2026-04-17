@@ -39,10 +39,10 @@ export class ComboSystem {
     const fxX = enemy.x;
     const fxY = enemy.y;
 
-    // 効果適用
+    // 効果適用 — 発生ダメージ合計を取得してコンボ演出に渡す
     const player = this.ctx.getPlayer?.();
     const powerMult = 1 + (player?.passives?.elementPowerBonus || 0);
-    this._applyEffect(combo, enemy, powerMult, hitParams);
+    const totalDamage = this._applyEffect(combo, enemy, powerMult, hitParams);
 
     // 状態異常消費
     if (combo.consume && combo.consume.length > 0) {
@@ -58,20 +58,25 @@ export class ComboSystem {
     // 演出 (キャプチャ済み座標を使用)
     this._emitFx(combo, fxX, fxY);
 
-    // UI 通知
+    // UI 通知（ダメージ集計は整数化してから渡す）
     eventBus.emit('combo:fired', {
       combo,
       x: fxX,
       y: fxY,
+      totalDamage: Math.max(0, Math.round(totalDamage || 0)),
     });
   }
 
   _applyEffect(combo, sourceEnemy, powerMult, hitParams) {
     const eff = combo.effect;
-    if (!eff) return;
+    if (!eff) return 0;
     const allEnemies = this.ctx.getAllEnemies?.() || [];
     const baseDamage = this._resolveDamageBase(eff, sourceEnemy, hitParams);
     const dmg = baseDamage * (eff.damageMult || 1) * powerMult;
+    let totalDealt = 0;
+    // 密集敵群で同フレームに複数のコンボが並列トリガーした際、同一被害敵への
+    // 重ね被弾を抑える免疫ウィンドウ (秒)。トリガー自体は許容し、被ダメだけキャップ。
+    const COMBO_HIT_IMMUNITY = 0.15;
 
     switch (eff.kind) {
       case 'aoe_damage': {
@@ -87,7 +92,12 @@ export class ComboSystem {
           // takeDamage で死亡 → pool.release → reset で target.x/y がクリアされる前に値を控える
           const tx = target.x;
           const ty = target.y;
-          if (dmg > 0) {
+          if (dmg > 0 && (target._comboHitImmunityTimer || 0) <= 0) {
+            // 被ダメ乗算（vulnerable 等）を合算後ダメージに反映させるため、
+            // targetの _incomingDamageMult を使って実効ダメを集計
+            const effectiveDmg = dmg * (typeof target._incomingDamageMult === 'function' ? target._incomingDamageMult() : 1);
+            totalDealt += effectiveDmg;
+            target._comboHitImmunityTimer = COMBO_HIT_IMMUNITY;
             if (target.takeDamage(dmg)) {
               eventBus.emit('enemy:killed', { enemy: target, x: tx, y: ty, isBoss: target.isBoss, color: target.color });
             }
@@ -123,7 +133,10 @@ export class ComboSystem {
           // takeDamage で死ぬと pool.release → reset で next.x/y が (0,0) になるため先に記憶
           const nextX = next.x;
           const nextY = next.y;
-          if (dmg > 0) {
+          if (dmg > 0 && (next._comboHitImmunityTimer || 0) <= 0) {
+            const effectiveDmg = dmg * (typeof next._incomingDamageMult === 'function' ? next._incomingDamageMult() : 1);
+            totalDealt += effectiveDmg;
+            next._comboHitImmunityTimer = COMBO_HIT_IMMUNITY;
             if (next.takeDamage(dmg)) {
               eventBus.emit('enemy:killed', { enemy: next, x: nextX, y: nextY, isBoss: next.isBoss, color: next.color });
             }
@@ -158,6 +171,7 @@ export class ComboSystem {
         if (eff.appliesStatus) this._applyStatusToTarget(sourceEnemy, eff.appliesStatus, sourceEnemy, powerMult);
         break;
     }
+    return totalDealt;
   }
 
   /**
