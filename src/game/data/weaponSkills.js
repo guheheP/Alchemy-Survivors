@@ -28,7 +28,7 @@ export const WeaponSkillDefs = {
     description: '炎を纏った大回転斬りで周囲を焼き尽くす',
     cooldown: 11,
     type: 'spin_blade',
-    params: { radius: 160, dmgMult: 2.5, spins: 2 },
+    params: { radius: 160, dmgMult: 2.0, spins: 2 },
     color: '#f62',
   },
   dark_blade: {
@@ -44,7 +44,7 @@ export const WeaponSkillDefs = {
     description: '天より聖なる光の柱を降ろし、広範囲を浄化する',
     cooldown: 9,
     type: 'meteor',
-    params: { radius: 140, dmgMult: 4.6 },
+    params: { radius: 140, dmgMult: 3.0 },
     color: '#ff8',
   },
   mithril_sword: {
@@ -68,7 +68,7 @@ export const WeaponSkillDefs = {
     description: '全力の一撃を放ち、前方の敵を一掃する',
     cooldown: 8,
     type: 'piercing_shot',
-    params: { range: 300, dmgMult: 6.9, width: 40 },
+    params: { range: 300, dmgMult: 4.0, width: 40 },
     color: '#f44',
   },
   void_blade: {
@@ -76,7 +76,7 @@ export const WeaponSkillDefs = {
     description: '虚無に満ちた毒の衝撃波が周囲を蝕む',
     cooldown: 8,
     type: 'shockwave',
-    params: { radius: 200, dmgMult: 4.0, waves: 3 },
+    params: { radius: 200, dmgMult: 2.8, waves: 3 },
     color: '#7a6',
   },
   sky_sword: {
@@ -84,7 +84,7 @@ export const WeaponSkillDefs = {
     description: '天の力を纏い、全方位に稲妻の刃を放射する',
     cooldown: 7,
     type: 'lightning_storm',
-    params: { radius: 260, dmgMult: 3.0, rays: 12 },
+    params: { radius: 260, dmgMult: 2.4, rays: 12 },
     color: '#ff4',
   },
   legendary_blade: {
@@ -92,7 +92,7 @@ export const WeaponSkillDefs = {
     description: '伝説の力が覚醒し、画面全体に光の刃が降り注ぐ',
     cooldown: 7,
     type: 'blade_rain',
-    params: { radius: 350, dmgMult: 5.75, blades: 50 },
+    params: { radius: 350, dmgMult: 3.5, blades: 50 },
     color: '#ffa',
   },
   time_blade: {
@@ -100,7 +100,7 @@ export const WeaponSkillDefs = {
     description: '時を止め、周囲の全ての敵に連続攻撃を叩き込む',
     cooldown: 7,
     type: 'flurry',
-    params: { hitCount: 15, radius: 200, dmgMult: 1.15 },
+    params: { hitCount: 15, radius: 200, dmgMult: 1.0 },
     color: '#c8f',
   },
 
@@ -188,7 +188,7 @@ export const WeaponSkillDefs = {
     description: '竜の炎を纏った矢を敵密集地に着弾させる',
     cooldown: 8,
     type: 'meteor',
-    params: { radius: 120, dmgMult: 4.0 },
+    params: { radius: 120, dmgMult: 3.5 },
     color: '#f62',
   },
   sky_bow: {
@@ -232,7 +232,7 @@ export const WeaponSkillDefs = {
     description: '月の光が降り注ぎ、周囲を浄化する',
     cooldown: 10,
     type: 'meteor',
-    params: { radius: 110, dmgMult: 4.6 },
+    params: { radius: 110, dmgMult: 4.0 },
     color: '#ccf',
   },
   elder_staff: {
@@ -257,7 +257,7 @@ export const WeaponSkillDefs = {
     description: '世界樹の根が地を割り、全敵に大ダメージを与える',
     cooldown: 7,
     type: 'world_break',
-    params: { dmgMult: 6.9 },
+    params: { dmgMult: 5.5 },
     color: '#4f4',
   },
 

@@ -95,8 +95,8 @@ export class Enemy extends Entity {
   }
 
   /**
-   * ノックバックを試みる。KB回数に応じて距離が減衰し、7回目以降は完全無効。
-   * 減衰式: strength × max(0, 1 - count/7)
+   * ノックバックを試みる。KB回数に応じて距離が減衰し、4回目以降は完全無効。
+   * 減衰式: strength × max(0, 1 - count/3)
    * @param {number} dx - 押し出し方向 x
    * @param {number} dy - 押し出し方向 y
    * @param {number} dist - sqrt(dx^2 + dy^2)
@@ -104,7 +104,7 @@ export class Enemy extends Entity {
    */
   tryKnockback(dx, dy, dist, strength) {
     if (!dist || dist <= 0 || !strength) return false;
-    const decay = Math.max(0, 1 - this._knockbackCount / 7);
+    const decay = Math.max(0, 1 - this._knockbackCount / 3);
     if (decay <= 0) return false;
     this.x += (dx / dist) * strength * decay;
     this.y += (dy / dist) * strength * decay;
