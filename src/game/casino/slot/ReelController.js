@@ -210,11 +210,18 @@ function computeNormalStopFrame(flags, phase, rng) {
 
   switch (flags.smallFlag) {
     case 'replay': {
-      // 基本的に中段揃い
+      // 基本的に中段揃い。BELL/WATERMELONが他ラインで揃わないように再抽選。
       const line = LINE_MID;
-      const stopIndexes = alignOnPayline('REPLAY', 'REPLAY', 'REPLAY', line, rng);
+      const conflict = ['BELL', 'WATERMELON'];
+      let stopIndexes;
+      let frame;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        stopIndexes = alignOnPayline('REPLAY', 'REPLAY', 'REPLAY', line, rng);
+        frame = frameFromStopIndexes(stopIndexes);
+        if (hasNoConflictAlignment(frame, conflict)) break;
+      }
       return {
-        frame: frameFromStopIndexes(stopIndexes),
+        frame,
         stopIndexes,
         winLine: line,
         winCells: winCellsForPayline(line),
@@ -224,13 +231,21 @@ function computeNormalStopFrame(flags, phase, rng) {
     }
     case 'bell': {
       // 上段 or 斜め揃い。左リールのフレームにCHERRYを見せない。
+      // WATERMELON/REPLAYが他ラインで揃わないように再抽選。
       const line = rng.pick([LINE_TOP, LINE_DIAG_DOWN, LINE_DIAG_UP]);
-      const lIdx = pickStopIndexForRowExcluding(REEL_LEFT, 'BELL', line.rows[0], ['CHERRY'], rng);
-      const cIdx = pickStopIndexForRow(REEL_CENTER, 'BELL', line.rows[1], rng);
-      const rIdx = pickStopIndexForRow(REEL_RIGHT, 'BELL', line.rows[2], rng);
-      const stopIndexes = [lIdx, cIdx, rIdx];
+      const conflict = ['WATERMELON', 'REPLAY'];
+      let stopIndexes;
+      let frame;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const lIdx = pickStopIndexForRowExcluding(REEL_LEFT, 'BELL', line.rows[0], ['CHERRY'], rng);
+        const cIdx = pickStopIndexForRow(REEL_CENTER, 'BELL', line.rows[1], rng);
+        const rIdx = pickStopIndexForRow(REEL_RIGHT, 'BELL', line.rows[2], rng);
+        stopIndexes = [lIdx, cIdx, rIdx];
+        frame = frameFromStopIndexes(stopIndexes);
+        if (hasNoConflictAlignment(frame, conflict)) break;
+      }
       return {
-        frame: frameFromStopIndexes(stopIndexes),
+        frame,
         stopIndexes,
         winLine: line,
         winCells: winCellsForPayline(line),
@@ -240,11 +255,19 @@ function computeNormalStopFrame(flags, phase, rng) {
     }
     case 'watermelon': {
       // 斜め 又は 上段揃い。上段はボーナス/CZ示唆。
+      // BELL/REPLAYが他ラインで揃わないように再抽選。
       const topBias = (isBonusFlag || isChanceContext) ? 0.6 : 0.2;
       const line = rng.next() < topBias ? LINE_TOP : rng.pick(DIAG_LINES);
-      const stopIndexes = alignOnPayline('WATERMELON', 'WATERMELON', 'WATERMELON', line, rng);
+      const conflict = ['BELL', 'REPLAY'];
+      let stopIndexes;
+      let frame;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        stopIndexes = alignOnPayline('WATERMELON', 'WATERMELON', 'WATERMELON', line, rng);
+        frame = frameFromStopIndexes(stopIndexes);
+        if (hasNoConflictAlignment(frame, conflict)) break;
+      }
       return {
-        frame: frameFromStopIndexes(stopIndexes),
+        frame,
         stopIndexes,
         winLine: line,
         winCells: winCellsForPayline(line),
@@ -253,35 +276,49 @@ function computeNormalStopFrame(flags, phase, rng) {
       };
     }
     case 'cherry': {
+      const conflict = ['BELL', 'WATERMELON', 'REPLAY'];
       if (isBonusFlag) {
         // 斜めチェリー（ダブル）: 左上 + 右下 または 左下 + 右上。bonus大チャンス示唆。
-        const upDown = rng.nextInt(2) === 0; // true: 左上-右下 / false: 左下-右上
+        const upDown = rng.nextInt(2) === 0;
         const leftRow  = upDown ? 0 : 2;
         const rightRow = upDown ? 2 : 0;
-        const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', leftRow, rng);
-        const rIdx = pickStopIndexForRow(REEL_RIGHT, 'CHERRY', rightRow, rng);
-        const cIdx = pickStopIndexExcludingFrame(REEL_CENTER, 'CHERRY', rng);
-        const stopIndexes = [lIdx, cIdx, rIdx];
+        let stopIndexes;
+        let frame;
+        for (let attempt = 0; attempt < 16; attempt++) {
+          const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', leftRow, rng);
+          const rIdx = pickStopIndexForRow(REEL_RIGHT, 'CHERRY', rightRow, rng);
+          const cIdx = pickStopIndexExcludingFrame(REEL_CENTER, 'CHERRY', rng);
+          stopIndexes = [lIdx, cIdx, rIdx];
+          frame = frameFromStopIndexes(stopIndexes);
+          if (hasNoConflictAlignment(frame, conflict)) break;
+        }
         return {
-          frame: frameFromStopIndexes(stopIndexes),
+          frame,
           stopIndexes,
           winLine: null,
-          // 左リールのチェリーのみが配当対象（右は演出用）
           winCells: [{ col: 0, row: leftRow }],
           bonusSymbolsAligned: false,
           blue7Aligned: false,
         };
       }
       // 基本: 左リール下段のみ。中/右リール窓にCHERRYを見せない。
-      const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', 2, rng);
-      const [cIdx, rIdx] = pickStopIndexesExcludingFrame(
-        [REEL_CENTER, REEL_RIGHT],
-        'CHERRY',
-        rng,
-      );
+      // BELL/WATERMELON/REPLAYが他ラインで揃わないように再抽選。
+      let stopIndexes;
+      let frame;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', 2, rng);
+        const [cIdx, rIdx] = pickStopIndexesExcludingFrame(
+          [REEL_CENTER, REEL_RIGHT],
+          'CHERRY',
+          rng,
+        );
+        stopIndexes = [lIdx, cIdx, rIdx];
+        frame = frameFromStopIndexes(stopIndexes);
+        if (hasNoConflictAlignment(frame, conflict)) break;
+      }
       return {
-        frame: frameFromStopIndexes([lIdx, cIdx, rIdx]),
-        stopIndexes: [lIdx, cIdx, rIdx],
+        frame,
+        stopIndexes,
         winLine: null,
         winCells: [{ col: 0, row: 2 }],
         bonusSymbolsAligned: false,
@@ -319,12 +356,20 @@ function computeNormalStopFrame(flags, phase, rng) {
     case 'reachme': {
       // リーチ目: 左リール中段CHERRY。中/右リールの窓にはCHERRYを出さない。
       // 配当は無いがBONUS確定告知としてプレイヤーには強いサイン。
+      // BELL/WATERMELON/REPLAYが他ラインで揃わないように再抽選。
+      const conflict = ['BELL', 'WATERMELON', 'REPLAY'];
       const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', 1, rng);
-      const cIdx = pickStopIndexExcludingFrame(REEL_CENTER, 'CHERRY', rng);
-      const rIdx = pickStopIndexExcludingFrame(REEL_RIGHT, 'CHERRY', rng);
-      const stopIndexes = [lIdx, cIdx, rIdx];
+      let stopIndexes;
+      let frame;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const cIdx = pickStopIndexExcludingFrame(REEL_CENTER, 'CHERRY', rng);
+        const rIdx = pickStopIndexExcludingFrame(REEL_RIGHT, 'CHERRY', rng);
+        stopIndexes = [lIdx, cIdx, rIdx];
+        frame = frameFromStopIndexes(stopIndexes);
+        if (hasNoConflictAlignment(frame, conflict)) break;
+      }
       return {
-        frame: frameFromStopIndexes(stopIndexes),
+        frame,
         stopIndexes,
         winLine: null,
         winCells: [],
@@ -453,4 +498,33 @@ function isAnyLineAligned(frame) {
     if (symL === symC && symC === symR) return true;
   }
   return false;
+}
+
+/**
+ * 指定シンボルが5ラインのいずれかで揃っているか
+ * @param {StopFrame} frame
+ * @param {SymbolId} symbol
+ */
+function isSymbolLineAligned(frame, symbol) {
+  const grid = [frame.left, frame.center, frame.right];
+  for (const line of PAYLINES) {
+    const [rL, rC, rR] = line.rows;
+    if (grid[0][rL] === symbol && grid[1][rC] === symbol && grid[2][rR] === symbol) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 小役競合回避: conflictSymbols のいずれかが他ラインで揃っていないかチェック
+ * @param {StopFrame} frame
+ * @param {SymbolId[]} conflictSymbols
+ * @returns {boolean} true = 競合なし（OK）
+ */
+function hasNoConflictAlignment(frame, conflictSymbols) {
+  for (const sym of conflictSymbols) {
+    if (isSymbolLineAligned(frame, sym)) return false;
+  }
+  return true;
 }

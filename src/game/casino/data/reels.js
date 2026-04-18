@@ -6,27 +6,35 @@
  * payline（中段）に表示される絵柄は state.reelIndex[i] の位置で決まる。
  */
 
+/**
+ * 配列設計上の制約:
+ *   WATERMELON の直下（index+1）が BELL だと、上段にスイカを揃える際に
+ *   必ず中段に BELL ラインが重なる視覚衝突が生じる。そのため WM と直下BELL は
+ *   必ず入れ替えてある（旧: [...REPLAY, WM, BELL, ...] / 新: [...REPLAY, BELL, WM, ...]）。
+ *   ベル・スイカ・リプレイが「他の役と同時ライン揃い」になる見た目を避ける設計。
+ */
+
 /** @type {import('./symbols.js').SymbolId[]} */
 export const REEL_LEFT = [
-  'BELL', 'REPLAY', 'WATERMELON', 'BELL', 'CHERRY', 'BIG7',
+  'BELL', 'REPLAY', 'BELL', 'WATERMELON', 'CHERRY', 'BIG7',
   'BELL', 'REPLAY', 'BELL', 'BIG7', 'BELL', 'REPLAY',
-  'WATERMELON', 'BELL', 'BLUE7', 'BELL', 'REPLAY', 'CHERRY',
+  'BELL', 'WATERMELON', 'BLUE7', 'BELL', 'REPLAY', 'CHERRY',
   'BELL', 'BIG7', 'REPLAY',
 ];
 
 /** @type {import('./symbols.js').SymbolId[]} */
 export const REEL_CENTER = [
   'REPLAY', 'BELL', 'CHERRY', 'BIG7', 'BELL', 'REPLAY',
-  'WATERMELON', 'BELL', 'REPLAY', 'BLUE7', 'BELL', 'CHERRY',
-  'REPLAY', 'BIG7', 'BELL', 'REPLAY', 'WATERMELON', 'BELL',
+  'BELL', 'WATERMELON', 'REPLAY', 'BLUE7', 'BELL', 'CHERRY',
+  'REPLAY', 'BIG7', 'BELL', 'REPLAY', 'BELL', 'WATERMELON',
   'BIG7', 'REPLAY', 'BELL',
 ];
 
 /** @type {import('./symbols.js').SymbolId[]} */
 export const REEL_RIGHT = [
   'BELL', 'REPLAY', 'CHERRY', 'BELL', 'BIG7', 'REPLAY',
-  'WATERMELON', 'BELL', 'REPLAY', 'BELL', 'BLUE7', 'REPLAY',
-  'CHERRY', 'BELL', 'BIG7', 'REPLAY', 'WATERMELON', 'BELL',
+  'BELL', 'WATERMELON', 'REPLAY', 'BELL', 'BLUE7', 'REPLAY',
+  'CHERRY', 'BELL', 'BIG7', 'REPLAY', 'BELL', 'WATERMELON',
   'REPLAY', 'BIG7', 'BELL',
 ];
 
