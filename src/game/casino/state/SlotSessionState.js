@@ -45,6 +45,12 @@ export class SlotSessionState {
     /** CZ（チャンスゾーン）残りゲーム数 */
     this.czGamesRemaining = 0;
 
+    /** 現BONUSの累計払い出し枚数（bonus_start でリセット、BONUS終了後も次回開始までは前回値を保持） */
+    this.bonusGainTotal = 0;
+
+    /** 現ART区間の累計純増枚数（art_start でリセット、ストック消化や復帰では維持） */
+    this.artGainTotal = 0;
+
     /** 統計用カウンタ（セッション中のみ） */
     this.stats = {
       gamesPlayed: 0,

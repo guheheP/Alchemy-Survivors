@@ -57,8 +57,6 @@ export class SlotScreen {
     this._pressOrderIndex = 0;
     /** 今スピンの実際の押し順（reelIdxの配列） */
     this._actualPressOrder = [];
-    /** ビタチャレンジアニメーションの requestAnimationFrame id */
-    this._bitaRaf = 0;
     /** 現在再生中の予告 */
     this._currentYokoku = null;
     /** 前回スピン開始時刻（ゲーム間最小間隔保証用） */
@@ -69,8 +67,6 @@ export class SlotScreen {
     this._autoStopTimers = [];
     /** _triggerScreenFlash が発行する setTimeout 群 */
     this._screenFlashTimers = [];
-    /** _showBitaOverlay が発行する setTimeout 群 */
-    this._bitaTimers = [];
     /** gasuri_fail の deferred タイマー */
     this._gasuriTimer = null;
     /** payout ロール完了後のクリーンアップタイマー */
@@ -109,14 +105,6 @@ export class SlotScreen {
                   <div class="casino-slot-nav-arrow" data-nav-pos="0"></div>
                   <div class="casino-slot-nav-arrow" data-nav-pos="1"></div>
                   <div class="casino-slot-nav-arrow" data-nav-pos="2"></div>
-                </div>
-                <div class="casino-slot-bita-overlay" hidden>
-                  <div class="casino-slot-bita-label">★ビタ押し★</div>
-                  <div class="casino-slot-bita-bar">
-                    <div class="casino-slot-bita-zone"></div>
-                    <div class="casino-slot-bita-cursor"></div>
-                  </div>
-                  <div class="casino-slot-bita-hint">左STOPで揃えろ!</div>
                 </div>
               </div>
             </div>
@@ -455,9 +443,6 @@ export class SlotScreen {
     // 押し順ナビ表示
     if (result.navOrder) this._showNavOverlay(result.navOrder);
 
-    // ビタ押しチャレンジ演出（成否は内部確定済み）
-    if (result.bitaChallenge) this._showBitaOverlay(result.bitaChallenge);
-
     // AUTO時は自動STOP（ナビがあればその順で、無ければ左→中→右）
     if (this.auto) {
       const settings = getCasinoSettings();
@@ -528,15 +513,6 @@ export class SlotScreen {
       }
     }
     this._hideNavOverlay();
-
-    // ビタ押し結果は spin 時に確定済み（medalsとstatsは反映済）。表示 payout に加算するのみ
-    if (result.bitaChallenge) {
-      result.bitaSuccess = result.bitaChallenge.success;
-      result.bitaBonus = result.bitaChallenge.bonus;
-      if (result.bitaChallenge.success) {
-        result.payout = (result.payout || 0) + result.bitaChallenge.bonus;
-      }
-    }
 
     this._onSpinFinalized(result);
     this.spinning = false;
@@ -689,16 +665,26 @@ export class SlotScreen {
       SlotSFX.czFail();
     }
 
-    // ビタ押し結果（SFXのみ、トースト表示はしない）
-    if (result.bitaChallenge) {
-      if (result.bitaSuccess) {
-        SlotSFX.upsell();
-      }
-    }
-
     // BONUS中: 毎ゲームの強制払い出し
     if (result.phase === 'BONUS' && result.payout > 0) {
       SlotSFX.bonusPayout();
+    }
+
+    // BIG中: 旧「ビタ押しチャンス」の代替として一定確率で演出領域フラッシュ
+    if (result.phase === 'BONUS' && this.machine.state.bonusKind === 'big' && this.pixelDisplay) {
+      if (Math.random() < 0.18) {
+        this.pixelDisplay.triggerEvent('bonus_flash');
+      }
+    }
+
+    // 演出領域に区間別ステータスを反映
+    if (this.pixelDisplay) {
+      this.pixelDisplay.setStats({
+        bonusRemaining: this.machine.state.bonusGamesRemaining,
+        bonusGain:      this.machine.state.bonusGainTotal,
+        artRemaining:   this.machine.state.artGamesRemaining,
+        artGain:        this.machine.state.artGainTotal,
+      });
     }
 
     // 上乗せ演出（ドット絵ディスプレイのみ）
@@ -804,7 +790,7 @@ export class SlotScreen {
     if (phase === 'CZ') return 'CZチャンス';
     if (phase === 'BONUS_STANDBY') return 'ボーナス内部成立中';
     if (phase === 'BONUS') return bonusKind === 'big' ? 'BIG中' : 'REG中';
-    if (phase === 'ART') return 'ART中';
+    if (phase === 'ART') return '錬金チャンス';
     if (phase === 'TENJOU') return '天井待機';
     return phase;
   }
@@ -875,76 +861,6 @@ export class SlotScreen {
   }
 
   /**
-   * ビタ押し演出: カーソルを動かし、成功ならゾーン内、失敗ならゾーン外に止める
-   * 成否は challenge.success で既に決まっている
-   * @param {{success:boolean, bonus:number}} challenge
-   */
-  _showBitaOverlay(challenge) {
-    const overlay = this.el.querySelector('.casino-slot-bita-overlay');
-    if (!overlay) return;
-    overlay.hidden = false;
-    overlay.classList.remove('is-success', 'is-fail');
-
-    // 固定: 中央40-60%をゾーンとする
-    const ZONE_START = 40;
-    const ZONE_END = 60;
-    const zone = overlay.querySelector('.casino-slot-bita-zone');
-    if (zone) {
-      zone.style.left = `${ZONE_START}%`;
-      zone.style.width = `${ZONE_END - ZONE_START}%`;
-    }
-    const cursor = overlay.querySelector('.casino-slot-bita-cursor');
-    const hint = overlay.querySelector('.casino-slot-bita-hint');
-    if (hint) hint.textContent = '狙え!';
-    if (cursor) {
-      cursor.style.transition = 'none';
-      cursor.style.left = '0%';
-    }
-
-    // 成功なら ゾーン中央(50%)、失敗なら ゾーン外（15% or 85%）で停止
-    const targetPct = challenge.success
-      ? (ZONE_START + ZONE_END) / 2
-      : (Math.random() < 0.5 ? 15 : 85);
-    const animMs = 700;
-
-    if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
-    this._clearBitaTimers();
-
-    // 1フレーム後に transition を掛けて移動開始
-    this._bitaRaf = requestAnimationFrame(() => {
-      if (cursor) {
-        cursor.style.transition = `left ${animMs}ms cubic-bezier(.3,.1,.3,1)`;
-        cursor.style.left = `${targetPct}%`;
-      }
-      // 移動完了後に結果を表示して自動でフェードアウト
-      const t1 = setTimeout(() => {
-        overlay.classList.toggle('is-success', challenge.success);
-        overlay.classList.toggle('is-fail', !challenge.success);
-        if (hint) hint.textContent = challenge.success ? `成功! +${challenge.bonus}枚` : '失敗...';
-        const t2 = setTimeout(() => { this._hideBitaOverlay(); }, 450);
-        this._bitaTimers.push(t2);
-      }, animMs + 40);
-      this._bitaTimers.push(t1);
-    });
-  }
-
-  _clearBitaTimers() {
-    for (const tid of this._bitaTimers) clearTimeout(tid);
-    this._bitaTimers.length = 0;
-  }
-
-  _hideBitaOverlay() {
-    if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
-    this._clearBitaTimers();
-    const overlay = this.el.querySelector('.casino-slot-bita-overlay');
-    if (!overlay) return;
-    overlay.hidden = true;
-    overlay.classList.remove('is-success', 'is-fail');
-    const cursor = overlay.querySelector('.casino-slot-bita-cursor');
-    if (cursor) { cursor.style.transition = ''; cursor.style.left = '0%'; }
-  }
-
-  /**
    * 全画面フラッシュ演出
    * @param {string} variant - 'bonus' | 'bonus-start' | 'premier' | 'art' | 'cz'
    */
@@ -980,13 +896,11 @@ export class SlotScreen {
   destroy() {
     this._stopAuto();
     if (this._cooldownTimer) { clearTimeout(this._cooldownTimer); this._cooldownTimer = null; }
-    if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
     if (this._payoutRollRaf) { cancelAnimationFrame(this._payoutRollRaf); this._payoutRollRaf = 0; }
     if (this._payoutCleanupTimer) { clearTimeout(this._payoutCleanupTimer); this._payoutCleanupTimer = null; }
     if (this._gasuriTimer) { clearTimeout(this._gasuriTimer); this._gasuriTimer = null; }
     if (this._shakeTimer) { clearTimeout(this._shakeTimer); this._shakeTimer = null; }
     this._clearScreenFlashes();
-    this._clearBitaTimers();
     if (this._keyHandler) {
       window.removeEventListener('keydown', this._keyHandler);
       this._keyHandler = null;

@@ -38,15 +38,3 @@ export const ART_CONSTANTS = {
   ART_IN_BONUS_ADD: 60,     // ART中BONUS青7成功時の上乗せ（固定G）
   STOCK_BONUS_ADD: 20,      // ARTストック1個消化時のG数
 };
-
-/** ビタ押しチャレンジ（BIG中のみ） */
-export const BITA_CONSTANTS = {
-  /** BIG中の1ゲームあたりビタチャンス発動確率（0..1） */
-  CHANCE_PROB: 0.18,
-  /** チャンス発動時の成功確率（タイミング不問、内部抽選） */
-  SUCCESS_PROB: 0.55,
-  /** 成功時のコイン上乗せ */
-  SUCCESS_BONUS: 20,
-  /** 演出の表示時間(ms) — 成功/失敗表示までの尺 */
-  SHOW_DURATION_MS: 900,
-};

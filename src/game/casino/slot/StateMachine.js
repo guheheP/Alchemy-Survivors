@@ -74,6 +74,7 @@ export function transition(state, input, rng) {
       state.bonusKind = kind;
       state.bonusGamesRemaining = kind === 'big' ? BONUS_GAME_COUNT.BIG : BONUS_GAME_COUNT.REG;
       state.blue7Succeeded = false;
+      state.bonusGainTotal = 0;
       state.standbyBonusKind = null;
       if (kind === 'big') state.stats.bigCount++;
       else if (kind === 'reg') state.stats.regCount++;
@@ -130,6 +131,7 @@ export function transition(state, input, rng) {
       events.push({ type: 'cz_success' });
       state.phase = 'ART';
       state.artGamesRemaining = ART_CONSTANTS.INITIAL_GAMES;
+      state.artGainTotal = 0;
       state.stats.artCount++;
       state.czGamesRemaining = 0;
       events.push({ type: 'art_start', amount: ART_CONSTANTS.INITIAL_GAMES });
@@ -218,6 +220,7 @@ function endBonus(state) {
       state.phase = 'ART';
     } else {
       state.artGamesRemaining = ART_CONSTANTS.INITIAL_GAMES;
+      state.artGainTotal = 0;
       state.phase = 'ART';
       state.stats.artCount++;
       events.push({ type: 'art_start', amount: ART_CONSTANTS.INITIAL_GAMES });

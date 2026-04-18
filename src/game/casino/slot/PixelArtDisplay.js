@@ -30,6 +30,7 @@ const EVENT_DURATION = {
   blue7_success:         1200,
   art_add:               1000,
   upsell:                 800,
+  bonus_flash:            500,
 };
 
 export class PixelArtDisplay {
@@ -52,6 +53,14 @@ export class PixelArtDisplay {
     this.frame = 0;
     this._running = false;
     this._timer = 0;
+
+    /** 演出領域のステータス表示用（SlotScreenから setStats() で渡される） */
+    this.stats = {
+      bonusRemaining: 0,
+      bonusGain: 0,
+      artRemaining: 0,
+      artGain: 0,
+    };
 
     /** @type {Array<{type:string, opts:object, startFrame:number, duration:number, resolve?:Function}>} */
     this._events = [];
@@ -87,6 +96,18 @@ export class PixelArtDisplay {
     this.mode = mode;
     this.bonusKind = bonusKind || null;
     this.frame = 0;
+  }
+
+  /**
+   * 演出領域に表示するステータスを更新
+   * @param {{ bonusRemaining?:number, bonusGain?:number, artRemaining?:number, artGain?:number }} stats
+   */
+  setStats(stats) {
+    if (!stats) return;
+    if (typeof stats.bonusRemaining === 'number') this.stats.bonusRemaining = stats.bonusRemaining;
+    if (typeof stats.bonusGain === 'number')      this.stats.bonusGain = stats.bonusGain;
+    if (typeof stats.artRemaining === 'number')   this.stats.artRemaining = stats.artRemaining;
+    if (typeof stats.artGain === 'number')        this.stats.artGain = stats.artGain;
   }
 
   /**
@@ -279,17 +300,27 @@ export class PixelArtDisplay {
     // 工房の床
     this.ctx.fillStyle = '#201038';
     this.ctx.fillRect(0, PIXEL_H - 6, PIXEL_W, 6);
-    // 錬金術師（idle: 呼吸アニメ）
-    this._drawAlchemist(40, 36, (t >> 3) % 2);
-    // 蒸留器
-    this._drawFlask(100, 40, t);
-    // タイトル
-    this._drawText('ALCHEMIST', 130, 18, '#ffe080', 12);
-    this._drawText('SLOT', 156, 36, '#ffc040', 12);
-    this._drawText('~ IN LAPIS ~', 130, 60, '#c08040', 8);
+
+    // タイトルバー
+    const titleY = 6;
+    this.ctx.fillStyle = 'rgba(64, 24, 96, 0.55)';
+    this.ctx.fillRect(0, 0, PIXEL_W, titleY + 14);
+    this.ctx.fillStyle = '#f0c040';
+    this.ctx.fillRect(0, titleY + 14, PIXEL_W, 1);
+    // メインタイトル: 中央寄せ「錬金スロット」
+    this._drawText('錬金スロット', PIXEL_W / 2 - 36, titleY, '#ffe080', 14);
+
+    // 左側: 錬金術師＋蒸留器のシーン
+    this._drawAlchemist(28, 38, (t >> 3) % 2);
+    this._drawFlask(60, 42, t);
+
+    // 右側: モード表示「通常時」＋ サブタイトル
+    this._drawText('NORMAL', 140, 30, '#a890ff', 12);
+    this._drawText('通常時', 152, 48, '#c0b0ff', 11);
+
     // 偶に泡パーティクル
     if (t % 20 === 0) {
-      this._spawnParticle(105, 42, 0, -0.3, 12, '#80d0ff', 'smoke');
+      this._spawnParticle(65, 44, 0, -0.3, 12, '#80d0ff', 'smoke');
     }
   }
 
@@ -341,26 +372,21 @@ export class PixelArtDisplay {
     const primary = this.bonusKind === 'reg' ? '#60d0ff' : '#ff4040';
     const accent  = this.bonusKind === 'reg' ? '#a0e0ff' : '#ffa0a0';
 
-    // マスコット: BIG=火竜、REG=水竜
-    if (this.bonusKind === 'reg') {
-      this._drawWaterDragon(30, 28, t);
-    } else {
-      this._drawFireDragon(28, 26, t);
-    }
+    // 左: マスコット（BIG=火竜、REG=水竜）
+    if (this.bonusKind === 'reg') this._drawWaterDragon(20, 24, t);
+    else                          this._drawFireDragon(18, 22, t);
 
-    // 放射光
-    this._drawRadialBurst(PIXEL_W - 60, PIXEL_H / 2, t, primary);
-
+    // 右上: タイトル
     const shake = (t % 2) ? 0 : 1;
-    this._drawText(`${kind} BONUS!`, 106 + shake, 14, accent, 14);
-    // 777
-    const d1 = (t + 0) % 10 < 5 ? '7' : ' ';
-    const d2 = (t + 3) % 10 < 5 ? '7' : ' ';
-    const d3 = (t + 6) % 10 < 5 ? '7' : ' ';
-    this._drawText(`${d1} ${d2} ${d3}`, 134, 36, primary, 16);
-    this._drawText('★GET!★', 126, 62, '#ffe080', 12);
+    this._drawText(`${kind} BONUS!`, 104 + shake, 8, accent, 14);
 
-    if (t % 8 === 0) this._spawnCoinBurst(PIXEL_W / 2 + 30, PIXEL_H - 10, 2);
+    // 中央: 残りG / 獲得枚数 をパネル表示
+    this._drawStatsPanel(100, 28, [
+      { label: '残り', value: `${this.stats.bonusRemaining}G`, color: primary },
+      { label: '獲得', value: `+${this.stats.bonusGain}`,      color: '#ffe080' },
+    ]);
+
+    if (t % 10 === 0) this._spawnCoinBurst(PIXEL_W - 20, PIXEL_H - 10, 2);
   }
 
   _drawArt() {
@@ -372,17 +398,26 @@ export class PixelArtDisplay {
       const y = ((t + i * 2) % 10) + 4;
       this.ctx.fillRect(0, y + i * 11, PIXEL_W, 2);
     }
-    this.ctx.fillStyle = 'rgba(0, 0, 30, 0.55)';
+    this.ctx.fillStyle = 'rgba(0, 0, 30, 0.6)';
     this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
 
-    // 賢者の石
-    this._drawPhilosopherStone(PIXEL_W / 2, PIXEL_H / 2, t);
-    // 錬金術師の踊り
-    this._drawAlchemist(30, 36, 'excited', t);
-    this._drawText('A R T', 150, 14, '#ffe080', 16);
-    this._drawText('RUSH', 156, 62, '#d0a0ff', 14);
+    // 左: 錬金術師＋賢者の石
+    this._drawAlchemist(20, 38, 'excited', t);
+    this._drawPhilosopherStone(60, 42, t);
 
-    if (t % 3 === 0) this._spawnSparkleBurst(PIXEL_W / 2, PIXEL_H / 2, 2, '#ffffff');
+    // 右上: タイトル
+    const flash = (t % 6) < 3 ? '#ffe080' : '#d0a0ff';
+    this._drawText('錬金チャンス', 100, 8, flash, 14);
+
+    // 中央: 残りG / 累計純増 をパネル表示
+    const gain = this.stats.artGain;
+    const gainStr = (gain >= 0 ? '+' : '') + gain;
+    this._drawStatsPanel(100, 28, [
+      { label: '残り', value: `${this.stats.artRemaining}G`, color: '#d0a0ff' },
+      { label: '純増', value: gainStr,                       color: gain >= 0 ? '#ffe080' : '#a0a0a0' },
+    ]);
+
+    if (t % 3 === 0) this._spawnSparkleBurst(60, 42, 2, '#ffffff');
   }
 
   _drawTenjou() {
@@ -421,6 +456,21 @@ export class PixelArtDisplay {
       case 'blue7_success':         this._drawBlue7Success(ev, progress); break;
       case 'art_add':               this._drawArtAdd(ev, progress); break;
       case 'upsell':                this._drawUpsell(ev, progress); break;
+      case 'bonus_flash':           this._drawBonusFlash(ev, progress); break;
+    }
+  }
+
+  _drawBonusFlash(ev, progress) {
+    // BIG中の盛り上げフラッシュ — 旧ビタ押し演出の置き換え
+    const intensity = Math.sin(progress * Math.PI);
+    this.ctx.fillStyle = `rgba(255, 220, 120, ${0.55 * intensity})`;
+    this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
+    if (this.frame % 2 === 0) {
+      this._spawnSparkleBurst(
+        20 + Math.random() * (PIXEL_W - 40),
+        10 + Math.random() * (PIXEL_H - 20),
+        3, '#ffe080',
+      );
     }
   }
 
@@ -759,6 +809,35 @@ export class PixelArtDisplay {
     if (t % 5 === 0) {
       this._spawnParticle(x + 14, y + 12 + sway, 0, 0.5, 10, '#80c0ff', 'spark');
     }
+  }
+
+  /**
+   * ステータスパネル描画 — 「ラベル: 値」の行を縦に並べる小さな枠付きパネル
+   * @param {number} x - パネル左上X
+   * @param {number} y - パネル左上Y
+   * @param {Array<{label:string, value:string, color:string}>} rows
+   */
+  _drawStatsPanel(x, y, rows) {
+    const ctx = this.ctx;
+    const W = 130, ROW_H = 14;
+    const H = rows.length * ROW_H + 6;
+    // パネル背景＋金縁
+    ctx.fillStyle = 'rgba(8, 8, 24, 0.78)';
+    ctx.fillRect(x, y, W, H);
+    ctx.strokeStyle = '#f0c040';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, W - 1, H - 1);
+    rows.forEach((row, i) => {
+      const ry = y + 4 + i * ROW_H;
+      this._drawText(row.label, x + 6, ry, '#c0a060', 10);
+      this._drawText(row.value, x + W - 6 - this._textWidthApprox(row.value, 12), ry - 1, row.color, 12);
+    });
+  }
+
+  /** _drawText で書く文字列のおおよそのpx幅を返す（右寄せ用） */
+  _textWidthApprox(text, size) {
+    this.ctx.font = `bold ${size}px monospace`;
+    return Math.ceil(this.ctx.measureText(text).width);
   }
 
   /**
