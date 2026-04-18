@@ -179,26 +179,70 @@ export function computeStopFrame(flags, phase, standbyKind, rng) {
   }
 
   // (C) NORMAL / ART / ZENCHO / CZ / TENJOU: 小役フラグに応じた停止形
-  return computeNormalStopFrame(flags, rng);
+  return computeNormalStopFrame(flags, phase, rng);
 }
 
 /**
  * 通常時の小役フラグ別停止形
+ *
+ * 仕様:
+ *   - REPLAY   : 基本 中段揃い
+ *   - BELL     : 上段 または 斜め揃い（中/下段無し）、左リールにCHERRY引き込み禁止
+ *   - WATERMELON: 斜め または 上段揃い。bonusFlag/CZ/ZENCHO時は上段確率UP（示唆）
+ *   - CHERRY   : 基本 左リール下段のみ。bonusFlag成立時は斜め(ダブル)チェリー（大チャンス示唆）
+ *   - REACHME  : 左リール中段CHERRY（リーチ目、配当なし＝BONUS確定示唆）
+ *   - CHANCE / NONE: 既存維持（左CHERRY除外、ガセ揃い回避）
+ *
+ * @param {import('./SlotEngine.js').DrawResult} flags
+ * @param {'NORMAL'|'ZENCHO'|'CZ'|'BONUS_STANDBY'|'BONUS'|'ART'|'TENJOU'} phase
+ * @param {import('../util/rng.js').Rng} rng
  */
-function computeNormalStopFrame(flags, rng) {
-  const alignSymbol = {
-    bell: 'BELL',
-    watermelon: 'WATERMELON',
-    replay: 'REPLAY',
-  };
+function computeNormalStopFrame(flags, phase, rng) {
+  const isBonusFlag = flags.bonusFlag && flags.bonusFlag !== 'none';
+  const isChanceContext = phase === 'CZ' || phase === 'ZENCHO';
+
+  // ペイラインの index 参照用
+  const LINE_MID  = PAYLINES[0];
+  const LINE_TOP  = PAYLINES[1];
+  const LINE_DIAG_DOWN = PAYLINES[3];
+  const LINE_DIAG_UP   = PAYLINES[4];
+  const DIAG_LINES = [LINE_DIAG_DOWN, LINE_DIAG_UP];
 
   switch (flags.smallFlag) {
-    case 'bell':
-    case 'watermelon':
     case 'replay': {
-      const sym = alignSymbol[flags.smallFlag];
-      const line = rng.pick(PAYLINES);
-      const stopIndexes = alignOnPayline(sym, sym, sym, line, rng);
+      // 基本的に中段揃い
+      const line = LINE_MID;
+      const stopIndexes = alignOnPayline('REPLAY', 'REPLAY', 'REPLAY', line, rng);
+      return {
+        frame: frameFromStopIndexes(stopIndexes),
+        stopIndexes,
+        winLine: line,
+        winCells: winCellsForPayline(line),
+        bonusSymbolsAligned: false,
+        blue7Aligned: false,
+      };
+    }
+    case 'bell': {
+      // 上段 or 斜め揃い。左リールのフレームにCHERRYを見せない。
+      const line = rng.pick([LINE_TOP, LINE_DIAG_DOWN, LINE_DIAG_UP]);
+      const lIdx = pickStopIndexForRowExcluding(REEL_LEFT, 'BELL', line.rows[0], ['CHERRY'], rng);
+      const cIdx = pickStopIndexForRow(REEL_CENTER, 'BELL', line.rows[1], rng);
+      const rIdx = pickStopIndexForRow(REEL_RIGHT, 'BELL', line.rows[2], rng);
+      const stopIndexes = [lIdx, cIdx, rIdx];
+      return {
+        frame: frameFromStopIndexes(stopIndexes),
+        stopIndexes,
+        winLine: line,
+        winCells: winCellsForPayline(line),
+        bonusSymbolsAligned: false,
+        blue7Aligned: false,
+      };
+    }
+    case 'watermelon': {
+      // 斜め 又は 上段揃い。上段はボーナス/CZ示唆。
+      const topBias = (isBonusFlag || isChanceContext) ? 0.6 : 0.2;
+      const line = rng.next() < topBias ? LINE_TOP : rng.pick(DIAG_LINES);
+      const stopIndexes = alignOnPayline('WATERMELON', 'WATERMELON', 'WATERMELON', line, rng);
       return {
         frame: frameFromStopIndexes(stopIndexes),
         stopIndexes,
@@ -209,11 +253,27 @@ function computeNormalStopFrame(flags, rng) {
       };
     }
     case 'cherry': {
-      // シングルチェリー: 左リールの任意の段にチェリーを1個表示するだけで成立。
-      // 中/右リールには3コマのどこにもCHERRYが見えないよう完全除外する
-      // （ガセチェリー防止）。
-      const row = rng.nextInt(3);
-      const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', row, rng);
+      if (isBonusFlag) {
+        // 斜めチェリー（ダブル）: 左上 + 右下 または 左下 + 右上。bonus大チャンス示唆。
+        const upDown = rng.nextInt(2) === 0; // true: 左上-右下 / false: 左下-右上
+        const leftRow  = upDown ? 0 : 2;
+        const rightRow = upDown ? 2 : 0;
+        const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', leftRow, rng);
+        const rIdx = pickStopIndexForRow(REEL_RIGHT, 'CHERRY', rightRow, rng);
+        const cIdx = pickStopIndexExcludingFrame(REEL_CENTER, 'CHERRY', rng);
+        const stopIndexes = [lIdx, cIdx, rIdx];
+        return {
+          frame: frameFromStopIndexes(stopIndexes),
+          stopIndexes,
+          winLine: null,
+          // 左リールのチェリーのみが配当対象（右は演出用）
+          winCells: [{ col: 0, row: leftRow }],
+          bonusSymbolsAligned: false,
+          blue7Aligned: false,
+        };
+      }
+      // 基本: 左リール下段のみ。中/右リール窓にCHERRYを見せない。
+      const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', 2, rng);
       const [cIdx, rIdx] = pickStopIndexesExcludingFrame(
         [REEL_CENTER, REEL_RIGHT],
         'CHERRY',
@@ -223,7 +283,7 @@ function computeNormalStopFrame(flags, rng) {
         frame: frameFromStopIndexes([lIdx, cIdx, rIdx]),
         stopIndexes: [lIdx, cIdx, rIdx],
         winLine: null,
-        winCells: [{ col: 0, row }],
+        winCells: [{ col: 0, row: 2 }],
         bonusSymbolsAligned: false,
         blue7Aligned: false,
       };
@@ -257,24 +317,12 @@ function computeNormalStopFrame(flags, rng) {
       };
     }
     case 'reachme': {
-      // リーチ目（BONUS確定告知）: 中段7テンパイハズレ
-      const pattern = rng.nextInt(2);
-      let stopIndexes;
-      if (pattern === 0) {
-        // 赤7・赤7・赤7上段（中段テンパイして右上段にズレる）
-        stopIndexes = [
-          pickStopIndexForRow(REEL_LEFT, 'BIG7', 1, rng),
-          pickStopIndexForRow(REEL_CENTER, 'BIG7', 1, rng),
-          pickStopIndexForRow(REEL_RIGHT, 'BIG7', 0, rng),
-        ];
-      } else {
-        // 青7・青7・青7上段
-        stopIndexes = [
-          pickStopIndexForRow(REEL_LEFT, 'BLUE7', 1, rng),
-          pickStopIndexForRow(REEL_CENTER, 'BLUE7', 1, rng),
-          pickStopIndexForRow(REEL_RIGHT, 'BLUE7', 0, rng),
-        ];
-      }
+      // リーチ目: 左リール中段CHERRY。中/右リールの窓にはCHERRYを出さない。
+      // 配当は無いがBONUS確定告知としてプレイヤーには強いサイン。
+      const lIdx = pickStopIndexForRow(REEL_LEFT, 'CHERRY', 1, rng);
+      const cIdx = pickStopIndexExcludingFrame(REEL_CENTER, 'CHERRY', rng);
+      const rIdx = pickStopIndexExcludingFrame(REEL_RIGHT, 'CHERRY', rng);
+      const stopIndexes = [lIdx, cIdx, rIdx];
       return {
         frame: frameFromStopIndexes(stopIndexes),
         stopIndexes,
@@ -359,6 +407,36 @@ function pickStopIndexExcludingFrame(reel, excludeSymbol, rng) {
   }
   if (candidates.length === 0) return rng.nextInt(N);
   return candidates[rng.nextInt(candidates.length)];
+}
+
+/**
+ * targetSymbol を指定行に置きつつ、3コマ表示窓から excludeSymbols を排除した
+ * 停止位置を抽選する。候補が無ければ除外条件を外して再抽選。
+ * @param {SymbolId[]} reel
+ * @param {SymbolId} targetSymbol
+ * @param {number} row - 0=上/1=中/2=下
+ * @param {SymbolId[]} excludeSymbols
+ * @param {import('../util/rng.js').Rng} rng
+ * @returns {number} stopIndex
+ */
+function pickStopIndexForRowExcluding(reel, targetSymbol, row, excludeSymbols, rng) {
+  const N = reel.length;
+  const candidates = [];
+  for (let i = 0; i < N; i++) {
+    if (reel[i] !== targetSymbol) continue;
+    const stopIdx = (i - row + 1 + N) % N;
+    const top = reel[(stopIdx - 1 + N) % N];
+    const mid = reel[stopIdx];
+    const bot = reel[(stopIdx + 1) % N];
+    let ok = true;
+    for (const sym of excludeSymbols) {
+      if (top === sym || mid === sym || bot === sym) { ok = false; break; }
+    }
+    if (ok) candidates.push(stopIdx);
+  }
+  if (candidates.length > 0) return candidates[rng.nextInt(candidates.length)];
+  // フォールバック: 除外条件を満たせないときは target だけで抽選
+  return pickStopIndexForRow(reel, targetSymbol, row, rng);
 }
 
 /**

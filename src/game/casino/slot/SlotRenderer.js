@@ -91,6 +91,15 @@ export class SlotRenderer {
     if (!target) return;
     if (target.reel.classList.contains('is-spinning')) return;
 
+    // 前スピンの当選ハイライト（ディム）を即リセットして全点灯状態から始動
+    if (reelIndex === 0) {
+      if (this._winCleanupTimer) {
+        clearTimeout(this._winCleanupTimer);
+        this._winCleanupTimer = 0;
+      }
+      this._clearWinHighlights();
+    }
+
     // アニメ開始前に transform をリセットしてアニメ起点にする
     target.strip.style.transition = 'none';
     target.strip.style.transform = '';
