@@ -994,16 +994,16 @@
   }
 }
 
-/* リール停止時のショートバウンス */
+/* リール停止時のショートバウンス（枠からはみ出ない程度の微小振幅 + 縦つぶし） */
 .casino-slot-reel.is-stopped-bounce {
-  animation: casino-reel-bounce 0.22s ease-out;
+  animation: casino-reel-bounce 0.2s ease-out;
+  transform-origin: 50% 50%;
 }
 
 @keyframes casino-reel-bounce {
-  0%   { transform: translateY(0); }
-  38%  { transform: translateY(3px); }
-  72%  { transform: translateY(-1px); }
-  100% { transform: translateY(0); }
+  0%   { transform: translateY(0) scaleY(1); }
+  40%  { transform: translateY(1px) scaleY(0.985); }
+  100% { transform: translateY(0) scaleY(1); }
 }
 
 /* ===== 下部ステータスパネル ===== */
@@ -1501,6 +1501,11 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+}
+
+/* HTML の [hidden] 属性を display:flex が上書きしてしまうのを明示的に打ち消す */
+.casino-slot-bita-overlay[hidden] {
+  display: none;
 }
 
 .casino-slot-bita-label {
