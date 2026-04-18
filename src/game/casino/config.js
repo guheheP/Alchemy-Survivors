@@ -10,7 +10,7 @@
  */
 
 export const CASINO_ENABLED = true;
-export const CASINO_VISIBLE = false; // 正式公開までは false のまま
+export const CASINO_VISIBLE = true; // 拠点タブに「🎰 賭博場」を常時表示
 export const CASINO_VERSION = 1;
 
 /** ゴールド↔メダル両替レート */
