@@ -65,6 +65,22 @@ export class SlotScreen {
     this._lastSpinStartAt = 0;
     /** クールダウン解除タイマー */
     this._cooldownTimer = null;
+    /** AUTO時のリール自動停止タイマー群 */
+    this._autoStopTimers = [];
+    /** _flashMessage が発行する setTimeout 群 */
+    this._flashTimers = [];
+    /** _triggerScreenFlash が発行する setTimeout 群 */
+    this._screenFlashTimers = [];
+    /** _showBitaOverlay が発行する setTimeout 群 */
+    this._bitaTimers = [];
+    /** gasuri_fail の deferred タイマー */
+    this._gasuriTimer = null;
+    /** payout ロール完了後のクリーンアップタイマー */
+    this._payoutCleanupTimer = null;
+    /** payout ロール中RAF id */
+    this._payoutRollRaf = 0;
+    /** 筐体シェイクのクリアタイマー */
+    this._shakeTimer = null;
 
     // 予告抽選用RNG（内部抽選とは別系列）
     this._yokokuRng = new Rng(Date.now() & 0xffffffff);
@@ -368,6 +384,7 @@ export class SlotScreen {
       clearTimeout(this._autoTimer);
       this._autoTimer = null;
     }
+    this._clearAutoStopTimers();
   }
 
   async _autoLoop() {
@@ -449,13 +466,21 @@ export class SlotScreen {
       const settings = getCasinoSettings();
       const spacing = settings.skipAnimations ? 40 : 400;
       const order = result.navOrder || [0, 1, 2];
+      // 前スピンの残りタイマーが残っていれば掃除
+      this._clearAutoStopTimers();
       for (let i = 0; i < 3; i++) {
         const reelIdx = order[i];
-        setTimeout(() => {
+        const tid = setTimeout(() => {
           if (this.spinning && !this._stoppedReels[reelIdx]) this._stopReel(reelIdx);
         }, spacing * (i + 1));
+        this._autoStopTimers.push(tid);
       }
     }
+  }
+
+  _clearAutoStopTimers() {
+    for (const tid of this._autoStopTimers) clearTimeout(tid);
+    this._autoStopTimers.length = 0;
   }
 
   /**
@@ -550,6 +575,10 @@ export class SlotScreen {
       cancelAnimationFrame(this._payoutRollRaf);
       this._payoutRollRaf = 0;
     }
+    if (this._payoutCleanupTimer) {
+      clearTimeout(this._payoutCleanupTimer);
+      this._payoutCleanupTimer = null;
+    }
     if (target <= 0) {
       el.textContent = this._pad(0, 3);
       el.classList.remove('is-rolling', 'is-payout-big');
@@ -561,7 +590,6 @@ export class SlotScreen {
     if (target >= 50) el.classList.add('is-payout-big');
     const step = (now) => {
       const t = Math.min(1, (now - start) / durationMs);
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - t, 3);
       const shown = Math.floor(eased * target);
       el.textContent = this._pad(shown, 3);
@@ -570,8 +598,9 @@ export class SlotScreen {
       } else {
         el.textContent = this._pad(target, 3);
         this._payoutRollRaf = 0;
-        setTimeout(() => {
+        this._payoutCleanupTimer = setTimeout(() => {
           el.classList.remove('is-rolling', 'is-payout-big');
+          this._payoutCleanupTimer = null;
         }, 500);
       }
     };
@@ -694,7 +723,9 @@ export class SlotScreen {
     if (this._currentYokoku && !this._currentYokoku.willHit && result.payout === 0 &&
         result.flags?.bonusFlag === 'none' && this.pixelDisplay) {
       // ガセ演出を重ねて発火（予告終了後）
-      setTimeout(() => {
+      if (this._gasuriTimer) clearTimeout(this._gasuriTimer);
+      this._gasuriTimer = setTimeout(() => {
+        this._gasuriTimer = null;
         if (this.pixelDisplay) this.pixelDisplay.triggerEvent('gasuri_fail');
       }, 100);
     }
@@ -813,12 +844,22 @@ export class SlotScreen {
     if (variant) msg.classList.add(`casino-slot-flash-${variant}`);
     msg.textContent = text;
     layer.appendChild(msg);
-    setTimeout(() => msg.classList.add('is-visible'), 10);
+    const t1 = setTimeout(() => msg.classList.add('is-visible'), 10);
+    this._flashTimers.push(t1);
     const duration = variant === 'premier' || variant === 'bonus-big' ? 2200 : 1500;
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       msg.classList.remove('is-visible');
-      setTimeout(() => msg.remove(), 300);
+      const t3 = setTimeout(() => msg.remove(), 300);
+      this._flashTimers.push(t3);
     }, duration);
+    this._flashTimers.push(t2);
+  }
+
+  _clearFlashMessages() {
+    for (const tid of this._flashTimers) clearTimeout(tid);
+    this._flashTimers.length = 0;
+    const layer = this.el.querySelector('.casino-slot-effect-layer');
+    if (layer) layer.querySelectorAll('.casino-slot-flash').forEach(n => n.remove());
   }
 
   /**
@@ -906,6 +947,7 @@ export class SlotScreen {
     const animMs = 700;
 
     if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
+    this._clearBitaTimers();
 
     // 1フレーム後に transition を掛けて移動開始
     this._bitaRaf = requestAnimationFrame(() => {
@@ -914,17 +956,25 @@ export class SlotScreen {
         cursor.style.left = `${targetPct}%`;
       }
       // 移動完了後に結果を表示して自動でフェードアウト
-      setTimeout(() => {
+      const t1 = setTimeout(() => {
         overlay.classList.toggle('is-success', challenge.success);
         overlay.classList.toggle('is-fail', !challenge.success);
         if (hint) hint.textContent = challenge.success ? `成功! +${challenge.bonus}枚` : '失敗...';
-        setTimeout(() => { this._hideBitaOverlay(); }, 450);
+        const t2 = setTimeout(() => { this._hideBitaOverlay(); }, 450);
+        this._bitaTimers.push(t2);
       }, animMs + 40);
+      this._bitaTimers.push(t1);
     });
+  }
+
+  _clearBitaTimers() {
+    for (const tid of this._bitaTimers) clearTimeout(tid);
+    this._bitaTimers.length = 0;
   }
 
   _hideBitaOverlay() {
     if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
+    this._clearBitaTimers();
     const overlay = this.el.querySelector('.casino-slot-bita-overlay');
     if (!overlay) return;
     overlay.hidden = true;
@@ -942,7 +992,14 @@ export class SlotScreen {
     flash.className = `casino-screen-flash casino-screen-flash-${variant}`;
     this.el.appendChild(flash);
     requestAnimationFrame(() => flash.classList.add('is-active'));
-    setTimeout(() => flash.remove(), 1200);
+    const tid = setTimeout(() => flash.remove(), 1200);
+    this._screenFlashTimers.push(tid);
+  }
+
+  _clearScreenFlashes() {
+    for (const tid of this._screenFlashTimers) clearTimeout(tid);
+    this._screenFlashTimers.length = 0;
+    this.el.querySelectorAll('.casino-screen-flash').forEach(n => n.remove());
   }
 
   /** 筐体シェイク（大当たり突入時など） */
@@ -952,7 +1009,11 @@ export class SlotScreen {
     cabinet.classList.remove('is-shaking');
     void cabinet.offsetHeight;
     cabinet.classList.add('is-shaking');
-    setTimeout(() => cabinet.classList.remove('is-shaking'), 600);
+    if (this._shakeTimer) clearTimeout(this._shakeTimer);
+    this._shakeTimer = setTimeout(() => {
+      cabinet.classList.remove('is-shaking');
+      this._shakeTimer = null;
+    }, 600);
   }
 
   destroy() {
@@ -960,6 +1021,12 @@ export class SlotScreen {
     if (this._cooldownTimer) { clearTimeout(this._cooldownTimer); this._cooldownTimer = null; }
     if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
     if (this._payoutRollRaf) { cancelAnimationFrame(this._payoutRollRaf); this._payoutRollRaf = 0; }
+    if (this._payoutCleanupTimer) { clearTimeout(this._payoutCleanupTimer); this._payoutCleanupTimer = null; }
+    if (this._gasuriTimer) { clearTimeout(this._gasuriTimer); this._gasuriTimer = null; }
+    if (this._shakeTimer) { clearTimeout(this._shakeTimer); this._shakeTimer = null; }
+    this._clearFlashMessages();
+    this._clearScreenFlashes();
+    this._clearBitaTimers();
     if (this._keyHandler) {
       window.removeEventListener('keydown', this._keyHandler);
       this._keyHandler = null;

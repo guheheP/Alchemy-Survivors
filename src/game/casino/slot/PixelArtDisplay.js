@@ -102,6 +102,7 @@ export class PixelArtDisplay {
         type,
         opts,
         startFrame: this.frame,
+        startAt: Date.now(),
         duration,
         resolve,
       });
@@ -124,12 +125,13 @@ export class PixelArtDisplay {
     return this._events.length > 0;
   }
 
-  /** 残り演出時間(ms) */
+  /** 残り演出時間(ms) — タブbackground時のsetTimeoutスロットルでも狂わないwall-clock基準 */
   remainingMs() {
     if (this._events.length === 0) return 0;
+    const now = Date.now();
     let maxRemaining = 0;
     for (const ev of this._events) {
-      const elapsed = (this.frame - ev.startFrame) * FRAME_MS;
+      const elapsed = ev.startAt != null ? now - ev.startAt : (this.frame - ev.startFrame) * FRAME_MS;
       const remaining = Math.max(0, ev.duration - elapsed);
       if (remaining > maxRemaining) maxRemaining = remaining;
     }

@@ -25,6 +25,8 @@ export class SlotRenderer {
     this.el.className = 'casino-slot-reels';
     /** @type {Array<{reel: HTMLElement, strip: HTMLElement}>} */
     this.reelEls = [];
+    /** 停止スナップ/バウンスの setTimeout 群 */
+    this._stopTimers = [];
   }
 
   render() {
@@ -140,7 +142,8 @@ export class SlotRenderer {
     target.strip.style.transform = `translateY(${finalOffset}px)`;
 
     // 300ms後、正規位置にスナップ（コンテンツ同一なので視覚的に変化なし）
-    setTimeout(() => {
+    const snapTid = setTimeout(() => {
+      if (!target.reel.isConnected) return;
       target.strip.style.transition = 'none';
       target.strip.style.transform = `translateY(${normalizedOffset}px)`;
       void target.strip.offsetHeight;
@@ -148,8 +151,12 @@ export class SlotRenderer {
       target.reel.classList.remove('is-stopped-bounce');
       void target.reel.offsetHeight;
       target.reel.classList.add('is-stopped-bounce');
-      setTimeout(() => target.reel.classList.remove('is-stopped-bounce'), 240);
+      const bounceTid = setTimeout(() => {
+        if (target.reel.isConnected) target.reel.classList.remove('is-stopped-bounce');
+      }, 240);
+      this._stopTimers.push(bounceTid);
     }, 320);
+    this._stopTimers.push(snapTid);
   }
 
   /**
@@ -271,6 +278,8 @@ export class SlotRenderer {
       clearTimeout(this._winCleanupTimer);
       this._winCleanupTimer = 0;
     }
+    for (const tid of this._stopTimers) clearTimeout(tid);
+    this._stopTimers.length = 0;
     for (const target of this.reelEls) {
       if (target?.reel) target.reel.classList.remove('is-spinning');
     }

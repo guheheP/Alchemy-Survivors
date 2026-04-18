@@ -40,7 +40,7 @@ export const BLUE7_PROB_TABLE = {
   3: { big: { blue7: 420,  none: 65116 }, reg: { blue7: 1000, none: 64536 } },
   4: { big: { blue7: 720,  none: 64816 }, reg: { blue7: 1620, none: 63916 } },
   5: { big: { blue7: 1000, none: 64536 }, reg: { blue7: 2250, none: 63286 } },
-  6: { big: { blue7: 1520, none: 64016 }, reg: { blue7: 3350, none: 62186 } },
+  6: { big: { blue7: 1300, none: 64236 }, reg: { blue7: 2850, none: 62686 } },
 };
 
 /**

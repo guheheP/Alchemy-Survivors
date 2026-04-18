@@ -145,6 +145,14 @@ export function transition(state, input, rng) {
 
   // NORMAL / ART / TENJOU: BONUS未成立時の各phase固有の処理
   if (state.phase === 'NORMAL') {
+    state.normalGameCount++;
+    // 天井判定（ZENCHO突入より優先: 天井Gに到達したら救済を確実に）
+    if (state.normalGameCount >= TENJOU_GAMES) {
+      state.phase = 'TENJOU';
+      state.stats.tenjouCount++;
+      events.push({ type: 'tenjou_start' });
+      return events;
+    }
     // ZENCHO突入判定
     if (input.flags.zenchoTriggered) {
       state.phase = 'ZENCHO';
@@ -152,16 +160,7 @@ export function transition(state, input, rng) {
       state.zenchoGamesRemaining = ZENCHO_GAMES.min + rng.nextInt(range);
       state.stats.zenchoCount++;
       events.push({ type: 'zencho_start', amount: state.zenchoGamesRemaining });
-      state.normalGameCount++;
       return events;
-    }
-
-    state.normalGameCount++;
-    // 天井判定
-    if (state.normalGameCount >= TENJOU_GAMES) {
-      state.phase = 'TENJOU';
-      state.stats.tenjouCount++;
-      events.push({ type: 'tenjou_start' });
     }
     return events;
   }
@@ -234,6 +233,8 @@ function endBonus(state) {
   }
 
   // BONUS経由で帰還する場合、天井カウンタをリセット
+  // 復帰先がARTでもリセットする（ART消化後にNORMAL復帰した時点で天井は0から再計測）。
+  // BONUS取得 = 天井権利消費、という一貫したルール。
   state.normalGameCount = 0;
 
   state.bonusKind = null;

@@ -50,6 +50,7 @@ function runSimulation(setting, totalGames, seed) {
   let bonusCount = 0;
   let artFromBonusCount = 0;
   let artFromCzCount = 0;
+  let artStockConsumeCount = 0;
 
   let artBet = 0;
   let artNetGain = 0;
@@ -90,6 +91,7 @@ function runSimulation(setting, totalGames, seed) {
         }
         if (ev.type === 'cz_success') artFromCzCount++;
         if (ev.type === 'art_add') artFromBonusCount++;
+        if (ev.type === 'art_stock_consume') artStockConsumeCount++;
       }
     }
   }
@@ -116,6 +118,7 @@ function runSimulation(setting, totalGames, seed) {
     tenjouCount: stats.tenjouCount,
     bonusCount,
     artPerBonus: bonusCount > 0 ? (artFromBonusOnly / bonusCount) * 100 : 0,
+    artStockConsumeCount,
     artSpins,
     artNetGain,
     artContribution: stats.totalBet > 0 ? (artNetGain / stats.totalBet) * 100 : 0,
@@ -132,6 +135,7 @@ function printResult(r) {
   console.log(`  BIG ${r.bigCount} (1/${r.bigFreq})  REG ${r.regCount} (1/${r.regFreq})`);
   console.log(`  BONUS total:        ${r.bonusCount}`);
   console.log(`  ART per BONUS:      ${r.artPerBonus.toFixed(1)}%`);
+  console.log(`  ART stock consume:  ${r.artStockConsumeCount}`);
   console.log(`  ART新規:            ${r.artCount}  (spins ${r.artSpins.toLocaleString()} / ${(100 * r.artSpins / r.games).toFixed(1)}%)`);
   console.log(`  ART contribution:   ${r.artContribution >= 0 ? '+' : ''}${r.artContribution.toFixed(2)}%`);
   console.log(`  ZENCHO: ${r.zenchoCount}  CZ: ${r.czCount}  TENJOU: ${r.tenjouCount}`);

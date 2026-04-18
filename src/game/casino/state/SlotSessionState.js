@@ -15,9 +15,6 @@ export class SlotSessionState {
     /** 通常時（NORMAL）からのゲーム数（天井判定用） */
     this.normalGameCount = 0;
 
-    /** 全体のゲーム数カウンタ（統計用） */
-    this.gameCount = 0;
-
     /** BONUS内部成立後、揃える待ちのBONUS種別 */
     /** @type {BonusKind} */
     this.standbyBonusKind = null;
