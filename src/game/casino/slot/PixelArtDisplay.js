@@ -302,21 +302,23 @@ export class PixelArtDisplay {
     this.ctx.fillRect(0, PIXEL_H - 6, PIXEL_W, 6);
 
     // タイトルバー
-    const titleY = 6;
-    this.ctx.fillStyle = 'rgba(64, 24, 96, 0.55)';
-    this.ctx.fillRect(0, 0, PIXEL_W, titleY + 14);
+    const titleY = 5;
+    this.ctx.fillStyle = 'rgba(64, 24, 96, 0.6)';
+    this.ctx.fillRect(0, 0, PIXEL_W, titleY + 16);
     this.ctx.fillStyle = '#f0c040';
-    this.ctx.fillRect(0, titleY + 14, PIXEL_W, 1);
-    // メインタイトル: 中央寄せ「錬金スロット」
-    this._drawText('錬金スロット', PIXEL_W / 2 - 36, titleY, '#ffe080', 14);
+    this.ctx.fillRect(0, titleY + 16, PIXEL_W, 1);
+    // メインタイトル: 中央寄せ「賢者の石を求めて」
+    const titleText = '賢者の石を求めて';
+    const titleW = this._textWidthApprox(titleText, 14);
+    this._drawText(titleText, Math.floor((PIXEL_W - titleW) / 2), titleY, '#ffe080', 14);
 
     // 左側: 錬金術師＋蒸留器のシーン
-    this._drawAlchemist(28, 38, (t >> 3) % 2);
-    this._drawFlask(60, 42, t);
+    this._drawAlchemist(28, 40, (t >> 3) % 2);
+    this._drawFlask(60, 44, t);
 
-    // 右側: モード表示「通常時」＋ サブタイトル
-    this._drawText('NORMAL', 140, 30, '#a890ff', 12);
-    this._drawText('通常時', 152, 48, '#c0b0ff', 11);
+    // 右側: モード表示「通常時」
+    this._drawText('NORMAL', 140, 32, '#a890ff', 12);
+    this._drawText('通常時', 152, 50, '#c0b0ff', 11);
 
     // 偶に泡パーティクル
     if (t % 20 === 0) {

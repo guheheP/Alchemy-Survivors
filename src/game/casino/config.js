@@ -10,15 +10,15 @@
  */
 
 export const CASINO_ENABLED = true;
-export const CASINO_VISIBLE = false; // 調整中につき非表示（localStorage 'casino_visible'=1 または ?casino=1 で開発者用に表示可）
+export const CASINO_VISIBLE = true; // 正式版で常時表示
 export const CASINO_VERSION = 1;
 
-/** ゴールド↔メダル両替レート */
+/** ゴールド↔メダル両替レート (20G = 1メダル) */
 export const EXCHANGE_RATE = {
-  goldToMedal: 1,   // 1G = 1メダル
-  medalToGold: 1,   // 1メダル = 1G
-  fee: 0,           // 両替手数料（%）
-  minExchange: 10,  // 1回あたりの最小両替量
+  goldToMedal: 1/20,  // 1G = 1/20メダル (20G で 1メダル)
+  medalToGold: 20,    // 1メダル = 20G
+  fee: 0,             // 両替手数料（%）
+  minExchange: 50,    // 1回あたりの最小両替量（メダル単位）
 };
 
 /** 1ゲームの掛け枚数（固定） */

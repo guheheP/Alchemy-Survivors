@@ -1,13 +1,11 @@
 /**
- * dailySetting.js — 日付ベースの設定（1〜6）抽選
+ * dailySetting.js — カジノの設定（1〜6）抽選
  *
- * 同じ日は同じ設定に収束させる（ゲーム内時刻ベース、セッション跨ぎ不変）。
- * ハッシュ関数で日付文字列から安定なインデックスを導出し、
- * 出現確率分布（やや甘め）にマップする。
+ * 正式版ではラン毎抽選 (pickRunSetting) を使用する。
+ * pickDailySetting / getTodayString は旧仕様用に残置（互換性維持目的）。
  *
  * 分布: 設定1: 15% / 2: 18% / 3: 22% / 4: 22% / 5: 15% / 6: 8%
- * 日次分布での期待機械割を 100〜102% に収め、プレイヤーが長期的に
- * わずかにプラス期待で遊べる設計（娯楽要素としての味付け）。
+ * 期待機械割を 100〜102% に収め、長期的にわずかにプラス期待で遊べる設計。
  */
 
 /** 設定1〜6の出現確率（小数、合計1.0） */
@@ -57,4 +55,20 @@ export function getTodayString() {
   const jstOffsetMs = 9 * 60 * 60 * 1000;
   const jst = new Date(now.getTime() + jstOffsetMs);
   return jst.toISOString().slice(0, 10);
+}
+
+/**
+ * ラン毎の設定抽選（正式版用）
+ * SETTING_DISTRIBUTION の重みに従い Math.random() で 1〜6 を選ぶ。
+ * 呼び出すたびに新しい乱数で抽選するため、ラン完了イベント等で利用すること。
+ * @returns {1|2|3|4|5|6}
+ */
+export function pickRunSetting() {
+  const r = Math.random();
+  let cumulative = 0;
+  for (const { setting, weight } of SETTING_DISTRIBUTION) {
+    cumulative += weight;
+    if (r < cumulative) return /** @type {1|2|3|4|5|6} */ (setting);
+  }
+  return 1;
 }

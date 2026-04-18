@@ -37,8 +37,9 @@ export class CasinoState {
   constructor() {
     this.version = CASINO_VERSION;
     this.medals = 0;
+    /** @deprecated 旧日付ベース設定の名残。セーブ互換のため保持するが正式版では未使用。 */
     this.lastSettingDate = '';
-    /** @type {1|2|3|4|5|6} */
+    /** @type {1|2|3|4|5|6} ラン完了毎に再抽選される（CasinoManager._pickNewSetting） */
     this.currentSetting = 4;
     this.lifetimeStats = { ...DEFAULT_LIFETIME_STATS };
   }

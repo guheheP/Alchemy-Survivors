@@ -1752,16 +1752,6 @@
   .casino-slot-symbol { max-width: 86px; max-height: 48px; }
 }
 
-/* ---- Debug Note ---- */
-.casino-debug-note {
-  margin-top: 20px;
-  color: var(--color-warning, #cc4);
-  font-size: 0.75rem;
-  text-align: center;
-  padding: 8px;
-  border: 1px dashed var(--color-warning, #cc4);
-  border-radius: 4px;
-}
 
 /* ---- Lobby Header ---- */
 .casino-lobby-header {

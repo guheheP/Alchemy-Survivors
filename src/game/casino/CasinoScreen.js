@@ -58,7 +58,6 @@ export class CasinoScreen {
 
     const medals = this.manager.getMedals();
     const gold = this.manager.inventory?.gold ?? 0;
-    const setting = this.manager.getCurrentSetting();
     const stats = this.manager.state.lifetimeStats;
     const lifetimeKW = stats.totalBet > 0 ? (stats.totalPayout / stats.totalBet * 100) : 0;
 
@@ -68,7 +67,6 @@ export class CasinoScreen {
       <div class="casino-lobby-header">
         <div>
           <h2 class="casino-lobby-title">🎰 錬金賭博場</h2>
-          <p class="casino-lobby-subtitle">実験的機能 — ゲーム本編とは別軸の娯楽</p>
         </div>
         <button type="button" class="casino-btn casino-btn-secondary" data-action="settings">⚙ 設定</button>
       </div>
@@ -86,13 +84,13 @@ export class CasinoScreen {
 
       <div class="casino-exchange-panel">
         <h3>両替所</h3>
-        <p class="casino-exchange-rate">レート: 1G = ${EXCHANGE_RATE.goldToMedal}メダル（手数料${EXCHANGE_RATE.fee}%、最小${EXCHANGE_RATE.minExchange}単位）</p>
+        <p class="casino-exchange-rate">レート: ${EXCHANGE_RATE.medalToGold}G = 1メダル</p>
         <div class="casino-exchange-controls">
-          <button type="button" class="casino-btn" data-action="gold-to-medals" data-amount="100">+100メダル</button>
-          <button type="button" class="casino-btn" data-action="gold-to-medals" data-amount="500">+500メダル</button>
-          <button type="button" class="casino-btn" data-action="gold-to-medals" data-amount="1000">+1000メダル</button>
-          <button type="button" class="casino-btn casino-btn-secondary" data-action="medals-to-gold" data-amount="100">100メダル→G</button>
-          <button type="button" class="casino-btn casino-btn-secondary" data-action="medals-to-gold" data-amount="500">500メダル→G</button>
+          <button type="button" class="casino-btn" data-action="gold-to-medals" data-amount="1000">1000G → 50メダル</button>
+          <button type="button" class="casino-btn" data-action="gold-to-medals" data-amount="2000">2000G → 100メダル</button>
+          <button type="button" class="casino-btn" data-action="gold-to-medals" data-amount="10000">10000G → 500メダル</button>
+          <button type="button" class="casino-btn casino-btn-secondary" data-action="medals-to-gold" data-amount="50">50メダル → 1000G</button>
+          <button type="button" class="casino-btn casino-btn-secondary" data-action="medals-to-gold" data-amount="100">100メダル → 2000G</button>
           <button type="button" class="casino-btn casino-btn-secondary" data-action="medals-to-gold-all">全額戻す</button>
         </div>
       </div>
@@ -143,10 +141,6 @@ export class CasinoScreen {
         </div>
       </div>
 
-      <p class="casino-debug-note">
-        ※ 開発者モード表示中（localStorage.casino_visible or ?casino=1）<br>
-        今日の設定: ${setting}（日付ベースで自動決定）
-      </p>
     `;
     this.el.appendChild(wrapper);
 
@@ -261,7 +255,7 @@ export class CasinoScreen {
       <div class="casino-modal casino-tutorial">
         <h3>🎰 錬金賭博場 へようこそ</h3>
         <ol>
-          <li>両替所でゴールドをメダルに換えて遊戯を始めます（1G = 1メダル）</li>
+          <li>両替所でゴールドをメダルに換えて遊戯を始めます（20G = 1メダル）</li>
           <li>3枚掛け固定で、ボーナスやARTを狙います</li>
           <li>赤7揃い=BIG、赤赤青=REG。ボーナス中に青7が揃うとART確定</li>
           <li>ART中にボーナスを引くと＋100G上乗せで大連チャンのチャンス</li>

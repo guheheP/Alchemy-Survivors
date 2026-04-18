@@ -6,8 +6,9 @@
  */
 
 import { CasinoState } from './state/CasinoState.js';
-import { pickDailySetting, getTodayString } from './util/dailySetting.js';
+import { pickRunSetting } from './util/dailySetting.js';
 import { CasinoScreen } from './CasinoScreen.js';
+import { EXCHANGE_RATE } from './config.js';
 import { eventBus } from '../core/EventBus.js';
 
 /**
@@ -39,19 +40,18 @@ export class CasinoManager {
   init(inventory) {
     this.inventory = inventory;
     this._initialized = true;
-    // 設定を日付で確定（まだ未決定の場合のみ）
-    this._refreshDailySetting();
+    // ラン完了毎に設定を再抽選
+    if (!this._unsubRunComplete) {
+      this._unsubRunComplete = eventBus.on('run:complete', () => this._pickNewSetting());
+    }
   }
 
   /**
-   * 日付が変わっていたら設定を再抽選
+   * 設定を新規抽選してsave要求を発火する
    */
-  _refreshDailySetting() {
-    const today = getTodayString();
-    if (this.state.lastSettingDate !== today) {
-      this.state.currentSetting = pickDailySetting(today);
-      this.state.lastSettingDate = today;
-    }
+  _pickNewSetting() {
+    this.state.currentSetting = pickRunSetting();
+    this._requestSave();
   }
 
   /**
@@ -69,8 +69,6 @@ export class CasinoManager {
    */
   hydrate(data) {
     this.state.fromJSON(data);
-    // ロード後も日付チェック
-    this._refreshDailySetting();
   }
 
   /**
@@ -88,30 +86,36 @@ export class CasinoManager {
   // --- 両替API（スロット画面から呼ばれる） ---
 
   /**
-   * ゴールドをメダルに両替
-   * @param {number} goldAmount
+   * ゴールドをメダルに両替（20G = 1メダル、端数のゴールドは消費されない）
+   * @param {number} goldAmount - 投入したいゴールド量
    * @returns {boolean} 成功したか
    */
   exchangeGoldToMedals(goldAmount) {
     if (!this.inventory) return false;
     if (!Number.isFinite(goldAmount) || goldAmount <= 0) return false;
-    if (!this.inventory.spendGold(goldAmount)) return false;
-    this.state.medals += goldAmount;
+    const rate = EXCHANGE_RATE.medalToGold; // 1メダル当たりのゴールド (=20)
+    const medalsOut = Math.floor(goldAmount / rate);
+    if (medalsOut <= 0) return false;
+    const cost = medalsOut * rate;
+    if (!this.inventory.spendGold(cost)) return false;
+    this.state.medals += medalsOut;
     this._requestSave();
     return true;
   }
 
   /**
-   * メダルをゴールドに両替
-   * @param {number} medalAmount
+   * メダルをゴールドに両替（1メダル = 20G）
+   * @param {number} medalAmount - 払い戻したいメダル数
    * @returns {boolean} 成功したか
    */
   exchangeMedalsToGold(medalAmount) {
     if (!this.inventory) return false;
     if (!Number.isFinite(medalAmount) || medalAmount <= 0) return false;
-    if (this.state.medals < medalAmount) return false;
-    this.state.medals -= medalAmount;
-    this.inventory.addGold(medalAmount);
+    const intAmount = Math.floor(medalAmount);
+    if (intAmount <= 0) return false;
+    if (this.state.medals < intAmount) return false;
+    this.state.medals -= intAmount;
+    this.inventory.addGold(intAmount * EXCHANGE_RATE.medalToGold);
     this._requestSave();
     return true;
   }
