@@ -30,15 +30,17 @@ export const BONUS_PROB_TABLE = {
 
 /**
  * BONUS中の青7フラグ抽選テーブル
+ * 目標: 1ボーナスあたりのART期待度を設定1〜6で 12〜28% に抑え、
+ *       ARTストック消化（STOCK_BONUS_ADD=20G）を考慮して機械割を仕様値に収める。
  * @type {Record<1|2|3|4|5|6, {big:{blue7:number,none:number}, reg:{blue7:number,none:number}}>}
  */
 export const BLUE7_PROB_TABLE = {
-  1: { big: { blue7: 900,  none: 64636 }, reg: { blue7: 2200, none: 63336 } },
-  2: { big: { blue7: 1000, none: 64536 }, reg: { blue7: 2500, none: 63036 } },
-  3: { big: { blue7: 1100, none: 64436 }, reg: { blue7: 2700, none: 62836 } },
-  4: { big: { blue7: 1200, none: 64336 }, reg: { blue7: 2900, none: 62636 } },
-  5: { big: { blue7: 1250, none: 64286 }, reg: { blue7: 3100, none: 62436 } },
-  6: { big: { blue7: 1300, none: 64236 }, reg: { blue7: 3300, none: 62236 } },
+  1: { big: { blue7: 440,  none: 65096 }, reg: { blue7: 1050, none: 64486 } },
+  2: { big: { blue7: 480,  none: 65056 }, reg: { blue7: 1120, none: 64416 } },
+  3: { big: { blue7: 420,  none: 65116 }, reg: { blue7: 1000, none: 64536 } },
+  4: { big: { blue7: 720,  none: 64816 }, reg: { blue7: 1620, none: 63916 } },
+  5: { big: { blue7: 1000, none: 64536 }, reg: { blue7: 2250, none: 63286 } },
+  6: { big: { blue7: 1520, none: 64016 }, reg: { blue7: 3350, none: 62186 } },
 };
 
 /**

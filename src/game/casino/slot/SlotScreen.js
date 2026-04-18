@@ -16,6 +16,7 @@ import { SlotSFX, getCasinoSettings } from './SoundEffects.js';
 import { PixelArtDisplay } from './PixelArtDisplay.js';
 import { decideYokoku, YOKOKU_DURATION } from './KoyakuManager.js';
 import { Rng } from '../util/rng.js';
+import { formatOrder } from '../data/navigation.js';
 
 export class SlotScreen {
   /**
@@ -54,6 +55,10 @@ export class SlotScreen {
     this._stoppedReels = [false, false, false];
     /** スペースキー用の押し順カウンタ（0=左, 1=中, 2=右） */
     this._pressOrderIndex = 0;
+    /** 今スピンの実際の押し順（reelIdxの配列） */
+    this._actualPressOrder = [];
+    /** ビタチャレンジアニメーションの requestAnimationFrame id */
+    this._bitaRaf = 0;
     /** 現在再生中の予告 */
     this._currentYokoku = null;
     /** 前回スピン開始時刻（ゲーム間最小間隔保証用） */
@@ -86,6 +91,19 @@ export class SlotScreen {
               <div class="casino-slot-reels-frame">
                 <div class="casino-slot-reels-area"></div>
                 <div class="casino-slot-effect-layer"></div>
+                <div class="casino-slot-nav-overlay" hidden>
+                  <div class="casino-slot-nav-arrow" data-nav-pos="0"></div>
+                  <div class="casino-slot-nav-arrow" data-nav-pos="1"></div>
+                  <div class="casino-slot-nav-arrow" data-nav-pos="2"></div>
+                </div>
+                <div class="casino-slot-bita-overlay" hidden>
+                  <div class="casino-slot-bita-label">★ビタ押し★</div>
+                  <div class="casino-slot-bita-bar">
+                    <div class="casino-slot-bita-zone"></div>
+                    <div class="casino-slot-bita-cursor"></div>
+                  </div>
+                  <div class="casino-slot-bita-hint">左STOPで揃えろ!</div>
+                </div>
               </div>
             </div>
           </div>
@@ -138,6 +156,10 @@ export class SlotScreen {
           <div class="casino-slot-info-row casino-slot-art-row" hidden>
             <span>ART残り</span>
             <span class="casino-slot-art-left">—</span>
+          </div>
+          <div class="casino-slot-info-row casino-slot-art-stock-row" hidden>
+            <span>ARTストック</span>
+            <span class="casino-slot-art-stock">0</span>
           </div>
           <div class="casino-slot-info-row">
             <span>今回獲得</span>
@@ -384,6 +406,8 @@ export class SlotScreen {
     this.spinning = true;
     this._stoppedReels = [false, false, false];
     this._pressOrderIndex = 0;
+    this._actualPressOrder = [];
+    this._hideNavOverlay();
     this._lastSpinStartAt = performance.now();
     if (this._cooldownTimer) { clearTimeout(this._cooldownTimer); this._cooldownTimer = null; }
     this._setLeverEnabled(false);
@@ -414,13 +438,21 @@ export class SlotScreen {
     // STOPボタンを有効化（すぐ全部押せる）
     this._setStopButtonsEnabled(true);
 
-    // AUTO時は自動STOP
+    // 押し順ナビ表示
+    if (result.navOrder) this._showNavOverlay(result.navOrder);
+
+    // ビタ押しチャレンジ演出（成否は内部確定済み）
+    if (result.bitaChallenge) this._showBitaOverlay(result.bitaChallenge);
+
+    // AUTO時は自動STOP（ナビがあればその順で、無ければ左→中→右）
     if (this.auto) {
       const settings = getCasinoSettings();
       const spacing = settings.skipAnimations ? 40 : 400;
+      const order = result.navOrder || [0, 1, 2];
       for (let i = 0; i < 3; i++) {
+        const reelIdx = order[i];
         setTimeout(() => {
-          if (this.spinning && !this._stoppedReels[i]) this._stopReel(i);
+          if (this.spinning && !this._stoppedReels[reelIdx]) this._stopReel(reelIdx);
         }, spacing * (i + 1));
       }
     }
@@ -434,6 +466,8 @@ export class SlotScreen {
     if (!this._pendingResult) return;
     if (this._stoppedReels[reelIdx]) return;
     this._stoppedReels[reelIdx] = true;
+    this._actualPressOrder.push(reelIdx);
+    this._advanceNavOverlay(this._actualPressOrder.length);
 
     const stopIndexes = this._pendingResult.stopIndexes;
     if (stopIndexes && stopIndexes.length === 3) {
@@ -462,6 +496,26 @@ export class SlotScreen {
     this._pendingDone = null;
     if (!result) return;
 
+    // ナビ成否を反映（外していたら差分を返金方向に没収）
+    if (result.navOrder) {
+      const nav = this.machine.finalizeNav(result, this._actualPressOrder);
+      if (!nav.matched) {
+        result.navMissed = true;
+        result.navRefund = nav.refund;
+        result.payout = Math.max(0, (result.payout || 0) - nav.refund);
+      }
+    }
+    this._hideNavOverlay();
+
+    // ビタ押し結果は spin 時に確定済み（medalsとstatsは反映済）。表示 payout に加算するのみ
+    if (result.bitaChallenge) {
+      result.bitaSuccess = result.bitaChallenge.success;
+      result.bitaBonus = result.bitaChallenge.bonus;
+      if (result.bitaChallenge.success) {
+        result.payout = (result.payout || 0) + result.bitaChallenge.bonus;
+      }
+    }
+
     this._onSpinFinalized(result);
     this.spinning = false;
     this._setStopButtonsEnabled(false);
@@ -486,6 +540,45 @@ export class SlotScreen {
   }
 
   /**
+   * 払い出し7セグをカウントアップ風に表示
+   * @param {number} target
+   */
+  _rollPayoutDisplay(target) {
+    const el = this.el.querySelector('.casino-slot-gain-7seg');
+    if (!el) return;
+    if (this._payoutRollRaf) {
+      cancelAnimationFrame(this._payoutRollRaf);
+      this._payoutRollRaf = 0;
+    }
+    if (target <= 0) {
+      el.textContent = this._pad(0, 3);
+      el.classList.remove('is-rolling', 'is-payout-big');
+      return;
+    }
+    const durationMs = target >= 100 ? 900 : target >= 30 ? 650 : 420;
+    const start = performance.now();
+    el.classList.add('is-rolling');
+    if (target >= 50) el.classList.add('is-payout-big');
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3);
+      const shown = Math.floor(eased * target);
+      el.textContent = this._pad(shown, 3);
+      if (t < 1) {
+        this._payoutRollRaf = requestAnimationFrame(step);
+      } else {
+        el.textContent = this._pad(target, 3);
+        this._payoutRollRaf = 0;
+        setTimeout(() => {
+          el.classList.remove('is-rolling', 'is-payout-big');
+        }, 500);
+      }
+    };
+    this._payoutRollRaf = requestAnimationFrame(step);
+  }
+
+  /**
    * 停止完了後の情報パネル更新・演出発火
    * @param {import('./SlotMachine.js').SpinResult} result
    */
@@ -494,9 +587,8 @@ export class SlotScreen {
     const medalsEl = this.el.querySelector('.casino-medals-value');
     if (medalsEl) medalsEl.textContent = this._pad(this.manager.getMedals(), 5);
 
-    // 今回払い出し（7セグ）
-    const gain7seg = this.el.querySelector('.casino-slot-gain-7seg');
-    if (gain7seg) gain7seg.textContent = this._pad(result.payout || 0, 3);
+    // 今回払い出し（7セグ、カウントアップ演出）
+    this._rollPayoutDisplay(result.payout || 0);
 
     // GAMEカウンタ
     const game7seg = this.el.querySelector('.casino-slot-game-7seg');
@@ -533,12 +625,25 @@ export class SlotScreen {
     if (artRow) artRow.hidden = !showArt;
     if (artLeftEl) artLeftEl.textContent = `${this.machine.state.artGamesRemaining}G`;
 
+    // ARTストック表示
+    const stockRow = this.el.querySelector('.casino-slot-art-stock-row');
+    const stockEl = this.el.querySelector('.casino-slot-art-stock');
+    const stocks = this.machine.state.artStocks;
+    if (stockRow) stockRow.hidden = stocks <= 0;
+    if (stockEl) stockEl.textContent = String(stocks);
+
     // phase表示
     const phaseEl = this.el.querySelector('.casino-slot-phase');
     if (phaseEl) {
       phaseEl.dataset.phase = result.phase;
       phaseEl.textContent = this._phaseLabel(result.phase, this.machine.state.bonusKind);
     }
+
+    // 筐体・リールフレームにphaseを伝播（アンビエント光用）
+    const cabinet = this.el.querySelector('.casino-slot-cabinet');
+    if (cabinet) cabinet.dataset.phase = result.phase;
+    const reelsFrame = this.el.querySelector('.casino-slot-reels-frame');
+    if (reelsFrame) reelsFrame.dataset.phase = result.phase;
 
     // 小役成立時の効果音＋当選コマフラッシュ
     // リールが正規位置にsettleするのを待ってからハイライト
@@ -552,6 +657,22 @@ export class SlotScreen {
     else if (result.flags?.smallFlag === 'watermelon' && result.payout > 0) SlotSFX.watermelon();
     else if (result.flags?.smallFlag === 'cherry' && result.payout > 0) SlotSFX.cherry();
     else if (result.flags?.smallFlag === 'replay') SlotSFX.replay();
+
+    // ナビ取りこぼし
+    if (result.navMissed) {
+      this._flashMessage(`ナビ外し -${result.navRefund}枚`);
+      SlotSFX.czFail();
+    }
+
+    // ビタ押し結果
+    if (result.bitaChallenge) {
+      if (result.bitaSuccess) {
+        this._flashMessage(`★ビタ成功 +${result.bitaBonus}枚★`, 'premier');
+        SlotSFX.upsell();
+      } else {
+        this._flashMessage('ビタ失敗...');
+      }
+    }
 
     // BONUS中: 毎ゲームの強制払い出し
     if (result.phase === 'BONUS' && result.payout > 0) {
@@ -585,16 +706,26 @@ export class SlotScreen {
           SlotSFX.bonusInternal();
         } else if (ev.type === 'bonus_start') {
           SlotSFX.bonusStart();
+          this._triggerScreenFlash('bonus-start');
+          this._shakeCabinet();
+          this._flashMessage('★BONUS★', 'bonus-big');
         } else if (ev.type === 'bonus_end') {
           SlotSFX.bonusEnd();
         } else if (ev.type === 'blue7_success') {
           SlotSFX.blue7Success();
           if (this.pixelDisplay) this.pixelDisplay.triggerEvent('blue7_success');
+          this._triggerScreenFlash('premier');
+          this._shakeCabinet();
         } else if (ev.type === 'art_start') {
           SlotSFX.artStart();
+          this._triggerScreenFlash('art');
+          this._flashMessage('ART START!', 'art');
         } else if (ev.type === 'art_add') {
           SlotSFX.artAdd();
           if (this.pixelDisplay) this.pixelDisplay.triggerEvent('art_add', { amount: ev.amount || 100 });
+        } else if (ev.type === 'art_stock_consume') {
+          SlotSFX.artStockConsume();
+          if (this.pixelDisplay) this.pixelDisplay.triggerEvent('art_add', { amount: ev.amount || 50 });
         } else if (ev.type === 'art_resume') {
           SlotSFX.artResume();
         } else if (ev.type === 'art_end') {
@@ -607,8 +738,10 @@ export class SlotScreen {
           else SlotSFX.zenchoEndFail();
         } else if (ev.type === 'cz_start') {
           SlotSFX.czStart();
+          this._triggerScreenFlash('cz');
         } else if (ev.type === 'cz_success') {
           SlotSFX.czSuccess();
+          this._triggerScreenFlash('bonus');
         } else if (ev.type === 'cz_fail') {
           SlotSFX.czFail();
         } else if (ev.type === 'tenjou_start') {
@@ -689,6 +822,118 @@ export class SlotScreen {
   }
 
   /**
+   * 押し順ナビを表示: 各リール窓上に番号1/2/3を表示
+   * @param {number[]} order - reelIdx の配列（押す順番で並んでいる）
+   */
+  _showNavOverlay(order) {
+    const overlay = this.el.querySelector('.casino-slot-nav-overlay');
+    if (!overlay || !order) return;
+    overlay.hidden = false;
+    const arrows = overlay.querySelectorAll('.casino-slot-nav-arrow');
+    // order[seq] = reelIdx: seq番目に押すリールindex
+    // arrows[reelIdx]に「seq+1」を表示
+    arrows.forEach(a => { a.textContent = ''; a.classList.remove('is-active', 'is-done'); });
+    for (let seq = 0; seq < order.length; seq++) {
+      const reelIdx = order[seq];
+      const arrow = arrows[reelIdx];
+      if (!arrow) continue;
+      arrow.textContent = String(seq + 1);
+      if (seq === 0) arrow.classList.add('is-active');
+    }
+  }
+
+  /**
+   * ナビの進捗更新: stepCount番目までの矢印を消化済みにして次をactiveに
+   * @param {number} stepCount - 押した回数（1..3）
+   */
+  _advanceNavOverlay(stepCount) {
+    const overlay = this.el.querySelector('.casino-slot-nav-overlay');
+    if (!overlay || overlay.hidden) return;
+    const arrows = overlay.querySelectorAll('.casino-slot-nav-arrow');
+    arrows.forEach(a => {
+      const seq = Number(a.textContent);
+      if (!seq) return;
+      if (seq <= stepCount) {
+        a.classList.remove('is-active');
+        a.classList.add('is-done');
+      } else if (seq === stepCount + 1) {
+        a.classList.add('is-active');
+      }
+    });
+  }
+
+  _hideNavOverlay() {
+    const overlay = this.el.querySelector('.casino-slot-nav-overlay');
+    if (!overlay) return;
+    overlay.hidden = true;
+    overlay.querySelectorAll('.casino-slot-nav-arrow').forEach(a => {
+      a.textContent = '';
+      a.classList.remove('is-active', 'is-done');
+    });
+  }
+
+  /**
+   * ビタ押し演出: カーソルを動かし、成功ならゾーン内、失敗ならゾーン外に止める
+   * 成否は challenge.success で既に決まっている
+   * @param {{success:boolean, bonus:number}} challenge
+   */
+  _showBitaOverlay(challenge) {
+    const overlay = this.el.querySelector('.casino-slot-bita-overlay');
+    if (!overlay) return;
+    overlay.hidden = false;
+    overlay.classList.remove('is-success', 'is-fail');
+
+    // 固定: 中央40-60%をゾーンとする
+    const ZONE_START = 40;
+    const ZONE_END = 60;
+    const zone = overlay.querySelector('.casino-slot-bita-zone');
+    if (zone) {
+      zone.style.left = `${ZONE_START}%`;
+      zone.style.width = `${ZONE_END - ZONE_START}%`;
+    }
+    const cursor = overlay.querySelector('.casino-slot-bita-cursor');
+    const hint = overlay.querySelector('.casino-slot-bita-hint');
+    if (hint) hint.textContent = '狙え!';
+    if (cursor) {
+      cursor.style.transition = 'none';
+      cursor.style.left = '0%';
+    }
+
+    // 成功なら ゾーン中央(50%)、失敗なら ゾーン外（15% or 85%）で停止
+    const targetPct = challenge.success
+      ? (ZONE_START + ZONE_END) / 2
+      : (Math.random() < 0.5 ? 15 : 85);
+    const animMs = 700;
+
+    if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
+
+    // 1フレーム後に transition を掛けて移動開始
+    this._bitaRaf = requestAnimationFrame(() => {
+      if (cursor) {
+        cursor.style.transition = `left ${animMs}ms cubic-bezier(.3,.1,.3,1)`;
+        cursor.style.left = `${targetPct}%`;
+      }
+      // 移動完了後に結果を表示して自動でフェードアウト
+      setTimeout(() => {
+        overlay.classList.toggle('is-success', challenge.success);
+        overlay.classList.toggle('is-fail', !challenge.success);
+        if (hint) hint.textContent = challenge.success ? `成功! +${challenge.bonus}枚` : '失敗...';
+        setTimeout(() => { this._hideBitaOverlay(); }, 450);
+      }, animMs + 40);
+    });
+  }
+
+  _hideBitaOverlay() {
+    if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
+    const overlay = this.el.querySelector('.casino-slot-bita-overlay');
+    if (!overlay) return;
+    overlay.hidden = true;
+    overlay.classList.remove('is-success', 'is-fail');
+    const cursor = overlay.querySelector('.casino-slot-bita-cursor');
+    if (cursor) { cursor.style.transition = ''; cursor.style.left = '0%'; }
+  }
+
+  /**
    * 全画面フラッシュ演出
    * @param {string} variant - 'bonus' | 'bonus-start' | 'premier' | 'art' | 'cz'
    */
@@ -700,9 +945,21 @@ export class SlotScreen {
     setTimeout(() => flash.remove(), 1200);
   }
 
+  /** 筐体シェイク（大当たり突入時など） */
+  _shakeCabinet() {
+    const cabinet = this.el.querySelector('.casino-slot-cabinet');
+    if (!cabinet) return;
+    cabinet.classList.remove('is-shaking');
+    void cabinet.offsetHeight;
+    cabinet.classList.add('is-shaking');
+    setTimeout(() => cabinet.classList.remove('is-shaking'), 600);
+  }
+
   destroy() {
     this._stopAuto();
     if (this._cooldownTimer) { clearTimeout(this._cooldownTimer); this._cooldownTimer = null; }
+    if (this._bitaRaf) { cancelAnimationFrame(this._bitaRaf); this._bitaRaf = 0; }
+    if (this._payoutRollRaf) { cancelAnimationFrame(this._payoutRollRaf); this._payoutRollRaf = 0; }
     if (this._keyHandler) {
       window.removeEventListener('keydown', this._keyHandler);
       this._keyHandler = null;

@@ -34,9 +34,10 @@ import { ZENCHO_GAMES, CZ_GAMES, TENJOU_GAMES } from '../data/probabilities.js';
 
 /**
  * @typedef {Object} TransitionEvent
- * @property {'bonus_standby_start'|'bonus_start'|'bonus_end'|'art_start'|'art_end'|'art_resume'|'blue7_success'|'art_add'|'zencho_start'|'zencho_end'|'cz_start'|'cz_success'|'cz_fail'|'tenjou_start'|'tenjou_hit'} type
+ * @property {'bonus_standby_start'|'bonus_start'|'bonus_end'|'art_start'|'art_end'|'art_resume'|'blue7_success'|'art_add'|'art_stock_consume'|'zencho_start'|'zencho_end'|'cz_start'|'cz_success'|'cz_fail'|'tenjou_start'|'tenjou_hit'} type
  * @property {string} [bonusKind]
  * @property {number} [amount]
+ * @property {number} [stocksRemaining]
  * @property {string} [reason]
  */
 
@@ -168,6 +169,19 @@ export function transition(state, input, rng) {
   if (state.phase === 'ART') {
     state.artGamesRemaining--;
     if (state.artGamesRemaining <= 0) {
+      // ストック消化: 残っていれば次ARTを即スタート
+      if (state.artStocks > 0) {
+        state.artStocks--;
+        state.artGamesRemaining = ART_CONSTANTS.STOCK_BONUS_ADD;
+        state.stats.artCount++;
+        events.push({
+          type: 'art_stock_consume',
+          amount: ART_CONSTANTS.STOCK_BONUS_ADD,
+          stocksRemaining: state.artStocks,
+        });
+        // phaseはARTのまま継続
+        return events;
+      }
       events.push({ type: 'art_end' });
       state.phase = 'NORMAL';
       state.artGamesRemaining = 0;

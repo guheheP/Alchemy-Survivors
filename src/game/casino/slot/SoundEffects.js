@@ -81,6 +81,7 @@ export const SlotSFX = {
   artEnd()       { safeCall(() => SoundManager.playDoorBell?.()); },
   artAdd()       { safeCall(() => SoundManager.playMaterialPickupRare?.()); },
   artResume()    { safeCall(() => SoundManager.playBattleBuff?.()); },
+  artStockConsume() { safeCall(() => SoundManager.playFanfare?.()); },
   upsell()       { safeCall(() => SoundManager.playMaterialPickupRare?.()); },
 
   // 天井

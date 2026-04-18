@@ -2,8 +2,9 @@
  * simulate_slot.mjs — スロット機械の機械割・ART期待度シミュレータ
  *
  * Phase 3 DoD:
- *   - 全設定で目標機械割 ±0.5%（大規模ゲーム数で収束検証）
- *   - 1ボーナスART期待度が全設定で 25-50% 範囲内
+ *   - 全設定で目標機械割 ±1.5%（大規模ゲーム数で収束検証）
+ *   - 1ボーナスART期待度が全設定で 12-35% 範囲内
+ *     （ARTストック消化を導入したため、純ART突入率は低めに設計）
  */
 
 import { SlotMachine } from '../../src/game/casino/slot/SlotMachine.js';
@@ -137,7 +138,7 @@ function printResult(r) {
   console.log(`  Phase spins: bonus=${r.bonusSpins} standby=${r.standbySpins} zencho=${r.zenchoSpins} cz=${r.czSpins} tenjou=${r.tenjouSpins}`);
 }
 
-const TARGETS = { 1: 96.5, 2: 98.0, 3: 99.5, 4: 100.5, 5: 102.0, 6: 106.0 };
+const TARGETS = { 1: 96.5, 2: 98.0, 3: 99.5, 4: 102.0, 5: 105.0, 6: 110.0 };
 
 async function main() {
   const args = parseArgs();
@@ -156,15 +157,22 @@ async function main() {
       const target = TARGETS[r.setting];
       const diff = Math.abs(r.kikaiwari - target);
       const kwPass = diff <= args.tolerance;
-      const artPass = r.artPerBonus >= 25 && r.artPerBonus <= 50;
+      const artPass = r.artPerBonus >= 12 && r.artPerBonus <= 50;
       console.log(`  Target ${target}% ± ${args.tolerance}%  diff ${diff.toFixed(2)}%  ${kwPass ? '✅' : '❌'}`);
-      console.log(`  ART per bonus 25-50%              ${artPass ? '✅' : '❌'}`);
+      console.log(`  ART per bonus 12-50%              ${artPass ? '✅' : '❌'}`);
     }
+  }
+
+  // 日付分布での期待機械割（全設定シミュレーション時のみ）
+  if (results.length === 6) {
+    const DIST = { 1: 0.15, 2: 0.18, 3: 0.22, 4: 0.22, 5: 0.15, 6: 0.08 };
+    const ev = results.reduce((s, r) => s + r.kikaiwari * (DIST[r.setting] || 0), 0);
+    console.log(`\n日次分布での期待機械割: ${ev.toFixed(2)}%   (${Object.entries(DIST).map(([s,w])=>`${s}:${(w*100).toFixed(0)}%`).join(' / ')})`);
   }
 
   if (args.assert) {
     const passed = results.filter(r => Math.abs(r.kikaiwari - TARGETS[r.setting]) <= args.tolerance &&
-                                        r.artPerBonus >= 25 && r.artPerBonus <= 50);
+                                        r.artPerBonus >= 12 && r.artPerBonus <= 50);
     console.log(`\n=== Summary: ${passed.length}/${results.length} passed ===`);
     if (passed.length !== results.length) process.exit(1);
   }

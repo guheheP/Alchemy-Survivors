@@ -144,6 +144,11 @@ export class SlotRenderer {
       target.strip.style.transition = 'none';
       target.strip.style.transform = `translateY(${normalizedOffset}px)`;
       void target.strip.offsetHeight;
+      // リール筐体にバウンスを発火
+      target.reel.classList.remove('is-stopped-bounce');
+      void target.reel.offsetHeight;
+      target.reel.classList.add('is-stopped-bounce');
+      setTimeout(() => target.reel.classList.remove('is-stopped-bounce'), 240);
     }, 320);
   }
 
@@ -185,6 +190,7 @@ export class SlotRenderer {
   /**
    * 当選コマをフラッシュ表示
    * strip 内の実際の .casino-slot-cell に is-winning クラスを付ける方式
+   * 非当選コマはリール側の has-win クラス経由でディム表示される
    * @param {{col:number,row:number}[]} cells
    * @param {number[]} stopIndexes - 各リールの停止index（中段のreelインデックス）
    */
@@ -199,6 +205,7 @@ export class SlotRenderer {
 
     if (!stopIndexes || stopIndexes.length !== 3) return;
 
+    let marked = 0;
     for (const { col, row } of cells) {
       const target = this.reelEls[col];
       if (!target || !target.strip) continue;
@@ -209,13 +216,19 @@ export class SlotRenderer {
       const total = STRIP_LAPS * REEL_LENGTH;
       const normalized = ((stripIdx % total) + total) % total;
       const cellEl = target.strip.children[normalized];
-      if (cellEl) cellEl.classList.add('is-winning');
+      if (cellEl) {
+        cellEl.classList.add('is-winning');
+        marked++;
+      }
     }
+
+    // 親リール群に has-win を付けて周囲をディム
+    if (marked > 0) this.el.classList.add('has-win');
 
     this._winCleanupTimer = setTimeout(() => {
       this._clearWinHighlights();
       this._winCleanupTimer = 0;
-    }, 1600);
+    }, 1800);
   }
 
   _clearWinHighlights() {
@@ -225,6 +238,7 @@ export class SlotRenderer {
         c.classList.remove('is-winning');
       });
     }
+    this.el.classList.remove('has-win');
   }
 
   /** 互換: 一括停止 */
