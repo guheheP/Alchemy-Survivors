@@ -840,15 +840,16 @@
   z-index: 1;
 }
 
-/* 回転中: CSS keyframe で軽量スクロール（JSタイマー不要） */
+/* 回転中: CSS keyframe で軽量スクロール（JSタイマー不要）
+   --casino-lap-px は JS 側で cellH * REEL_LENGTH に実寸差し替え。
+   未注入時のフォールバックは 1344px（64px × 21）。 */
 .casino-slot-reel.is-spinning .casino-slot-reel-strip {
   animation: casino-reel-scroll 0.42s linear infinite;
 }
 
 @keyframes casino-reel-scroll {
-  /* 3周構成 SYMBOL_HEIGHT=64px, REEL_LENGTH=21, oneLap=1344px */
-  from { transform: translateY(-2688px); }
-  to   { transform: translateY(-1344px); }
+  from { transform: translateY(calc(var(--casino-lap-px, 1344px) * -2)); }
+  to   { transform: translateY(calc(var(--casino-lap-px, 1344px) * -1)); }
 }
 
 /* 回転中の周辺暗転（軽量：疑似要素1つのみ） */
@@ -1416,13 +1417,7 @@
 
 /* STOPボタンは番号等の文字を表示しない（位置で判別） */
 
-/* モバイル対応 */
-@media (max-width: 720px) {
-  .casino-slot-controls { padding: 12px; gap: 8px; }
-  .casino-slot-stop-buttons { gap: 10px; }
-  .casino-slot-stop-btn { width: 54px; height: 54px; }
-  .casino-slot-lever { width: 44px; height: 44px; }
-}
+/* モバイル対応は末尾にまとめている（重複ブロック回避のためここでは空） */
 
 /* エフェクトレイヤー */
 .casino-slot-effect-layer {
@@ -1734,22 +1729,136 @@
   80%      { transform: translate(1px, 0) rotate(0.1deg); }
 }
 
-/* モバイル対応 */
+/* ======================================================================
+ * モバイル対応（<=720px: タブレット縦 / スマホ全般、<=480px: 狭幅スマホ）
+ * デスクトップ表示は一切変更しない。すべての調整は @media 内で完結する。
+ *
+ * 重要: SlotRenderer.js の停止計算は `.casino-slot-cell` の実寸を
+ * getBoundingClientRect() で読み取るため、セル高さを縮めても
+ * 絵柄は中段窓にピタ停止する。keyframe `casino-reel-scroll` も
+ * CSS 変数 --casino-lap-px を JS が注入するため追随する。
+ * ====================================================================== */
 @media (max-width: 720px) {
+  /* ---- レイアウト / 筐体 ---- */
   .casino-slot-main { padding: 8px 4px; gap: 10px; }
-  .casino-slot-cabinet { padding: 12px 8px 10px; }
-  .casino-slot-title-logo { font-size: 1.0rem; }
+  .casino-slot-cabinet { padding: 12px 8px 10px; max-width: 100%; }
+  .casino-slot-cabinet::after { left: 3px; right: 3px; top: 16px; bottom: 16px; }
+
+  /* ---- タイトル / ヘッダー ---- */
+  .casino-slot-header { padding: 8px 12px; }
+  .casino-slot-balance { font-size: 1rem; }
+  .casino-slot-phase { font-size: 0.75rem; padding: 3px 10px; }
+  .casino-slot-title-logo { font-size: 1rem; }
   .casino-slot-title-en { font-size: 0.55rem; }
   .casino-slot-title-saga { display: none; }
-  .casino-slot-7seg { font-size: 1.0rem; min-width: 54px; }
-  .casino-slot-status-label { font-size: 0.55rem; }
-  .casino-slot-lever { min-width: 130px; height: 50px; }
-  .casino-slot-status-cell { min-width: 56px; }
+
+  /* ---- ステータスパネル / 7セグ ---- */
+  .casino-slot-status-panel { padding: 8px 10px; gap: 4px; }
+  .casino-slot-7seg { font-size: 1rem; min-width: 52px; padding: 2px 6px; }
+  .casino-slot-status-label { font-size: 0.55rem; letter-spacing: 0.12em; }
+  .casino-slot-status-cell { min-width: 0; gap: 2px; }
   .casino-slot-bonus-badge-label { font-size: 0.5rem; }
-  /* リールをモバイルに収める */
-  .casino-slot-reel { width: 96px; height: 174px; }
-  .casino-slot-cell { width: 96px; height: 58px; }
-  .casino-slot-symbol { max-width: 86px; max-height: 48px; }
+  .casino-slot-bet-lamp { width: 12px; height: 12px; }
+
+  /* ---- リール窓（タブレット〜標準スマホ） ----
+     3本 × 100px + gap 4px × 2 + padding 3px × 2 + border ≒ 318px で 360px 幅にも収まる。
+     cell アスペクト比は 64:140 を踏襲（height = width * 64/140 ≒ 0.457） */
+  .casino-slot-reels-wrap { gap: 8px; }
+  .casino-slot-reels-frame { padding: 10px; border-width: 2px; border-radius: 10px; }
+  .casino-slot-reels-frame::after { left: 12px; right: 12px; top: 13px; height: 10px; }
+  .casino-slot-reels { gap: 4px; padding: 0 3px; }
+  .casino-slot-reel { width: clamp(80px, 28vw, 110px); height: calc(clamp(80px, 28vw, 110px) * 1.371); }
+  .casino-slot-reel-strip { width: 100%; }
+  .casino-slot-cell { width: 100%; height: calc(clamp(80px, 28vw, 110px) * 0.457); }
+  .casino-slot-symbol { max-width: 100%; max-height: 100%; }
+
+  /* ---- 押し順ナビ（リール上のオーバーレイ） ---- */
+  .casino-slot-nav-arrow { width: 28px; height: 28px; font-size: 1rem; border-width: 2px; }
+  .casino-slot-nav-overlay { padding-top: 2px; }
+
+  /* ---- 情報パネル ---- */
+  .casino-slot-info { gap: 4px; }
+  .casino-slot-info-row { padding: 6px 10px; font-size: 0.8rem; flex: 1 1 140px; }
+  .casino-slot-info .casino-slot-info-row { flex: 1 1 140px; min-width: 120px; }
+
+  /* ---- コントロール（タッチ対応） ----
+     デスクトップ: [lever | stops | auto] の3列横並び
+     モバイル:     1列目 STOP×3（中央） / 2列目 lever + AUTO（両端） */
+  .casino-slot-controls {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+  .casino-slot-control-left {
+    order: 2;
+    justify-content: flex-start;
+  }
+  .casino-slot-stop-buttons {
+    order: 1;
+    grid-column: 1 / -1;
+    gap: 12px;
+  }
+  .casino-slot-control-right {
+    order: 3;
+    justify-content: flex-end;
+  }
+  /* レバー/STOP: タッチ最小 48px を保ちつつ円形維持（min-width 上書きの破壊的指定を除去） */
+  .casino-slot-lever {
+    width: clamp(48px, 14vw, 56px);
+    height: clamp(48px, 14vw, 56px);
+    min-width: 0;
+  }
+  .casino-slot-stop-btn {
+    width: clamp(56px, 18vw, 72px);
+    height: clamp(56px, 18vw, 72px);
+    border-width: 3px;
+  }
+  .casino-slot-auto { font-size: 0.85rem; }
+}
+
+/* 狭幅スマホ（iPhone SE, Galaxy S8, Pixel 5 相当） */
+@media (max-width: 480px) {
+  .casino-slot-header { padding: 6px 10px; }
+  .casino-slot-title-en { display: none; }
+  .casino-slot-balance { font-size: 0.95rem; }
+  .casino-slot-phase { font-size: 0.7rem; padding: 2px 8px; }
+
+  /* ステータスパネル: 2×2 グリッドに折り返し */
+  .casino-slot-status-panel {
+    flex-wrap: wrap;
+    justify-content: space-around;
+    row-gap: 6px;
+  }
+  .casino-slot-status-cell { flex: 1 1 42%; }
+  .casino-slot-7seg { font-size: 0.95rem; min-width: 46px; }
+
+  /* リール: さらに縮小（3×64px + gap 4px × 2 = 200px / vw 30% 相当） */
+  .casino-slot-reels-frame { padding: 6px; border-radius: 8px; }
+  .casino-slot-reels-frame::after { left: 8px; right: 8px; top: 9px; height: 8px; }
+  .casino-slot-reels { gap: 3px; padding: 0 2px; }
+  .casino-slot-reel { width: clamp(64px, 30vw, 96px); height: calc(clamp(64px, 30vw, 96px) * 1.371); }
+  .casino-slot-cell { height: calc(clamp(64px, 30vw, 96px) * 0.457); }
+
+  /* LCD パディング縮小 */
+  .casino-slot-pixel-display { padding: 6px; margin-bottom: 6px; }
+
+  /* 情報パネル（2列コンパクト） */
+  .casino-slot-info-row { padding: 5px 8px; font-size: 0.75rem; flex: 1 1 45%; }
+  .casino-slot-info .casino-slot-info-row { flex: 1 1 45%; min-width: 0; }
+
+  /* コントロール: さらに詰める */
+  .casino-slot-controls { padding: 8px 10px; gap: 10px; }
+}
+
+/* モバイル横画面: リールの高さが画面外に出ないよう抑制 */
+@media (max-height: 480px) and (orientation: landscape) {
+  .casino-slot-main { padding: 4px; gap: 6px; }
+  .casino-slot-cabinet { padding: 8px 10px; }
+  .casino-slot-reel { width: clamp(72px, 12vw, 96px); height: calc(clamp(72px, 12vw, 96px) * 1.371); }
+  .casino-slot-cell { height: calc(clamp(72px, 12vw, 96px) * 0.457); }
+  .casino-slot-reels-frame { padding: 6px; }
+  .casino-slot-header { padding: 4px 10px; }
 }
 
 

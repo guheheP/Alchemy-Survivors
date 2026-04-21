@@ -14,6 +14,7 @@
 import { SYMBOLS } from '../data/symbols.js';
 import { REELS, REEL_LENGTH } from '../data/reels.js';
 
+// デスクトップ時の既定値。モバイルでは CSS が縮めるため実測値で上書きする。
 const SYMBOL_HEIGHT = 64;
 const SYMBOL_WIDTH = 140;
 const STRIP_LAPS = 3;
@@ -27,6 +28,12 @@ export class SlotRenderer {
     this.reelEls = [];
     /** 停止スナップ/バウンスの setTimeout 群 */
     this._stopTimers = [];
+    /** 実測セル寸法（モバイル CSS の縮小に追随） */
+    this._cellH = SYMBOL_HEIGHT;
+    this._cellW = SYMBOL_WIDTH;
+    /** リサイズ監視 */
+    this._resizeObserver = null;
+    this._resizeRaf = 0;
   }
 
   render() {
@@ -71,10 +78,59 @@ export class SlotRenderer {
 
     this.container.appendChild(this.el);
 
-    // 初期位置: 全リール index=0 を中段に
-    this._snapToIndex(0, 0);
-    this._snapToIndex(1, 0);
-    this._snapToIndex(2, 0);
+    // 実寸計測（CSS 適用後の1フレーム後）＋ 初期位置スナップ
+    this._scheduleMeasure(() => {
+      this._snapToIndex(0, 0);
+      this._snapToIndex(1, 0);
+      this._snapToIndex(2, 0);
+    });
+
+    // リサイズ/回転に追随して再計測＋再スナップ
+    if (typeof ResizeObserver !== 'undefined' && this.reelEls[0]) {
+      this._resizeObserver = new ResizeObserver(() => {
+        this._scheduleMeasure(() => {
+          // スピン中は再計測のみ（keyframe の CSS 変数が更新され次ラップから追随）
+          for (let i = 0; i < this.reelEls.length; i++) {
+            const t = this.reelEls[i];
+            if (t && !t.reel.classList.contains('is-spinning')) {
+              this._snapToIndex(i, this._lastStopIndex?.[i] ?? 0);
+            }
+          }
+        });
+      });
+      this._resizeObserver.observe(this.reelEls[0].reel);
+    }
+  }
+
+  /**
+   * CSS 適用後に実セル寸法を測定し、keyframe 用 CSS 変数を注入する
+   * @param {() => void} [after]
+   */
+  _scheduleMeasure(after) {
+    if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
+    this._resizeRaf = requestAnimationFrame(() => {
+      this._resizeRaf = 0;
+      this._measureCell();
+      if (typeof after === 'function') after();
+    });
+  }
+
+  _measureCell() {
+    const first = this.reelEls[0];
+    if (!first || !first.strip || !first.strip.children[0]) return;
+    const cellEl = first.strip.children[0];
+    const rect = cellEl.getBoundingClientRect();
+    const h = Math.round(rect.height);
+    const w = Math.round(rect.width);
+    if (h > 0) this._cellH = h;
+    if (w > 0) this._cellW = w;
+    // keyframe `casino-reel-scroll` がこの CSS 変数を読んでアニメ距離を合わせる
+    const lap = this._cellH * REEL_LENGTH;
+    for (const t of this.reelEls) {
+      if (!t || !t.strip) continue;
+      t.strip.style.setProperty('--casino-cell-h', this._cellH + 'px');
+      t.strip.style.setProperty('--casino-lap-px', lap + 'px');
+    }
   }
 
   /** 全リール回転開始 — CSSアニメ発動のみ */
@@ -131,9 +187,10 @@ export class SlotRenderer {
     // 下方向に継続して目標位置に滑り込む
     // スピンは translateY が増加する方向（絵柄が下へ流れる）
     // stop でも finalOffset は currentY より大きくする
-    const oneLap = SYMBOL_HEIGHT * REEL_LENGTH;
+    const cellH = this._cellH || SYMBOL_HEIGHT;
+    const oneLap = cellH * REEL_LENGTH;
     const normalizedOffset = this._offsetForIndex(targetIndex);
-    const minTravel = 2 * SYMBOL_HEIGHT;
+    const minTravel = 2 * cellH;
     let finalOffset = normalizedOffset;
     while (finalOffset <= currentY + minTravel) {
       finalOffset += oneLap;
@@ -149,6 +206,10 @@ export class SlotRenderer {
 
     target.strip.style.transition = 'transform 0.28s cubic-bezier(.25, 0.85, .3, 1)';
     target.strip.style.transform = `translateY(${finalOffset}px)`;
+
+    // 最終停止 index を保存（リサイズ時の再スナップ用）
+    if (!this._lastStopIndex) this._lastStopIndex = [0, 0, 0];
+    this._lastStopIndex[reelIndex] = targetIndex;
 
     // 300ms後、正規位置にスナップ（コンテンツ同一なので視覚的に変化なし）
     const snapTid = setTimeout(() => {
@@ -278,14 +339,23 @@ export class SlotRenderer {
    * 中段 = window top + 1コマ下
    */
   _offsetForIndex(i) {
+    const cellH = this._cellH || SYMBOL_HEIGHT;
     const cellRow = REEL_LENGTH + i;
-    return -cellRow * SYMBOL_HEIGHT + SYMBOL_HEIGHT;
+    return -cellRow * cellH + cellH;
   }
 
   destroy() {
     if (this._winCleanupTimer) {
       clearTimeout(this._winCleanupTimer);
       this._winCleanupTimer = 0;
+    }
+    if (this._resizeRaf) {
+      cancelAnimationFrame(this._resizeRaf);
+      this._resizeRaf = 0;
+    }
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect();
+      this._resizeObserver = null;
     }
     for (const tid of this._stopTimers) clearTimeout(tid);
     this._stopTimers.length = 0;

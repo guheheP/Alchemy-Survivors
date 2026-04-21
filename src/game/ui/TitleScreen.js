@@ -35,7 +35,12 @@ function _readSaveMeta() {
 }
 
 export class TitleScreen {
-  constructor(container, onStart) {
+  /**
+   * @param {HTMLElement} container
+   * @param {(mode: 'continue'|'new') => void} onStart
+   * @param {{updateRequired?: {cloudVersion: number, supportedVersion: number}|null, onRequestUpdate?: () => void, onRequestRecovery?: () => void}} [options]
+   */
+  constructor(container, onStart, options = {}) {
     this.container = container;
     this.el = document.createElement('div');
     this.el.id = 'title-screen';
@@ -43,19 +48,35 @@ export class TitleScreen {
     const saveMeta = _readSaveMeta();
     const hasSave = saveMeta !== null;
     const lastPlayed = saveMeta?.lastSaved ? _formatLastPlayed(saveMeta.lastSaved) : '';
+    const updateRequired = options.updateRequired || null;
+
+    // cloud 側に新しいバージョンのセーブが検出された場合は「コンティニュー」を置換
+    const continueBtnHtml = updateRequired
+      ? `
+        <button class="title-btn title-btn-warning" id="title-update-required" aria-label="アプリ更新が必要">
+          <span class="title-btn-icon">🆕</span>
+          <span class="title-btn-label">
+            <span class="title-btn-main">アプリの更新が必要</span>
+            <span class="title-btn-sub">別端末で新しい保存データ (v${updateRequired.cloudVersion}) を検出</span>
+          </span>
+        </button>
+      `
+      : `
+        <button class="title-btn ${hasSave ? 'title-btn-continue' : 'title-btn-primary'}" id="title-continue" ${hasSave ? '' : 'disabled'} aria-label="${hasSave ? '前回の続きからプレイ' : 'セーブデータなし'}">
+          <span class="title-btn-icon">${hasSave ? '▶' : '—'}</span>
+          <span class="title-btn-label">
+            <span class="title-btn-main">${hasSave ? 'コンティニュー' : 'セーブデータなし'}</span>
+            ${hasSave && lastPlayed ? `<span class="title-btn-sub">前回プレイ: ${lastPlayed}</span>` : ''}
+          </span>
+        </button>
+      `;
 
     this.el.innerHTML = `
       <div class="title-content anim-fade-in">
         <img class="title-logo" src="${assetPath('/art/title.png')}" alt="Alchemy Survivors">
         <div class="title-buttons">
-          <button class="title-btn ${hasSave ? 'title-btn-continue' : 'title-btn-primary'}" id="title-continue" ${hasSave ? '' : 'disabled'} aria-label="${hasSave ? '前回の続きからプレイ' : 'セーブデータなし'}">
-            <span class="title-btn-icon">${hasSave ? '▶' : '—'}</span>
-            <span class="title-btn-label">
-              <span class="title-btn-main">${hasSave ? 'コンティニュー' : 'セーブデータなし'}</span>
-              ${hasSave && lastPlayed ? `<span class="title-btn-sub">前回プレイ: ${lastPlayed}</span>` : ''}
-            </span>
-          </button>
-          <button class="title-btn ${hasSave ? 'title-btn-secondary' : 'title-btn-primary'}" id="title-new-game" aria-label="新規ゲーム開始">
+          ${continueBtnHtml}
+          <button class="title-btn ${hasSave && !updateRequired ? 'title-btn-secondary' : 'title-btn-primary'}" id="title-new-game" aria-label="新規ゲーム開始">
             <span class="title-btn-icon">✦</span>
             <span class="title-btn-label">
               <span class="title-btn-main">ニューゲーム</span>
@@ -76,7 +97,18 @@ export class TitleScreen {
     `;
     container.appendChild(this.el);
 
-    if (hasSave) {
+    if (updateRequired) {
+      const btn = this.el.querySelector('#title-update-required');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          if (typeof options.onRequestRecovery === 'function') {
+            options.onRequestRecovery();
+          } else if (typeof options.onRequestUpdate === 'function') {
+            options.onRequestUpdate();
+          }
+        });
+      }
+    } else if (hasSave) {
       const continueBtn = this.el.querySelector('#title-continue');
       continueBtn.addEventListener('click', () => {
         this.hide();

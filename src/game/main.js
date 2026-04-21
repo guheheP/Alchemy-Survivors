@@ -28,6 +28,7 @@ import { EquipmentPresetsManager } from './hub/EquipmentPresets.js';
 import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNamePrompt.js';
 import { initPwaRuntime, applyPwaUpdate } from './core/pwaRuntime.js';
 import { CASINO_ENABLED, CasinoManager } from './casino/index.js';
+import { SaveRecoveryModal } from './ui/SaveRecoveryModal.js';
 
 class Game {
   constructor() {
@@ -295,7 +296,14 @@ class Game {
         tempSave.syncOnBoot(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), SYNC_TIMEOUT_MS)),
       ]);
-      if (result.source === 'cloud' && result.data) {
+      // cloud が自クライアントより新しいバージョンなら、localStorage は絶対に上書きしない
+      if (result.cloudFutureVersion) {
+        this._pendingUpdateRequired = {
+          cloudVersion: result.cloudFutureVersion,
+          supportedVersion: SaveSystem.SAVE_VERSION,
+        };
+        console.warn(`[Game] Cloud save has future version v${result.cloudFutureVersion}. Local save preserved, writes will be locked.`);
+      } else if (result.source === 'cloud' && result.data) {
         // クラウドデータが採用された → localStorage に書き戻し
         localStorage.setItem('alchemy_survivors_save_v1', JSON.stringify(result.data));
         if (result.conflict) {
@@ -317,18 +325,78 @@ class Game {
     new TitleScreen(this.uiRoot, (mode) => {
       SoundManager.init();
       this._initGame(mode);
+    }, {
+      updateRequired: this._pendingUpdateRequired || null,
+      onRequestUpdate: () => applyPwaUpdate(),
+      onRequestRecovery: () => this._showSaveRecoveryModal({
+        reason: 'future_version',
+        cloudVersion: this._pendingUpdateRequired?.cloudVersion,
+        supportedVersion: this._pendingUpdateRequired?.supportedVersion,
+      }),
+    });
+  }
+
+  /**
+   * セーブ復旧モーダル表示。saveSystem が未初期化の場合は一時SaveSystemを生成して渡す。
+   */
+  _showSaveRecoveryModal(options) {
+    // まだ saveSystem が初期化されていない段階（TitleScreenからの呼び出し）では
+    // バックアップ閲覧用に一時的な SaveSystem を用意
+    let save = this.saveSystem;
+    if (!save) {
+      save = new SaveSystem({ items: [], gold: 0, maxCapacity: 0 });
+    }
+    // future-version検知時は即ロックして、その後の自動saveが発生しても無視されるようにする
+    if (options.reason === 'future_version' || options.reason === 'cloud_conflict') {
+      save.lockWrites(options.reason === 'future_version' ? 'future_version' : 'cloud_newer');
+    }
+    new SaveRecoveryModal(this.uiRoot, {
+      ...options,
+      saveSystem: save,
+      onResolved: (result) => {
+        this._pendingUpdateRequired = null;
+        if (result.action === 'restored') {
+          // 復元済みセーブをロードしてゲーム開始
+          this._initGame('continue');
+        } else if (result.action === 'newgame') {
+          this._initGame('new');
+        }
+      },
     });
   }
 
   _initGame(mode) {
-    this.inventory = new InventorySystem();
-    this.saveSystem = new SaveSystem(this.inventory);
-    // クラウド同期ステータスをトーストで通知
-    this.saveSystem.setCloudSyncListener((event, detail) => {
-      if (event === 'error' && detail?.phase === 'push') {
-        this._showToast('☁ クラウド保存に失敗しました（次回再試行）', 'warning');
-      }
-    });
+    // 既に saveSystem がある場合（復旧モーダル経由の continue）は再利用、それ以外は新規作成
+    if (!this.inventory) this.inventory = new InventorySystem();
+    if (!this.saveSystem) {
+      this.saveSystem = new SaveSystem(this.inventory);
+      // クラウド同期ステータスをトーストで通知
+      this.saveSystem.setCloudSyncListener((event, detail) => {
+        if (event === 'error' && detail?.phase === 'push') {
+          this._showToast('☁ クラウド保存に失敗しました（次回再試行）', 'warning');
+        } else if (event === 'conflict') {
+          // 別端末で新しい進捗が検出され、ロックされた状態
+          this._showToast('⚠ 別端末で新しい進捗が見つかり、保存を停止しました', 'warning');
+          this._showSaveRecoveryModal({
+            reason: 'cloud_conflict',
+            cloudVersion: detail?.cloudVersion,
+            supportedVersion: SaveSystem.SAVE_VERSION,
+          });
+        } else if (event === 'locked') {
+          this._showToast('⚠ セーブデータ保護のため保存を停止しました', 'warning');
+        }
+      });
+    }
+
+    // 起動時にcloud側がfuture-versionだった場合、continue選択前にモーダルで止める
+    if (mode === 'continue' && this._pendingUpdateRequired) {
+      this._showSaveRecoveryModal({
+        reason: 'future_version',
+        cloudVersion: this._pendingUpdateRequired.cloudVersion,
+        supportedVersion: this._pendingUpdateRequired.supportedVersion,
+      });
+      return;
+    }
 
     // カジノ機能の初期化（CASINO_ENABLED=false なら何もしない）
     if (CASINO_ENABLED) {
@@ -337,61 +405,83 @@ class Game {
 
     if (mode === 'continue') {
       const data = this.saveSystem.load();
-      // applySaveData はバージョン不一致/破損時に false を返す。その場合は新規ゲーム扱いにフォールバックする
-      const saveData = data ? this.saveSystem.applySaveData(data) : null;
-      if (saveData) {
-        this.stats = saveData.stats || this.stats;
-        // 装備復元
-        if (saveData.restoredEquipment) {
-          this.weaponSlots = saveData.restoredEquipment.weaponSlots;
-          this.equippedArmor = saveData.restoredEquipment.armor;
-          this.equippedAccessory = saveData.restoredEquipment.accessory;
-        }
-        // 消耗品選択UIDを復元（インベントリにまだ存在するものだけ）
-        if (saveData.savedConsumableUids) {
-          this.savedConsumableUids = saveData.savedConsumableUids.filter(
-            uid => this.inventory.getItemByUid(uid)
-          );
-        }
-        // 前回選択したステージを復元
-        if (saveData.lastSelectedAreaId) {
-          this.lastSelectedAreaId = saveData.lastSelectedAreaId;
-        }
-        // 装備プリセット復元
-        if (saveData.equipmentPresets) {
-          this.presetsManager = new EquipmentPresetsManager(saveData.equipmentPresets);
-        }
-        // 実績復元
-        this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
-        // カジノstate復元（CASINO_ENABLED=false時はスキップ）
-        if (CASINO_ENABLED) {
-          CasinoManager.getInstance().hydrate(saveData.casino);
-        }
-      } else {
-        // セーブ破損/非対応バージョン: 実績だけでも空で初期化してクラッシュ回避
-        if (data) {
-          console.warn('[Game] Save data is invalid or from an unsupported version. Starting fresh.');
-          eventBus.emit('toast', {
-            message: '⚠️ セーブデータを読み込めませんでした。新規データで開始します。',
-            type: 'warning',
-          });
-        }
-        this.achievements = new AchievementSystem(this.stats, []);
+      if (!data) {
+        // セーブ自体が無い（TitleScreenの判定と矛盾するが防御的に）
+        console.warn('[Game] Continue requested but no save data found. Falling back to new game.');
+        this._startNewGame();
+        return;
+      }
+
+      // 適用前にversionを分類。future/corrupt の場合はサイレントに新規化せず、明示的にモーダルで止める
+      const status = SaveSystem.classifyVersion(data);
+      if (status === 'future') {
+        this._showSaveRecoveryModal({
+          reason: 'future_version',
+          cloudVersion: data.version,
+          supportedVersion: SaveSystem.SAVE_VERSION,
+        });
+        return;
+      }
+      if (status === 'corrupt') {
+        this._showSaveRecoveryModal({ reason: 'corrupt' });
+        return;
+      }
+
+      const saveData = this.saveSystem.applySaveData(data);
+      if (!saveData) {
+        // マイグレーションで想定外の失敗。データ消失を避けるためモーダルで止める
+        console.warn('[Game] applySaveData failed despite classifyVersion passing. Locking writes.');
+        this.saveSystem.lockWrites('apply_failed');
+        this._showSaveRecoveryModal({ reason: 'apply_failed' });
+        return;
+      }
+
+      this.stats = saveData.stats || this.stats;
+      if (saveData.restoredEquipment) {
+        this.weaponSlots = saveData.restoredEquipment.weaponSlots;
+        this.equippedArmor = saveData.restoredEquipment.armor;
+        this.equippedAccessory = saveData.restoredEquipment.accessory;
+      }
+      if (saveData.savedConsumableUids) {
+        this.savedConsumableUids = saveData.savedConsumableUids.filter(
+          uid => this.inventory.getItemByUid(uid)
+        );
+      }
+      if (saveData.lastSelectedAreaId) {
+        this.lastSelectedAreaId = saveData.lastSelectedAreaId;
+      }
+      if (saveData.equipmentPresets) {
+        this.presetsManager = new EquipmentPresetsManager(saveData.equipmentPresets);
+      }
+      this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
+      if (CASINO_ENABLED) {
+        CasinoManager.getInstance().hydrate(saveData.casino);
       }
     } else {
-      // ニューゲーム: 初期装備（石斧）を武器スロット1に自動装備
-      const axe = this.inventory.items.find(i => i.blueprintId === 'stone_axe');
-      if (axe) {
-        this.weaponSlots = [axe, null, null, null];
-      }
-      this.achievements = new AchievementSystem(this.stats, []);
-      this.tutorialCompleted = false;
+      this._startNewGame();
+      return;
     }
 
     this._showHub();
+  }
 
-    // ニューゲーム時にチュートリアル表示
-    if (mode === 'new' && !this.tutorialCompleted) {
+  _startNewGame() {
+    // applySaveData が途中失敗していた場合に備えて、インベントリが空なら初期状態に戻す
+    if (!this.inventory || this.inventory.items.length === 0) {
+      this.inventory = new InventorySystem();
+      if (this.saveSystem) this.saveSystem.inventory = this.inventory;
+    }
+    // ニューゲーム: 初期装備（石斧）を武器スロット1に自動装備
+    const axe = this.inventory.items.find(i => i.blueprintId === 'stone_axe');
+    if (axe) {
+      this.weaponSlots = [axe, null, null, null];
+    }
+    this.achievements = new AchievementSystem(this.stats, []);
+    this.tutorialCompleted = false;
+
+    this._showHub();
+
+    if (!this.tutorialCompleted) {
       new TutorialOverlay(this.uiRoot, () => {
         this.tutorialCompleted = true;
       });
