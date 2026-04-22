@@ -234,35 +234,86 @@ export class CraftingScreen {
       effectHtml = `<div class="craft-effect-info">${this._describeBattleEffect(bp.battleEffect)}</div>`;
     }
 
+    // プレビュー結果（中央表示用の予測品質）
+    const previewResult = this._canCraft() ? this._computePreviewResult() : null;
+    const centerQ = previewResult?.finalQ;
+    const n = recipe.materials.length;
+
     detail.innerHTML = `
-      <h3>${bp.name}</h3>
+      <h3 class="craft-heading">${bp.name}</h3>
       ${effectHtml}
-      <div class="craft-slots">
-        <h4>素材スロット</h4>
+      <div class="craft-grid">
+      <div class="craft-grid-left">
+      <div class="craft-slots craft-circle-stage" style="--n: ${n};" id="craft-stage">
+        <div class="craft-circle-center result-card" aria-hidden="true">
+          <div class="result-card-icon-wrap">
+            ${bp.image ? `<img class="result-card-icon" src="${assetPath(bp.image)}" alt="" onerror="this.style.display='none'">` : '<span class="result-card-fallback">✦</span>'}
+          </div>
+          <div class="result-card-body">
+            <div class="result-card-name">${bp.name}</div>
+            ${centerQ != null
+              ? `<div class="result-card-quality">◆ Q${centerQ}</div>`
+              : '<div class="result-card-quality placeholder">◆ Q?</div>'
+            }
+          </div>
+        </div>
         ${recipe.materials.map((slot, i) => {
           const assigned = this.assignedMaterials[i];
-          const slotLabel = isCategorySlot(slot)
+          const isCategory = isCategorySlot(slot);
+          const slotLabel = isCategory
             ? (MaterialCategories[getCategoryId(slot)]?.name || slot)
             : (ItemBlueprints[slot]?.name || slot);
-          const traitBadges = assigned ? (assigned.traits || []).map(t => {
-            const r = TraitDefs[t]?.rarity || 'common';
-            return `<span class="slot-trait-badge rarity-${r}" title="${t}">${t}</span>`;
-          }).join('') : '';
-          return `<div class="craft-slot" data-slot="${i}">
-            <span class="slot-label">${slotLabel}</span>
-            ${assigned
-              ? `<button class="slot-assigned slot-select" data-slot="${i}" title="クリックで変更">
-                  <span class="slot-assigned-name">${assigned.name} (Q${assigned.quality})</span>
-                  ${traitBadges ? `<span class="slot-assigned-traits">${traitBadges}</span>` : ''}
-                  <span class="slot-clear" data-slot="${i}" role="button">✕</span>
-                </button>`
-              : `<button class="slot-select" data-slot="${i}">素材を選択</button>`
-            }
-          </div>`;
+          // アイコン解決: 割当済みなら素材画像、未割当でカテゴリスロットならemoji、特定素材指定なら素材画像
+          const assignedBp = assigned ? ItemBlueprints[assigned.blueprintId] : null;
+          const assignedImg = assignedBp?.image ? assetPath(assignedBp.image) : null;
+          const categoryIcon = isCategory ? (MaterialCategories[getCategoryId(slot)]?.icon || '❖') : '';
+          const specificBp = !isCategory ? ItemBlueprints[slot] : null;
+          const specificImg = specificBp?.image ? assetPath(specificBp.image) : null;
+          const rarityTop = assigned
+            ? (() => {
+                const order = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
+                let best = 'common';
+                for (const t of (assigned.traits || [])) {
+                  const r = TraitDefs[t]?.rarity;
+                  if (r && order[r] > order[best]) best = r;
+                }
+                return best;
+              })()
+            : null;
+          const iconHtml = assignedImg
+            ? `<img class="slot-icon" src="${assignedImg}" alt="" onerror="this.style.display='none'">`
+            : specificImg
+              ? `<img class="slot-icon slot-icon-ghost" src="${specificImg}" alt="" onerror="this.style.display='none'">`
+              : `<span class="slot-icon slot-icon-emoji">${categoryIcon}</span>`;
+          // n=2 は左右に、n>=3 は先頭を真上に配置して放射状に
+          const offsetDeg = n === 2 ? -90 : 0;
+          const angleDeg = (360 / n) * i + offsetDeg;
+          const filledCls = assigned ? ' is-filled' : ' is-empty';
+          const rarityCls = rarityTop ? ` slot-rarity-${rarityTop}` : '';
+          return `<button class="craft-slot slot-select${filledCls}${rarityCls}" data-slot="${i}"
+                          style="--i: ${i}; --n: ${n}; --angle: ${angleDeg}deg;"
+                          title="${assigned ? 'クリックで変更' : slotLabel + 'を選択'}">
+            <div class="slot-icon-wrap">
+              ${iconHtml}
+              ${assigned ? `<span class="slot-clear" data-slot="${i}" role="button" title="クリアする">✕</span>` : ''}
+            </div>
+            <div class="slot-body">
+              ${assigned
+                ? `<span class="slot-name">${assigned.name}</span>
+                   <span class="slot-q">Q${assigned.quality}</span>`
+                : `<span class="slot-label">${slotLabel}</span>
+                   <span class="slot-hint">未装填</span>`
+              }
+            </div>
+          </button>`;
         }).join('')}
       </div>
-      <div class="craft-traits" id="craft-traits"></div>
-      <div class="craft-preview" id="craft-preview"></div>
+      </div><!-- /.craft-grid-left -->
+      <div class="craft-grid-right">
+        <div class="craft-traits" id="craft-traits"></div>
+        <div class="craft-preview" id="craft-preview"></div>
+      </div>
+      </div><!-- /.craft-grid -->
       ${this._renderCapacityWarning()}
       <button class="craft-btn" id="craft-execute" ${this._canCraft() ? '' : 'disabled'}>
         調合する
@@ -1125,11 +1176,23 @@ export class CraftingScreen {
 
       eventBus.emit('toast', { message: `✨ ${item.name} (Q${item.quality}) を調合しました！`, type: 'success' });
 
-      // リセット
-      this.assignedMaterials = [];
-      this.selectedTraits = [];
-      this._renderWorkspace();
-      this._renderRecipeList();
+      // 錬金陣の成功演出 (1.2秒間)
+      const stage = this.el.querySelector('#craft-stage');
+      if (stage) {
+        stage.classList.add('craft-success');
+        setTimeout(() => {
+          // リセット & 再描画。クラスは再描画時に消える
+          this.assignedMaterials = [];
+          this.selectedTraits = [];
+          this._renderWorkspace();
+          this._renderRecipeList();
+        }, 900);
+      } else {
+        this.assignedMaterials = [];
+        this.selectedTraits = [];
+        this._renderWorkspace();
+        this._renderRecipeList();
+      }
     } catch (err) {
       eventBus.emit('toast', { message: `調合失敗: ${err.message}`, type: 'error' });
     }

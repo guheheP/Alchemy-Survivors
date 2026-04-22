@@ -1,0 +1,209 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "❖ 拠点 ❖" [level=2] [ref=e4]
+      - generic [ref=e5]:
+        - generic [ref=e6]: 💰 100G
+        - generic [ref=e7]: 📦 1 / 100
+    - tablist "拠点メニュー" [ref=e8]:
+      - tab [ref=e447] [cursor=pointer]:
+        - generic [ref=e10]: 🔮
+      - tab [ref=e448] [cursor=pointer]:
+        - generic [ref=e13]: ⚔️
+      - tab [ref=e449] [cursor=pointer]:
+        - generic [ref=e16]: 🚀
+      - tab [ref=e450] [cursor=pointer]:
+        - generic [ref=e19]: 📦
+      - tab [ref=e451] [cursor=pointer]:
+        - generic [ref=e22]: 🏪
+      - tab [ref=e452] [cursor=pointer]:
+        - generic [ref=e25]: 🎰
+      - tab [selected] [ref=e453] [cursor=pointer]:
+        - generic [ref=e28]: 📖
+      - tab [ref=e454] [cursor=pointer]:
+        - generic [ref=e31]: 📊
+      - tab [ref=e455] [cursor=pointer]:
+        - generic [ref=e34]: 🏅
+      - tab [ref=e456] [cursor=pointer]:
+        - generic [ref=e37]: 🏆
+      - tab [ref=e457] [cursor=pointer]:
+        - generic [ref=e40]: ⚙
+    - tabpanel [ref=e42]:
+      - generic [ref=e559]:
+        - generic [ref=e560]:
+          - heading "図鑑" [level=3] [ref=e561]
+          - generic [ref=e562]:
+            - generic [ref=e563]: "アイテム: 1/150"
+            - generic [ref=e564]: "ボス撃破: 0/7"
+            - generic [ref=e565]: "エリア: 1/8"
+        - generic [ref=e566]:
+          - button "アイテム" [ref=e567] [cursor=pointer]
+          - button "ボス" [ref=e568] [cursor=pointer]
+          - button "エリア" [ref=e569] [cursor=pointer]
+          - button "特性" [ref=e570] [cursor=pointer]
+          - button "属性" [ref=e571] [cursor=pointer]
+        - generic [ref=e572]:
+          - generic [ref=e573]:
+            - heading "素材 (0/58)" [level=4] [ref=e574]
+            - generic [ref=e575]:
+              - generic [ref=e577]: "???"
+              - generic [ref=e579]: "???"
+              - generic [ref=e581]: "???"
+              - generic [ref=e583]: "???"
+              - generic [ref=e585]: "???"
+              - generic [ref=e587]: "???"
+              - generic [ref=e589]: "???"
+              - generic [ref=e591]: "???"
+              - generic [ref=e593]: "???"
+              - generic [ref=e595]: "???"
+              - generic [ref=e597]: "???"
+              - generic [ref=e599]: "???"
+              - generic [ref=e601]: "???"
+              - generic [ref=e603]: "???"
+              - generic [ref=e605]: "???"
+              - generic [ref=e607]: "???"
+              - generic [ref=e609]: "???"
+              - generic [ref=e611]: "???"
+              - generic [ref=e613]: "???"
+              - generic [ref=e615]: "???"
+              - generic [ref=e617]: "???"
+              - generic [ref=e619]: "???"
+              - generic [ref=e621]: "???"
+              - generic [ref=e623]: "???"
+              - generic [ref=e625]: "???"
+              - generic [ref=e627]: "???"
+              - generic [ref=e629]: "???"
+              - generic [ref=e631]: "???"
+              - generic [ref=e633]: "???"
+              - generic [ref=e635]: "???"
+              - generic [ref=e637]: "???"
+              - generic [ref=e639]: "???"
+              - generic [ref=e641]: "???"
+              - generic [ref=e643]: "???"
+              - generic [ref=e645]: "???"
+              - generic [ref=e647]: "???"
+              - generic [ref=e649]: "???"
+              - generic [ref=e651]: "???"
+              - generic [ref=e653]: "???"
+              - generic [ref=e655]: "???"
+              - generic [ref=e657]: "???"
+              - generic [ref=e659]: "???"
+              - generic [ref=e661]: "???"
+              - generic [ref=e663]: "???"
+              - generic [ref=e665]: "???"
+              - generic [ref=e667]: "???"
+              - generic [ref=e669]: "???"
+              - generic [ref=e671]: "???"
+              - generic [ref=e673]: "???"
+              - generic [ref=e675]: "???"
+              - generic [ref=e677]: "???"
+              - generic [ref=e679]: "???"
+              - generic [ref=e681]: "???"
+              - generic [ref=e683]: "???"
+              - generic [ref=e685]: "???"
+              - generic [ref=e687]: "???"
+              - generic [ref=e689]: "???"
+              - generic [ref=e691]: "???"
+          - generic [ref=e692]:
+            - heading "装備 (1/55)" [level=4] [ref=e693]
+            - generic [ref=e694]:
+              - generic [ref=e696]: "???"
+              - generic [ref=e698]: "???"
+              - generic [ref=e700]: "???"
+              - generic [ref=e702]: 石斧
+              - generic [ref=e704]: "???"
+              - generic [ref=e706]: "???"
+              - generic [ref=e708]: "???"
+              - generic [ref=e710]: "???"
+              - generic [ref=e712]: "???"
+              - generic [ref=e714]: "???"
+              - generic [ref=e716]: "???"
+              - generic [ref=e718]: "???"
+              - generic [ref=e720]: "???"
+              - generic [ref=e722]: "???"
+              - generic [ref=e724]: "???"
+              - generic [ref=e726]: "???"
+              - generic [ref=e728]: "???"
+              - generic [ref=e730]: "???"
+              - generic [ref=e732]: "???"
+              - generic [ref=e734]: "???"
+              - generic [ref=e736]: "???"
+              - generic [ref=e738]: "???"
+              - generic [ref=e740]: "???"
+              - generic [ref=e742]: "???"
+              - generic [ref=e744]: "???"
+              - generic [ref=e746]: "???"
+              - generic [ref=e748]: "???"
+              - generic [ref=e750]: "???"
+              - generic [ref=e752]: "???"
+              - generic [ref=e754]: "???"
+              - generic [ref=e756]: "???"
+              - generic [ref=e758]: "???"
+              - generic [ref=e760]: "???"
+              - generic [ref=e762]: "???"
+              - generic [ref=e764]: "???"
+              - generic [ref=e766]: "???"
+              - generic [ref=e768]: "???"
+              - generic [ref=e770]: "???"
+              - generic [ref=e772]: "???"
+              - generic [ref=e774]: "???"
+              - generic [ref=e776]: "???"
+              - generic [ref=e778]: "???"
+              - generic [ref=e780]: "???"
+              - generic [ref=e782]: "???"
+              - generic [ref=e784]: "???"
+              - generic [ref=e786]: "???"
+              - generic [ref=e788]: "???"
+              - generic [ref=e790]: "???"
+              - generic [ref=e792]: "???"
+              - generic [ref=e794]: "???"
+              - generic [ref=e796]: "???"
+              - generic [ref=e798]: "???"
+              - generic [ref=e800]: "???"
+              - generic [ref=e802]: "???"
+              - generic [ref=e804]: "???"
+          - generic [ref=e805]:
+            - heading "アクセサリ (0/17)" [level=4] [ref=e806]
+            - generic [ref=e807]:
+              - generic [ref=e809]: "???"
+              - generic [ref=e811]: "???"
+              - generic [ref=e813]: "???"
+              - generic [ref=e815]: "???"
+              - generic [ref=e817]: "???"
+              - generic [ref=e819]: "???"
+              - generic [ref=e821]: "???"
+              - generic [ref=e823]: "???"
+              - generic [ref=e825]: "???"
+              - generic [ref=e827]: "???"
+              - generic [ref=e829]: "???"
+              - generic [ref=e831]: "???"
+              - generic [ref=e833]: "???"
+              - generic [ref=e835]: "???"
+              - generic [ref=e837]: "???"
+              - generic [ref=e839]: "???"
+              - generic [ref=e841]: "???"
+          - generic [ref=e842]:
+            - heading "消耗品 (0/20)" [level=4] [ref=e843]
+            - generic [ref=e844]:
+              - generic [ref=e846]: "???"
+              - generic [ref=e848]: "???"
+              - generic [ref=e850]: "???"
+              - generic [ref=e852]: "???"
+              - generic [ref=e854]: "???"
+              - generic [ref=e856]: "???"
+              - generic [ref=e858]: "???"
+              - generic [ref=e860]: "???"
+              - generic [ref=e862]: "???"
+              - generic [ref=e864]: "???"
+              - generic [ref=e866]: "???"
+              - generic [ref=e868]: "???"
+              - generic [ref=e870]: "???"
+              - generic [ref=e872]: "???"
+              - generic [ref=e874]: "???"
+              - generic [ref=e876]: "???"
+              - generic [ref=e878]: "???"
+              - generic [ref=e880]: "???"
+              - generic [ref=e882]: "???"
+              - generic [ref=e884]: "???"
+  - tooltip "装備":
+    - generic: 装備

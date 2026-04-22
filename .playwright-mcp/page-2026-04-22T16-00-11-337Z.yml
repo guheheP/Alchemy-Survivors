@@ -1,0 +1,104 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "❖ 拠点 ❖" [level=2] [ref=e4]
+      - generic [ref=e5]:
+        - generic [ref=e6]: 💰 100G
+        - generic [ref=e7]: 📦 1 / 100
+    - tablist "拠点メニュー" [ref=e8]:
+      - tab "錬金工房" [selected] [ref=e9] [cursor=pointer]:
+        - generic [ref=e10]: 🔮
+        - generic [ref=e11]: 錬金工房
+      - tab "装備" [ref=e12] [cursor=pointer]:
+        - generic [ref=e13]: ⚔️
+        - generic [ref=e14]: 装備
+      - tab "出撃準備" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: 🚀
+        - generic [ref=e17]: 出撃準備
+      - tab "倉庫" [ref=e18] [cursor=pointer]:
+        - generic [ref=e19]: 📦
+        - generic [ref=e20]: 倉庫
+      - tab "ショップ" [ref=e21] [cursor=pointer]:
+        - generic [ref=e22]: 🏪
+        - generic [ref=e23]: ショップ
+      - tab "賭博場" [ref=e24] [cursor=pointer]:
+        - generic [ref=e25]: 🎰
+        - generic [ref=e26]: 賭博場
+      - tab "図鑑" [ref=e27] [cursor=pointer]:
+        - generic [ref=e28]: 📖
+        - generic [ref=e29]: 図鑑
+      - tab "統計" [ref=e30] [cursor=pointer]:
+        - generic [ref=e31]: 📊
+        - generic [ref=e32]: 統計
+      - tab "実績" [ref=e33] [cursor=pointer]:
+        - generic [ref=e34]: 🏅
+        - generic [ref=e35]: 実績
+      - tab "ランキング" [ref=e36] [cursor=pointer]:
+        - generic [ref=e37]: 🏆
+        - generic [ref=e38]: ランキング
+      - tab "設定" [ref=e39] [cursor=pointer]:
+        - generic [ref=e40]: ⚙
+        - generic [ref=e41]: 設定
+    - tabpanel [ref=e42]:
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - heading "レシピ一覧 9 / 9" [level=3] [ref=e46]
+          - textbox "🔍 レシピ名で検索" [ref=e48]
+          - generic [ref=e49]:
+            - button "全て" [ref=e50] [cursor=pointer]
+            - button "装備" [ref=e51] [cursor=pointer]
+            - button "消耗品" [ref=e52] [cursor=pointer]
+            - button "アクセサリ" [ref=e53] [cursor=pointer]
+            - button "素材" [ref=e54] [cursor=pointer]
+          - generic [ref=e56] [cursor=pointer]:
+            - checkbox "作成可能のみ" [ref=e57]
+            - generic [ref=e58]: 作成可能のみ
+          - generic [ref=e59]:
+            - generic [ref=e61] [cursor=pointer]:
+              - generic [ref=e62]: 木の盾
+              - generic [ref=e63]:
+                - text: 2素材
+                - generic [ref=e64]: 不足
+            - generic [ref=e66] [cursor=pointer]:
+              - generic [ref=e67]: 回復薬
+              - generic [ref=e68]:
+                - text: 2素材
+                - generic [ref=e69]: 不足
+            - generic [ref=e71] [cursor=pointer]:
+              - generic [ref=e72]: 木の弓
+              - generic [ref=e73]:
+                - text: 2素材
+                - generic [ref=e74]: 不足
+            - generic [ref=e76] [cursor=pointer]:
+              - generic [ref=e77]: ハーブティー
+              - generic [ref=e78]:
+                - text: 2素材
+                - generic [ref=e79]: 不足
+            - generic [ref=e81] [cursor=pointer]:
+              - generic [ref=e82]: 石斧
+              - generic [ref=e83]:
+                - text: 2素材
+                - generic [ref=e84]: 不足
+            - generic [ref=e86] [cursor=pointer]:
+              - generic [ref=e87]: 粘土の壺
+              - generic [ref=e88]:
+                - text: 2素材
+                - generic [ref=e89]: 不足
+            - generic [ref=e91] [cursor=pointer]:
+              - generic [ref=e92]: 泥団子
+              - generic [ref=e93]:
+                - text: 2素材
+                - generic [ref=e94]: 不足
+            - generic [ref=e96] [cursor=pointer]:
+              - generic [ref=e97]: 合板
+              - generic [ref=e98]:
+                - text: 2素材
+                - generic [ref=e99]: 不足
+            - generic [ref=e101] [cursor=pointer]:
+              - generic [ref=e102]: 薬草エキス
+              - generic [ref=e103]:
+                - text: 2素材
+                - generic [ref=e104]: 不足
+        - paragraph [ref=e107]: ← レシピを選択してください
+  - tooltip "装備":
+    - generic: 装備

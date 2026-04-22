@@ -74,6 +74,7 @@ export class TitleScreen {
     this.el.innerHTML = `
       <div class="title-content anim-fade-in">
         <img class="title-logo" src="${assetPath('/art/title.png')}" alt="Alchemy Survivors">
+        <div class="title-divider" aria-hidden="true"></div>
         <div class="title-buttons">
           ${continueBtnHtml}
           <button class="title-btn ${hasSave && !updateRequired ? 'title-btn-secondary' : 'title-btn-primary'}" id="title-new-game" aria-label="新規ゲーム開始">
