@@ -11,7 +11,7 @@
 
 import { EXCHANGE_RATE } from './config.js';
 import { SlotScreen } from './slot/SlotScreen.js';
-import { SlotSFX, getCasinoSettings, saveCasinoSettings } from './slot/SoundEffects.js';
+import { SlotSFX, getCasinoSettings, saveCasinoSettings, applyCasinoSeVolume } from './slot/SoundEffects.js';
 
 const TUTORIAL_SEEN_KEY = 'casino_tutorial_seen_v1';
 
@@ -220,6 +220,11 @@ export class CasinoScreen {
           <input type="range" min="100" max="2000" step="100" value="${settings.autoDelay}" data-field="autoDelay" />
           <span class="casino-modal-value" data-value="autoDelay">${settings.autoDelay}ms</span>
         </label>
+        <label class="casino-modal-field casino-modal-field-range">
+          <span>SE音量</span>
+          <input type="range" min="0" max="100" step="5" value="${Math.round((settings.seVolume ?? 0.7) * 100)}" data-field="seVolume" data-scale="0.01" />
+          <span class="casino-modal-value" data-value="seVolume">${Math.round((settings.seVolume ?? 0.7) * 100)}%</span>
+        </label>
         <div class="casino-modal-actions">
           <button type="button" class="casino-btn" data-action="save">保存</button>
           <button type="button" class="casino-btn casino-btn-secondary" data-action="close">閉じる</button>
@@ -234,14 +239,24 @@ export class CasinoScreen {
       if (disp) disp.textContent = `${val}ms`;
     });
 
+    modal.querySelector('[data-field="seVolume"]').addEventListener('input', (e) => {
+      const val = e.target.value;
+      const disp = modal.querySelector('[data-value="seVolume"]');
+      if (disp) disp.textContent = `${val}%`;
+    });
+
     modal.querySelector('[data-action="save"]').addEventListener('click', () => {
       const next = { ...settings };
       modal.querySelectorAll('[data-field]').forEach(el => {
         const field = el.getAttribute('data-field');
         if (el.type === 'checkbox') next[field] = el.checked;
-        else if (el.type === 'range') next[field] = Number(el.value);
+        else if (el.type === 'range') {
+          const scale = el.getAttribute('data-scale');
+          next[field] = scale ? Number(el.value) * Number(scale) : Number(el.value);
+        }
       });
       saveCasinoSettings(next);
+      applyCasinoSeVolume();
       modal.remove();
     });
     modal.querySelector('[data-action="close"]').addEventListener('click', () => modal.remove());

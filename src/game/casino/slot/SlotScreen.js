@@ -12,7 +12,8 @@
 import { SlotMachine } from './SlotMachine.js';
 import { SlotRenderer } from './SlotRenderer.js';
 import { BET_PER_GAME } from '../config.js';
-import { SlotSFX, getCasinoSettings } from './SoundEffects.js';
+import { SlotSFX, getCasinoSettings, applyCasinoSeVolume, resetSeVolumeScale } from './SoundEffects.js';
+import { SoundManager } from '../../core/SoundManager.js';
 import { PixelArtDisplay } from './PixelArtDisplay.js';
 import { decideYokoku, YOKOKU_DURATION } from './KoyakuManager.js';
 import { Rng } from '../util/rng.js';
@@ -187,6 +188,11 @@ export class SlotScreen {
       </main>
     `;
     this.container.appendChild(this.el);
+
+    // スロット画面中はSE同時発音数を拡張 (AUTO連打でも欠落しないように)
+    SoundManager.setSeNodeBudget?.(20);
+    // カジノSE音量スケールを適用
+    applyCasinoSeVolume();
 
     const reelsArea = this.el.querySelector('.casino-slot-reels-area');
     this.renderer = new SlotRenderer(reelsArea);
@@ -489,6 +495,27 @@ export class SlotScreen {
     const btn = this.el.querySelector(`[data-action="stop"][data-reel="${reelIdx}"]`);
     if (btn) btn.disabled = true;
 
+    // 2リール停止時にテンパイ判定 → 3リール目停止前にリーチSE
+    // reachme (リーチ目) / 内部成立 / 青7 で段階的に音を変える
+    const stoppedCount = this._stoppedReels.filter(Boolean).length;
+    if (stoppedCount === 2) {
+      const flags = this._pendingResult?.flags;
+      if (flags) {
+        /** @type {1|2|3} */
+        let level = 0;
+        if (flags.blue7Flag === 'blue7') level = 3;
+        else if (flags.bonusFlag && flags.bonusFlag !== 'none') level = 2;
+        else if (flags.smallFlag === 'reachme') level = 1;
+        if (level > 0) {
+          if (this._tenpaiTimer) clearTimeout(this._tenpaiTimer);
+          this._tenpaiTimer = setTimeout(() => {
+            this._tenpaiTimer = null;
+            SlotSFX.tenpai(level);
+          }, 120);
+        }
+      }
+    }
+
     // 全リール停止チェック
     if (this._stoppedReels.every(Boolean)) {
       const settings = getCasinoSettings();
@@ -659,6 +686,7 @@ export class SlotScreen {
     else if (result.flags?.smallFlag === 'watermelon' && result.payout > 0) SlotSFX.watermelon();
     else if (result.flags?.smallFlag === 'cherry' && result.payout > 0) SlotSFX.cherry();
     else if (result.flags?.smallFlag === 'replay') SlotSFX.replay();
+    else if (result.flags?.smallFlag === 'chance' && result.payout === 0) SlotSFX.chanceMoku();
 
     // ナビ取りこぼし（SFXのみ、トースト表示はしない）
     if (result.navMissed) {
@@ -713,21 +741,31 @@ export class SlotScreen {
     if (result.events) {
       for (const ev of result.events) {
         if (ev.type === 'bonus_standby_start') {
-          SlotSFX.bonusInternal();
+          SlotSFX.bonusInternal(ev.bonusKind || 'big');
         } else if (ev.type === 'bonus_start') {
           SlotSFX.bonusStart();
           this._triggerScreenFlash('bonus-start');
           this._shakeCabinet();
+          // ボーナス専用BGMに切替 (スタックで保存、bonus_endで復元)
+          SoundManager.startCasinoBGM?.(ev.bonusKind === 'reg' ? 'reg' : 'big');
         } else if (ev.type === 'bonus_end') {
           SlotSFX.bonusEnd();
+          SoundManager.stopCasinoBGM?.();
         } else if (ev.type === 'blue7_success') {
-          SlotSFX.blue7Success();
+          // プレミア演出: フリーズ (0.8秒) → 既存のblue7ファンファーレを後追いで重ねる
+          SlotSFX.freeze();
+          if (this._blue7Timer) clearTimeout(this._blue7Timer);
+          this._blue7Timer = setTimeout(() => {
+            this._blue7Timer = null;
+            SlotSFX.blue7Success();
+          }, 400);
           if (this.pixelDisplay) this.pixelDisplay.triggerEvent('blue7_success');
           this._triggerScreenFlash('premier');
           this._shakeCabinet();
         } else if (ev.type === 'art_start') {
           SlotSFX.artStart();
           this._triggerScreenFlash('art');
+          this._onArtEnter();
         } else if (ev.type === 'art_add') {
           SlotSFX.artAdd();
           if (this.pixelDisplay) this.pixelDisplay.triggerEvent('art_add', { amount: ev.amount || 100 });
@@ -738,11 +776,12 @@ export class SlotScreen {
           SlotSFX.artResume();
         } else if (ev.type === 'art_end') {
           SlotSFX.artEnd();
+          this._onArtExit();
         } else if (ev.type === 'zencho_start') {
           SlotSFX.zenchoStart();
         } else if (ev.type === 'zencho_end') {
           if (ev.reason === 'cz') SlotSFX.zenchoEndCz();
-          else if (ev.reason === 'bonus_hit') SlotSFX.bonusInternal();
+          else if (ev.reason === 'bonus_hit') SlotSFX.bonusInternal(ev.bonusKind || 'big');
           else SlotSFX.zenchoEndFail();
         } else if (ev.type === 'cz_start') {
           SlotSFX.czStart();
@@ -879,6 +918,16 @@ export class SlotScreen {
     this.el.querySelectorAll('.casino-screen-flash').forEach(n => n.remove());
   }
 
+  /** ART突入時のBGM切替 → ART.mp3 */
+  _onArtEnter() {
+    SoundManager.startCasinoBGM?.('art');
+  }
+
+  /** ART終了時のBGM復元 */
+  _onArtExit() {
+    SoundManager.stopCasinoBGM?.();
+  }
+
   /** 筐体シェイク（大当たり突入時など） */
   _shakeCabinet() {
     const cabinet = this.el.querySelector('.casino-slot-cabinet');
@@ -895,6 +944,15 @@ export class SlotScreen {
 
   destroy() {
     this._stopAuto();
+    // SE同時発音数をデフォルトに復元
+    SoundManager.setSeNodeBudget?.(12);
+    // SEスケールを通常に戻す
+    resetSeVolumeScale();
+    // 画面内で起動した遅延SEタイマーをクリア (離脱中に鳴らないように)
+    if (this._tenpaiTimer) { clearTimeout(this._tenpaiTimer); this._tenpaiTimer = null; }
+    if (this._blue7Timer) { clearTimeout(this._blue7Timer); this._blue7Timer = null; }
+    // カジノBGMを通常BGMへ戻す (ART/BONUS途中離脱時の後始末)
+    SoundManager.drainCasinoBGM?.();
     if (this._cooldownTimer) { clearTimeout(this._cooldownTimer); this._cooldownTimer = null; }
     if (this._payoutRollRaf) { cancelAnimationFrame(this._payoutRollRaf); this._payoutRollRaf = 0; }
     if (this._payoutCleanupTimer) { clearTimeout(this._payoutCleanupTimer); this._payoutCleanupTimer = null; }

@@ -22,6 +22,12 @@ const BATTLE_TRACKS = {
   boss_time_lord:     assetPath('/bgm/battle_08.mp3'),
 };
 const BATTLE_TRACK_DEFAULT = assetPath('/bgm/battle_EX.mp3');
+// カジノ(スロット) — ボーナス/ARTの専用BGM
+const CASINO_TRACKS = {
+  big: assetPath('/bgm/BIG_BONUS.mp3'),
+  reg: assetPath('/bgm/REG_BONUS.mp3'),
+  art: assetPath('/bgm/ART.mp3'),
+};
 // 拠点（ハブ）BGM — シャッフル再生
 const GAME_TRACKS = Array.from({ length: 6 }, (_, i) =>
   assetPath(`/bgm/bgm_${String(i + 1).padStart(2, '0')}.mp3`)
@@ -63,6 +69,7 @@ class SoundManagerClass {
     this.masterVolume = 0.3;  // デフォルト30%
     this.bgmVolume = 0.5;
     this.seVolume = 0.5;
+    this._seVolumeScale = 1.0;  // SEシーン別スケール (カジノ内SE音量など)
 
     // --- BGMプレイリスト ---
     this.audioEl = null;        // <audio> element
@@ -76,6 +83,12 @@ class SoundManagerClass {
     this.preBattleTrackSrc = null;
     this.preBattleTrackTime = 0;
     this.isFading = false;
+
+    // カジノBGMスタック — ART→BONUS→ART復帰のようなネストに対応
+    /** @type {Array<{src: string, time: number}>} */
+    this._casinoBgmStack = [];
+    // 競合対策: start/stop の都度インクリメント。fadeコールバック内で自分の世代か確認
+    this._casinoBgmPendingToken = 0;
 
     // --- プロシージャルBGM (フォールバック) ---
     this.proceduralActive = false;
@@ -117,7 +130,7 @@ class SoundManagerClass {
     this.bgmGain.connect(this.masterGain);
 
     this.seGain = this.ctx.createGain();
-    this.seGain.gain.value = this.seVolume;
+    this.seGain.gain.value = this.seVolume * this._seVolumeScale;
     this.seGain.connect(this.masterGain);
 
     // <audio> element for BGM streaming
@@ -264,9 +277,21 @@ class SoundManagerClass {
   setSeVolume(v) {
     this.seVolume = Math.max(0, Math.min(1, v));
     if (this.seGain) {
-      this.seGain.gain.setTargetAtTime(this.seVolume, this.ctx.currentTime, 0.05);
+      this.seGain.gain.setTargetAtTime(this.seVolume * this._seVolumeScale, this.ctx.currentTime, 0.05);
     }
     this._saveSettings();
+  }
+
+  /**
+   * シーン別SEスケール (0.0〜1.0) を設定。
+   * 永続化せず、画面遷移で一時的にSE音量を縮小する用途に使う (カジノ内のSE音量など)。
+   * @param {number} scale
+   */
+  setSeVolumeScale(scale) {
+    this._seVolumeScale = Math.max(0, Math.min(1, scale));
+    if (this.seGain && this.ctx) {
+      this.seGain.gain.setTargetAtTime(this.seVolume * this._seVolumeScale, this.ctx.currentTime, 0.05);
+    }
   }
 
   // ===== アセット読み込み待ち =====
@@ -376,6 +401,63 @@ class SoundManagerClass {
         this.playNextTrack();
       }
     }, 1200);
+  }
+
+  // ===== カジノBGM (BIG/REG/ART) =====
+
+  /**
+   * カジノ専用BGMを開始。スタックに現在の再生状態を積んでから切替。
+   * @param {'big'|'reg'|'art'} kind
+   */
+  startCasinoBGM(kind) {
+    const track = CASINO_TRACKS[kind];
+    if (!track) return;
+    if (this.audioEl) {
+      this._casinoBgmStack.push({
+        src: this.audioEl.src || '',
+        time: this.audioEl.currentTime || 0,
+      });
+    }
+    const token = ++this._casinoBgmPendingToken;
+    this._fadeOutThen(() => {
+      // 世代が進んでいたら (stop等で割り込まれた) キャンセル
+      if (token !== this._casinoBgmPendingToken) return;
+      this._playTrack(track);
+      if (this.audioEl) this.audioEl.loop = true;
+    }, 400);
+  }
+
+  /** カジノBGMを終了。スタックから直前の再生状態を復元。 */
+  stopCasinoBGM() {
+    if (this._casinoBgmStack.length === 0) return;
+    const prev = this._casinoBgmStack.pop();
+    const token = ++this._casinoBgmPendingToken;
+    this._fadeOutThen(() => {
+      if (token !== this._casinoBgmPendingToken) return;
+      if (prev && prev.src) {
+        this._playTrack(prev.src);
+        if (this.audioEl) {
+          this.audioEl.currentTime = Math.max(0, (prev.time || 0) - 0.5);
+          this.audioEl.loop = true;
+        }
+      } else {
+        // スタックエントリにsrcなし → 通常プレイリストへ
+        this.playNextTrack();
+      }
+    }, 600);
+  }
+
+  /**
+   * カジノBGMスタックを全部剥がして通常BGMへ戻す (画面離脱時の後始末)。
+   * ネストされた ART→BONUS 状態から一度のフェードで通常BGMへ戻す。
+   */
+  drainCasinoBGM() {
+    if (this._casinoBgmStack.length === 0) return;
+    // 最下層の通常BGMエントリだけ残してネスト分は破棄
+    const base = this._casinoBgmStack[0];
+    this._casinoBgmStack.length = 0;
+    this._casinoBgmStack.push(base);
+    this.stopCasinoBGM();
   }
 
   /** エンディングBGM */
@@ -998,6 +1080,145 @@ class SoundManagerClass {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     this._playSENote(700, now, 0.02, 'sine', 0.02);
+  }
+
+  // ===== スロット専用SE (NES/ファミコン風チップチューン — 矩形波/三角波/ノイズのみ) =====
+
+  /**
+   * SE同時発音数の上限を一時的に変更する。
+   * スロット画面のように短時間にSEが集中する場面で呼び出し、離脱時に復元する。
+   * @param {number} n
+   */
+  setSeNodeBudget(n) {
+    const value = Math.max(4, Math.min(32, Math.floor(n)));
+    this._maxSeNodes = value;
+  }
+
+  /** レバーON — 8bit「ドンッ」 低音トライアングル + 矩形 + ノイズ */
+  playSlotLever() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(110, now,        0.05, 'triangle', 0.14);
+    this._playSENote(70,  now + 0.03, 0.10, 'triangle', 0.12);
+    this._playSENote(220, now,        0.05, 'square',   0.07);
+    this._playNoiseBurst(now, 0.05, 0.08);
+  }
+
+  /** リール停止 — 短くクリスプな「カッ」 矩形+ノイズ (全リール共通) */
+  playSlotReelStop() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(440, now, 0.03, 'square', 0.09);
+    this._playNoiseBurst(now, 0.025, 0.05);
+  }
+
+  /** BET — Mario風コイン音 (B5→E6 矩形波2音上昇) */
+  playSlotBet() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(987.77,  now,        0.04, 'square', 0.08);  // B5
+    this._playSENote(1318.51, now + 0.04, 0.12, 'square', 0.07);  // E6
+  }
+
+  /**
+   * テンパイ/リーチ — 8bitアルペジオ
+   * @param {1|2|3} level  1=弱(保持音), 2=強(2音上昇), 3=プレミア(完全5度アルペジオ)
+   */
+  playSlotTenpai(level = 1) {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    if (level >= 3) {
+      // プレミア: ソ-シ-レ-ソ(完全5度アルペジオ) + ノイズアクセント
+      [783.99, 987.77, 1174.66, 1567.98].forEach((f, i) =>
+        this._playSENote(f, now + i * 0.07, 0.14, 'square', 0.10)
+      );
+      this._playSENote(1567.98, now + 0.32, 0.30, 'triangle', 0.08);
+      this._playNoiseBurst(now, 0.03, 0.04);
+    } else if (level === 2) {
+      // 強: ミ→シ 完全5度ジャンプ
+      this._playSENote(659.25, now,        0.10, 'square', 0.10);
+      this._playSENote(987.77, now + 0.12, 0.25, 'square', 0.10);
+    } else {
+      // 弱: 保持音トレモロ (矩形でチープに)
+      this._playSENote(783.99, now,        0.10, 'square', 0.09);
+      this._playSENote(783.99, now + 0.14, 0.20, 'square', 0.07);
+    }
+  }
+
+  /** CHANCE目 — NES「アイテム入手」風3音上昇 */
+  playSlotChanceMoku() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(987.77,  now,        0.06, 'square', 0.08);
+    this._playSENote(1318.51, now + 0.05, 0.06, 'square', 0.07);
+    this._playSENote(1567.98, now + 0.10, 0.10, 'square', 0.06);
+  }
+
+  /**
+   * 内部成立告知 — ボーナス種別で音色変化 (全て矩形波のみ)
+   * @param {'big'|'reg'|'blue7'} [kind]
+   */
+  playSlotBonusInternal(kind = 'big') {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    if (kind === 'blue7') {
+      // 青7: 高速アルペジオ + トライアングル余韻
+      [1046.50, 1318.51, 1567.98, 2093.00, 2637.02].forEach((f, i) =>
+        this._playSENote(f, now + i * 0.05, 0.08, 'square', 0.09)
+      );
+      this._playSENote(1318.51, now + 0.35, 0.35, 'triangle', 0.08);
+      this._playNoiseBurst(now, 0.04, 0.05);
+    } else if (kind === 'reg') {
+      // REG: 控えめ2音 (ソ→レ 完全4度上昇)
+      this._playSENote(783.99,  now,        0.10, 'square', 0.09);
+      this._playSENote(1174.66, now + 0.12, 0.22, 'square', 0.08);
+    } else {
+      // BIG (デフォルト): Mario 1-UP風 6音ファンファーレ (ミ-ソ-ミ6-ド6-レ6-ソ6)
+      const big = [659.25, 783.99, 1318.51, 1046.50, 1174.66, 1567.98];
+      big.forEach((f, i) => this._playSENote(f, now + i * 0.07, 0.09, 'square', 0.10));
+    }
+  }
+
+  /** ART突入ジングル — 明るい4音上昇 (ミ-ソ-シ-ミ6) 矩形+トライアングル余韻 */
+  playSlotArtStart() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    [659.25, 783.99, 987.77, 1318.51].forEach((f, i) =>
+      this._playSENote(f, now + i * 0.07, 0.11, 'square', 0.10)
+    );
+    this._playSENote(1318.51, now + 0.28, 0.25, 'triangle', 0.08);
+  }
+
+  /** ART終了 — 2音下降 (レ→ラ) 矩形のみ */
+  playSlotArtEnd() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(1174.66, now,        0.12, 'square', 0.08);
+    this._playSENote(880.00,  now + 0.13, 0.22, 'square', 0.08);
+  }
+
+  /** ART上乗せ — 短い3音上昇「チャリン♪」 */
+  playSlotArtAdd() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this._playSENote(1318.51, now,        0.05, 'square', 0.08);
+    this._playSENote(1567.98, now + 0.04, 0.06, 'square', 0.07);
+    this._playSENote(2093.00, now + 0.08, 0.10, 'square', 0.06);
+  }
+
+  /** フリーズ演出 — 8bitボス登場風 (トライアングル低音 + 矩形スウィープ + ノイズ) */
+  playSlotFreeze() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    // トライアングル低音ランブル (sine代わり)
+    this._playSENote(55, now,        0.75, 'triangle', 0.14);
+    this._playSENote(82, now + 0.05, 0.65, 'triangle', 0.10);
+    // 矩形波でステップ状スウィープ (NES風の階段的ピッチ)
+    [196, 392, 784, 1175, 1568].forEach((f, i) =>
+      this._playSENote(f, now + 0.10 + i * 0.11, 0.09, 'square', 0.06)
+    );
+    // 突入ノイズ (長め)
+    this._playNoiseBurst(now, 0.15, 0.08);
   }
 
   // ===== 共通ユーティリティ =====
