@@ -11,8 +11,8 @@
  *         .casino-slot-cell × 42
  */
 
-import { SYMBOLS } from '../data/symbols.js';
-import { REELS, REEL_LENGTH } from '../data/reels.js';
+import { SYMBOLS as DEFAULT_SYMBOLS } from '../data/symbols.js';
+import { REELS as DEFAULT_REELS, REEL_LENGTH as DEFAULT_REEL_LENGTH } from '../data/reels.js';
 
 // デスクトップ時の既定値。モバイルでは CSS が縮めるため実測値で上書きする。
 const SYMBOL_HEIGHT = 64;
@@ -20,10 +20,21 @@ const SYMBOL_WIDTH = 140;
 const STRIP_LAPS = 3;
 
 export class SlotRenderer {
-  constructor(container) {
+  /**
+   * @param {HTMLElement} container
+   * @param {object} [opts]
+   * @param {string[][]} [opts.reels]   3×N の絵柄配列 (既定: 標準スロットのREELS)
+   * @param {number} [opts.reelLength]  リール長 (既定: 21)
+   * @param {Record<string, {label:string, image:string}>} [opts.symbols] 絵柄定義 (既定: 標準スロットのSYMBOLS)
+   * @param {string} [opts.className]   ルート要素のクラス名 (既定: 'casino-slot-reels')
+   */
+  constructor(container, opts = {}) {
     this.container = container;
+    this._reels = opts.reels || DEFAULT_REELS;
+    this._reelLength = opts.reelLength || DEFAULT_REEL_LENGTH;
+    this._symbols = opts.symbols || DEFAULT_SYMBOLS;
     this.el = document.createElement('div');
-    this.el.className = 'casino-slot-reels';
+    this.el.className = opts.className || 'casino-slot-reels';
     /** @type {Array<{reel: HTMLElement, strip: HTMLElement}>} */
     this.reelEls = [];
     /** 停止スナップ/バウンスの setTimeout 群 */
@@ -47,14 +58,14 @@ export class SlotRenderer {
 
       const strip = document.createElement('div');
       strip.className = 'casino-slot-reel-strip';
-      const reelData = REELS[i];
+      const reelData = this._reels[i];
       // 3周分並べる: stopIdx=20 のとき下段(strip[22+20]=strip[42])のセルが必要
       for (let pass = 0; pass < STRIP_LAPS; pass++) {
-        for (let j = 0; j < REEL_LENGTH; j++) {
+        for (let j = 0; j < this._reelLength; j++) {
           const cell = document.createElement('div');
           cell.className = 'casino-slot-cell';
           const symId = reelData[j];
-          const sym = SYMBOLS[symId];
+          const sym = this._symbols[symId];
           if (sym) {
             cell.innerHTML = `<img class="casino-slot-symbol" src="${sym.image}" alt="${sym.label}" draggable="false" />`;
           } else {
@@ -125,7 +136,7 @@ export class SlotRenderer {
     if (h > 0) this._cellH = h;
     if (w > 0) this._cellW = w;
     // keyframe `casino-reel-scroll` がこの CSS 変数を読んでアニメ距離を合わせる
-    const lap = this._cellH * REEL_LENGTH;
+    const lap = this._cellH * this._reelLength;
     for (const t of this.reelEls) {
       if (!t || !t.strip) continue;
       t.strip.style.setProperty('--casino-cell-h', this._cellH + 'px');
@@ -188,7 +199,7 @@ export class SlotRenderer {
     // スピンは translateY が増加する方向（絵柄が下へ流れる）
     // stop でも finalOffset は currentY より大きくする
     const cellH = this._cellH || SYMBOL_HEIGHT;
-    const oneLap = cellH * REEL_LENGTH;
+    const oneLap = cellH * this._reelLength;
     const normalizedOffset = this._offsetForIndex(targetIndex);
     const minTravel = 2 * cellH;
     let finalOffset = normalizedOffset;
@@ -244,19 +255,20 @@ export class SlotRenderer {
    * @param {import('../data/symbols.js').SymbolId[]} symbols
    */
   renderSingleReelStop(reelIndex, symbols) {
-    const reelData = REELS[reelIndex];
+    const reelData = this._reels[reelIndex];
+    const N = this._reelLength;
     let targetIndex = -1;
-    for (let i = 0; i < REEL_LENGTH; i++) {
-      const up = reelData[(i - 1 + REEL_LENGTH) % REEL_LENGTH];
+    for (let i = 0; i < N; i++) {
+      const up = reelData[(i - 1 + N) % N];
       const mid = reelData[i];
-      const down = reelData[(i + 1) % REEL_LENGTH];
+      const down = reelData[(i + 1) % N];
       if (up === symbols[0] && mid === symbols[1] && down === symbols[2]) {
         targetIndex = i;
         break;
       }
     }
     if (targetIndex < 0) {
-      for (let i = 0; i < REEL_LENGTH; i++) {
+      for (let i = 0; i < N; i++) {
         if (reelData[i] === symbols[1]) { targetIndex = i; break; }
       }
     }
@@ -290,7 +302,7 @@ export class SlotRenderer {
       // 3周並び: 中央ラップ(strip[21-41])が normalize 位置。rowに対応するstripセル:
       //   top=20+stopIdx, mid=21+stopIdx, bot=22+stopIdx
       const stripIdx = 21 + stopIdx + (row - 1);
-      const total = STRIP_LAPS * REEL_LENGTH;
+      const total = STRIP_LAPS * this._reelLength;
       const normalized = ((stripIdx % total) + total) % total;
       const cellEl = target.strip.children[normalized];
       if (cellEl) {
@@ -340,7 +352,7 @@ export class SlotRenderer {
    */
   _offsetForIndex(i) {
     const cellH = this._cellH || SYMBOL_HEIGHT;
-    const cellRow = REEL_LENGTH + i;
+    const cellRow = this._reelLength + i;
     return -cellRow * cellH + cellH;
   }
 

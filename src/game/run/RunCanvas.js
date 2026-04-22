@@ -116,7 +116,7 @@ export class RunCanvas {
         if (!boss.active) continue;
         const sx = boss.lerpX(alpha) - camera.x;
         const sy = boss.lerpY(alpha) - camera.y;
-        if (sx < -80 || sx > w + 80 || sy < -80 || sy > h + 80) continue;
+        if (sx < -120 || sx > w + 120 || sy < -120 || sy > h + 120) continue;
         EntityRenderer.drawShadow(ctx, sx, sy, boss.radius, 0.45);
       }
     }
@@ -216,13 +216,15 @@ export class RunCanvas {
       // スプライトがあれば優先
       const def = enemy.enemyDef;
       let sprite = null;
+      let outlineSprite = null;
       if (spriteCache && def && def.preset) {
         sprite = spriteCache.getPreset(def.preset);
+        outlineSprite = spriteCache.getPresetOutline(def.preset);
       }
       if (sprite) {
         const baseSize = Math.max(sprite.width, sprite.height);
         const scale = (enemy.radius * 2.2) / baseSize;
-        EntityRenderer.drawSprite(ctx, sprite, sx, sy, { scale, flash });
+        EntityRenderer.drawSprite(ctx, sprite, sx, sy, { scale, flash, outlineSprite });
       } else {
         EntityRenderer.drawEntityFallback(ctx, sx, sy, enemy.radius, enemy.color, flash);
       }
@@ -265,7 +267,7 @@ export class RunCanvas {
         if (!boss.active) continue;
         const sx = boss.lerpX(alpha) - camera.x;
         const sy = boss.lerpY(alpha) - camera.y;
-        if (sx < -80 || sx > w + 80 || sy < -80 || sy > h + 80) continue;
+        if (sx < -120 || sx > w + 120 || sy < -120 || sy > h + 120) continue;
 
         // テレグラフ表示（スキル予告）— circle / line / radial_burst / wide_aoe に対応
         if (boss.telegraphTimer > 0 && boss.telegraphPos) {
@@ -330,11 +332,15 @@ export class RunCanvas {
         const flash = boss.hitFlashTimer > 0 ? boss.hitFlashTimer / 0.1 : 0;
         // スプライト or フォールバック
         let sprite = null;
-        if (spriteCache && boss.preset) sprite = spriteCache.getPreset(boss.preset);
+        let outlineSprite = null;
+        if (spriteCache && boss.preset) {
+          sprite = spriteCache.getPreset(boss.preset);
+          outlineSprite = spriteCache.getPresetOutline(boss.preset);
+        }
         if (sprite) {
           const baseSize = Math.max(sprite.width, sprite.height);
           const scale = (boss.radius * 2.4) / baseSize;
-          EntityRenderer.drawSprite(ctx, sprite, sx, sy, { scale, flash });
+          EntityRenderer.drawSprite(ctx, sprite, sx, sy, { scale, flash, outlineSprite });
         } else {
           EntityRenderer.drawEntityFallback(ctx, sx, sy, boss.radius, boss.color, flash);
         }

@@ -11,6 +11,7 @@
 
 import { EXCHANGE_RATE } from './config.js';
 import { SlotScreen } from './slot/SlotScreen.js';
+import { RoadToMillionaireScreen } from './roadToMillionaire/RoadToMillionaireScreen.js';
 import { SlotSFX, getCasinoSettings, saveCasinoSettings, applyCasinoSeVolume } from './slot/SoundEffects.js';
 
 const TUTORIAL_SEEN_KEY = 'casino_tutorial_seen_v1';
@@ -27,6 +28,7 @@ export class CasinoScreen {
     this.el.className = 'casino-screen';
     this.currentView = 'lobby';
     this.slotScreen = null;
+    this.rtmScreen = null;
   }
 
   render() {
@@ -52,6 +54,10 @@ export class CasinoScreen {
     if (this.slotScreen) {
       this.slotScreen.destroy();
       this.slotScreen = null;
+    }
+    if (this.rtmScreen) {
+      this.rtmScreen.destroy();
+      this.rtmScreen = null;
     }
     this.currentView = 'lobby';
     this.el.innerHTML = '';
@@ -180,6 +186,11 @@ export class CasinoScreen {
       openSlot.addEventListener('click', () => this._openSlot());
     }
 
+    const openRtm = wrapper.querySelector('[data-action="open-rtm"]');
+    if (openRtm) {
+      openRtm.addEventListener('click', () => this._openRtm());
+    }
+
     const settingsBtn = wrapper.querySelector('[data-action="settings"]');
     if (settingsBtn) {
       settingsBtn.addEventListener('click', () => this._showSettings());
@@ -191,6 +202,13 @@ export class CasinoScreen {
     this.el.innerHTML = '';
     this.slotScreen = new SlotScreen(this.el, this.manager, () => this._renderLobby());
     this.slotScreen.render();
+  }
+
+  _openRtm() {
+    this.currentView = 'rtm';
+    this.el.innerHTML = '';
+    this.rtmScreen = new RoadToMillionaireScreen(this.el, this.manager, () => this._renderLobby());
+    this.rtmScreen.render();
   }
 
   _refreshBalances() {
@@ -291,6 +309,7 @@ export class CasinoScreen {
 
   destroy() {
     if (this.slotScreen) this.slotScreen.destroy();
+    if (this.rtmScreen) this.rtmScreen.destroy();
     this.el.remove();
   }
 }

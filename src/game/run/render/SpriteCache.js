@@ -15,10 +15,53 @@
 import { assetPath } from '../../core/assetPath.js';
 import { renderVoxelPresetToCanvas } from './VoxelRenderer.js';
 
+// ブルームの最大スプレッド分の余白
+const OUTLINE_PAD = 5;
+
+/**
+ * スプライト用のブルーム付きキャンバスを生成。
+ * 構成（奥→手前）:
+ *   1. ソフトブルーム（白 40%, blur 2.5px, 8方向2.5px広がり） — 背景と馴染むアトモスフェリックな発光
+ *   2. 元スプライト
+ */
+function buildOutlineCanvas(sprite) {
+  if (!sprite || !sprite.width || !sprite.height) return null;
+  const w = sprite.width + OUTLINE_PAD * 2;
+  const h = sprite.height + OUTLINE_PAD * 2;
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const cx = cv.getContext('2d');
+
+  // --- Layer 1: ソフトブルーム ---
+  cx.save();
+  cx.filter = 'blur(2.5px)';
+  const bloomRadius = 2.5;
+  for (let a = 0; a < 8; a++) {
+    const ang = (Math.PI * 2 / 8) * a;
+    cx.drawImage(
+      sprite,
+      OUTLINE_PAD + Math.cos(ang) * bloomRadius,
+      OUTLINE_PAD + Math.sin(ang) * bloomRadius
+    );
+  }
+  cx.restore();
+  cx.globalCompositeOperation = 'source-in';
+  cx.fillStyle = 'rgba(255,255,255,0.2)';
+  cx.fillRect(0, 0, w, h);
+  cx.globalCompositeOperation = 'source-over';
+
+  // --- Top: 元スプライト ---
+  cx.drawImage(sprite, OUTLINE_PAD, OUTLINE_PAD);
+
+  return cv;
+}
+
 export class SpriteCache {
   constructor() {
     this.images = new Map();      // path -> HTMLImageElement
     this.presets = new Map();     // path -> HTMLCanvasElement
+    this.presetOutlines = new Map(); // path -> HTMLCanvasElement (白アウトライン付き)
     this._loadingImages = new Map();  // path -> Promise
     this._loadingPresets = new Map(); // path -> Promise
   }
@@ -60,6 +103,7 @@ export class SpriteCache {
       .then(json => {
         const canvas = renderVoxelPresetToCanvas(json, opts);
         this.presets.set(path, canvas);
+        this.presetOutlines.set(path, buildOutlineCanvas(canvas));
         this._loadingPresets.delete(path);
         return canvas;
       })
@@ -92,8 +136,13 @@ export class SpriteCache {
     return this.presets.get(path) || null;
   }
 
+  getPresetOutline(path) {
+    return this.presetOutlines.get(path) || null;
+  }
+
   clear() {
     this.images.clear();
     this.presets.clear();
+    this.presetOutlines.clear();
   }
 }

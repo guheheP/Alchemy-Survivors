@@ -14,6 +14,11 @@ import { CASINO_VERSION } from '../config.js';
  * @property {number} bigCount
  * @property {number} regCount
  * @property {number} artCount
+ * @property {number} [rtmAtCount]      - Road to Millionaire: AT初当り回数
+ * @property {number} [rtmAtSetCount]   - Road to Millionaire: ATセット合計 (連数含む)
+ * @property {number} [rtmTenjouCount]  - Road to Millionaire: 天井救済回数
+ * @property {number} [rtmTotalBet]     - Road to Millionaire専用: BET合計
+ * @property {number} [rtmTotalPayout]  - Road to Millionaire専用: 払出合計
  */
 
 /**
@@ -31,6 +36,12 @@ const DEFAULT_LIFETIME_STATS = {
   bigCount: 0,
   regCount: 0,
   artCount: 0,
+  // Road to Millionaire 専用カウンタ (機種別統計。旧セーブデータでは 0 にフォールバック)
+  rtmAtCount: 0,
+  rtmAtSetCount: 0,
+  rtmTenjouCount: 0,
+  rtmTotalBet: 0,
+  rtmTotalPayout: 0,
 };
 
 export class CasinoState {

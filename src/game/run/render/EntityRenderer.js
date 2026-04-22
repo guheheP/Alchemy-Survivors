@@ -70,7 +70,7 @@ export const EntityRenderer = {
    * @param {HTMLCanvasElement|HTMLImageElement|ImageBitmap} sprite
    * @param {number} x - 中心X
    * @param {number} y - 中心Y
-   * @param {object} opts - { scale, facing, flash, flipX }
+   * @param {object} opts - { scale, facing, flash, flipX, rotate, outlineSprite }
    */
   drawSprite(ctx, sprite, x, y, opts = {}) {
     if (!sprite) return;
@@ -78,16 +78,23 @@ export const EntityRenderer = {
     const w = sprite.width * scale;
     const h = sprite.height * scale;
     const flash = opts.flash || 0;
+    const outline = opts.outlineSprite;
 
     ctx.save();
     ctx.translate(x, y);
     if (opts.flipX) ctx.scale(-1, 1);
     if (opts.rotate) ctx.rotate(opts.rotate);
 
-    // スプライト本体
-    ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
+    if (outline) {
+      // アウトライン済みキャンバスは白ハロー+元スプライト合成済み（SpriteCache 生成）
+      const ow = outline.width * scale;
+      const oh = outline.height * scale;
+      ctx.drawImage(outline, -ow / 2, -oh / 2, ow, oh);
+    } else {
+      ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
+    }
 
-    // 被弾フラッシュ（白オーバーレイ）
+    // 被弾フラッシュ（白オーバーレイ）— スプライト本体の矩形のみ塗る
     if (flash > 0) {
       ctx.globalCompositeOperation = 'source-atop';
       ctx.globalAlpha = Math.min(1, flash);
@@ -110,8 +117,8 @@ export const EntityRenderer = {
     ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
 
-    // 暗色リング（縁取り）
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    // 柔らかい白リング — スプライト版のブルームと揃える
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 

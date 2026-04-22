@@ -135,17 +135,33 @@ export class CasinoManager {
   }
 
   /**
-   * スロット退出時（ロビーへ戻る）に呼ばれる
+   * スロット/RTM 退出時（ロビーへ戻る）に呼ばれる
    * セッション統計をlifetimeStatsに集計してセーブ要求
-   * @param {import('./state/SlotSessionState.js').SlotSessionState} session
+   * @param {import('./state/SlotSessionState.js').SlotSessionState | import('./roadToMillionaire/state/RtmSessionState.js').RtmSessionState} session
    */
   finalizeSession(session) {
     if (!session) return;
     this.state.lifetimeStats.totalBet += session.stats.totalBet;
     this.state.lifetimeStats.totalPayout += session.stats.totalPayout;
-    this.state.lifetimeStats.bigCount += session.stats.bigCount;
-    this.state.lifetimeStats.regCount += session.stats.regCount;
-    this.state.lifetimeStats.artCount += session.stats.artCount || 0;
+
+    if (session.machineType === 'roadToMillionaire') {
+      // Road to Millionaire: 機種別カウンタへ加算 (BIG/REG は存在しない)
+      this.state.lifetimeStats.rtmTotalBet =
+        (this.state.lifetimeStats.rtmTotalBet || 0) + session.stats.totalBet;
+      this.state.lifetimeStats.rtmTotalPayout =
+        (this.state.lifetimeStats.rtmTotalPayout || 0) + session.stats.totalPayout;
+      this.state.lifetimeStats.rtmAtCount =
+        (this.state.lifetimeStats.rtmAtCount || 0) + (session.stats.atCount || 0);
+      this.state.lifetimeStats.rtmAtSetCount =
+        (this.state.lifetimeStats.rtmAtSetCount || 0) + (session.stats.atSetCount || 0);
+      this.state.lifetimeStats.rtmTenjouCount =
+        (this.state.lifetimeStats.rtmTenjouCount || 0) + (session.stats.tenjouCount || 0);
+    } else {
+      // 既存スロット (machineType 未設定 or 'slot')
+      this.state.lifetimeStats.bigCount += session.stats.bigCount || 0;
+      this.state.lifetimeStats.regCount += session.stats.regCount || 0;
+      this.state.lifetimeStats.artCount += session.stats.artCount || 0;
+    }
     this._requestSave();
   }
 

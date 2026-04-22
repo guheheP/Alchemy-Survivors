@@ -49,20 +49,23 @@ export class BossEntity extends Enemy {
 
   /** ボスデータから初期化 */
   initBoss(bossDef, x, y) {
+    // ボス巨大化: 当たり判定と見た目を1.7倍、HPは1.3倍で補填
+    const sizeMult = 1.7;
+    const hpMult = 1.3;
     this.active = true;
     this.x = x;
     this.y = y;
     this.prevX = x;
     this.prevY = y;
-    this.hp = bossDef.maxHp;
-    this.maxHp = bossDef.maxHp;
+    this.hp = bossDef.maxHp * hpMult;
+    this.maxHp = bossDef.maxHp * hpMult;
     this.baseDamage = bossDef.atk;
     this.damage = bossDef.atk;
     this.defense = bossDef.def;
     this.baseSpeed = bossDef.spd * 0.8;
     this.speed = this.baseSpeed;
     this.expValue = 50;
-    this.radius = 24;
+    this.radius = 24 * sizeMult;
     this.color = '#f80';
     this.enemyId = bossDef.id;
     this.bossName = bossDef.name;
