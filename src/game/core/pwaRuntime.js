@@ -54,6 +54,10 @@ export function isRunningStandalone() {
 export function initPwaRuntime({ getSaveSystem } = {}) {
   if (typeof window === 'undefined') return;
 
+  // 0. 画面を縦向きにロック (スマホ PWA で意図せず回転する問題の対策)
+  //    スタンドアロンで無い場合は失敗するが、ブラウザタブでは回転問題は発生しないので無視可。
+  lockPortraitOrientation();
+
   // 1. インストール可否の検知
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -139,6 +143,26 @@ export function applyPwaUpdate() {
   }
 }
 
+// ---------- Orientation Lock (縦向き固定) ----------
+// マニフェストの orientation: 'portrait' は「ヒント」であり、Android Chrome の
+// スタンドアロン PWA でも OS の自動回転設定や端末仕様により尊重されない事例がある。
+// Screen Orientation API で明示的に縦向きにロックし、意図しない回転を防ぐ。
+// iOS Safari / 非対応環境では lock() が例外を投げるため、握りつぶして degrade する。
+let _orientationLockApplied = false;
+
+export async function lockPortraitOrientation() {
+  if (typeof screen === 'undefined' || !screen.orientation) return false;
+  if (typeof screen.orientation.lock !== 'function') return false;
+  try {
+    await screen.orientation.lock('portrait');
+    _orientationLockApplied = true;
+    return true;
+  } catch (e) {
+    // NotSupportedError (ブラウザタブ等の非スタンドアロン) や SecurityError は想定内
+    return false;
+  }
+}
+
 // ---------- WakeLock (プレイ中のみスクリーン点灯維持) ----------
 let wakeLockSentinel = null;
 
@@ -166,9 +190,10 @@ export function releaseWakeLock() {
 // visibility 復帰時に再取得 (ブラウザ仕様で非アクティブ時に自動解除される)
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && wakeLockSentinel === null) {
-      // プレイ中フラグは main.js 側で別管理するため、ここでは自動再取得せず
-      // 呼び出し側 (RunManager 等) が必要に応じて requestWakeLock() を呼ぶ
+    if (document.visibilityState === 'visible') {
+      // 向きロックはバックグラウンド遷移で解除される実装があるため、復帰時に再適用
+      if (_orientationLockApplied) lockPortraitOrientation();
+      // wakeLock のプレイ中判定は RunManager 側で持つのでここでは何もしない
     }
   });
 }
