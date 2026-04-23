@@ -4062,7 +4062,20 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
   /* カードの高さをモバイル向けに調整（スクロール容量確保） */
   .shop-card { height: 150px; }
   .coll-boss-card { height: 130px; }
-  .coll-area-card { height: 120px; }
+  .coll-area-grid { grid-template-columns: 1fr; gap: 0.5rem; }
+  .coll-area-card { height: auto; padding: 0.6rem 0.7rem; }
+  .coll-area-card-head { gap: 0.6rem; }
+  .coll-area-icon { font-size: 1.6rem; }
+  .coll-area-name { font-size: 0.9rem; }
+  .coll-area-desc { font-size: 0.72rem; }
+  .coll-area-diff, .coll-area-quality { font-size: 0.72rem; }
+  .coll-area-drops h5 { font-size: 0.72rem; }
+  .coll-drop-row {
+    grid-template-columns: 20px 1fr 28px 60px 34px;
+    gap: 0.3rem;
+    font-size: 0.68rem;
+  }
+  .coll-drop-icon { width: 16px; height: 16px; }
   .levelup-card { height: 260px; }
 }
 
