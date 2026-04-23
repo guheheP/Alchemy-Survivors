@@ -402,7 +402,8 @@ export class CraftingScreen {
         <button class="picker-cancel">キャンセル</button>
       </div>
     `;
-    this.el.appendChild(picker);
+    // 親の filter(anim-fade-in) が包含ブロックを作り position:fixed が効かないため body 直下へ
+    document.body.appendChild(picker);
 
     const closePicker = () => {
       if (onKeyDown) window.removeEventListener('keydown', onKeyDown);
