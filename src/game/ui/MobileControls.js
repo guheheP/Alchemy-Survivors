@@ -11,6 +11,23 @@ const DASH_BTN_MARGIN_X = 60;
 // コンソールHUD (画面下 ~90〜110px) に被らないよう十分上に配置
 const DASH_BTN_MARGIN_Y = 180;
 
+/**
+ * CSS カスタムプロパティ（--safe-*）から px 値を読み取る。
+ * env(safe-area-inset-*) にフォールバックが 0px なので、未対応端末では 0 を返す。
+ * @param {string} varName 例: '--safe-right'
+ * @returns {number}
+ */
+function _readSafeInsetPx(varName) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return 0;
+  try {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(varName);
+    const n = parseFloat(raw);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export class MobileControls {
   constructor() {
     this.active = false;
@@ -56,9 +73,12 @@ export class MobileControls {
   }
 
   _updateLayout() {
-    // 右下にダッシュボタン（safe-area考慮: 余裕を持って配置）
-    this.dashBtnX = window.innerWidth - DASH_BTN_MARGIN_X;
-    this.dashBtnY = window.innerHeight - DASH_BTN_MARGIN_Y;
+    // 右下にダッシュボタン。ノッチ / ホームインジケータ分を safe-area で退避。
+    // env(safe-area-inset-*) は CSS 変数経由で取得（--safe-right / --safe-bottom）
+    const insetRight = _readSafeInsetPx('--safe-right');
+    const insetBottom = _readSafeInsetPx('--safe-bottom');
+    this.dashBtnX = window.innerWidth - DASH_BTN_MARGIN_X - insetRight;
+    this.dashBtnY = window.innerHeight - DASH_BTN_MARGIN_Y - insetBottom;
   }
 
   _isInsideDashButton(x, y) {

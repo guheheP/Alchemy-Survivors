@@ -530,12 +530,15 @@ export class RunHUD {
     this._bossBar.classList.remove('hidden');
     this._bossName.textContent = name;
     this._bossHpFill.style.width = '100%';
+    // モバイルHUD: パッシブフロートをボスバーの下に退避させるためクラス付与
+    if (this._passivesEl) this._passivesEl.classList.add('boss-active');
   }
   _onBossHpChanged({ hp, maxHp }) {
     this._bossHpFill.style.width = Math.max(0, hp / maxHp * 100) + '%';
   }
   _onBossDefeated() {
     this._bossBar.classList.add('hidden');
+    if (this._passivesEl) this._passivesEl.classList.remove('boss-active');
     this._showAlert('\uD83C\uDFC6 \u30DC\u30B9\u3092\u64C3\u7834\u3057\u305F\uFF01');
   }
 

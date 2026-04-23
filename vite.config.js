@@ -33,7 +33,7 @@ export default defineConfig({
         start_url: BASE,
         scope: BASE,
         display: 'standalone',
-        orientation: 'any',
+        orientation: 'portrait',
         background_color: '#0d0d1a',
         theme_color: '#0d0d1a',
         categories: ['games'],
