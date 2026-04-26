@@ -499,12 +499,12 @@ export class PixelArtDisplay {
     const flash = (t % 6) < 3 ? '#ffe080' : '#d0a0ff';
     this._drawText('錬金チャンス', 100, 8, flash, 14);
 
-    // 中央: 残りG / 累計純増 をパネル表示
+    // 中央: 残りG / 総獲得 (ART中BONUSの払い出しも含む) をパネル表示
     const gain = this.stats.artGain;
-    const gainStr = (gain >= 0 ? '+' : '') + gain;
+    const gainStr = `${gain}`;
     this._drawStatsPanel(100, 28, [
       { label: '残り', value: `${this.stats.artRemaining}G`, color: '#d0a0ff' },
-      { label: '純増', value: gainStr,                       color: gain >= 0 ? '#ffe080' : '#a0a0a0' },
+      { label: '総獲得', value: gainStr,                     color: '#ffe080' },
     ]);
 
     if (t % 3 === 0) this._spawnSparkleBurst(60, 42, 2, '#ffffff');
