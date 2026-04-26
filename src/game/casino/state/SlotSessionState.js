@@ -42,6 +42,14 @@ export class SlotSessionState {
     /** ZENCHO（前兆）残りゲーム数 */
     this.zenchoGamesRemaining = 0;
 
+    /** ZENCHO突入時に確定済の当選種別 — 前兆消化終了後の遷移先 */
+    /** @type {'bonus'|'cz'|null} */
+    this.pendingResult = null;
+
+    /** ZENCHO中に確定済のBONUS種別 (pendingResult==='bonus' のとき) */
+    /** @type {'big'|'reg'|null} */
+    this.pendingBonusKind = null;
+
     /** CZ（チャンスゾーン）残りゲーム数 */
     this.czGamesRemaining = 0;
 

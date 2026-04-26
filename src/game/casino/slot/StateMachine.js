@@ -3,33 +3,32 @@
  *
  * Phase 3 で実装する状態: NORMAL / ZENCHO / CZ / BONUS_STANDBY / BONUS / ART / TENJOU
  *
- * 遷移ルール要約:
- *   - BONUS抽選は NORMAL / ZENCHO / CZ / ART / TENJOU で常時稼働
- *   - BONUS内部成立 → BONUS_STANDBY（resumePhase保存）
+ * 遷移ルール要約 (レア役複合方式):
+ *   - レア役強弱→BONUS抽選→外れたらCZ抽選 (NORMAL/TENJOU)
+ *   - NORMAL中のレア役からBONUS当選 → ZENCHO(1-3G) → BONUS_STANDBY
+ *   - NORMAL中のレア役からCZ当選   → ZENCHO(10-15G) → CZ
+ *   - ART/ZENCHO/CZ/TENJOU 中のBONUS当選は即 BONUS_STANDBY (前兆スキップ)
  *   - BONUS_STANDBY中に図柄揃い成立 → BONUS
  *   - BONUS中に青7揃い → blue7Succeeded=true
  *   - BONUS終了時:
- *       blue7 && resumePhase=ART → ART復帰＋100G上乗せ
+ *       blue7 && resumePhase=ART → ART復帰＋上乗せ
  *       blue7                    → 新規ART突入（初期40G）
  *       resumePhase=ART          → ART復帰（残G消化再開）
  *       else                     → NORMAL復帰
- *   - NORMAL中のレア役でZENCHO抽選 → ZENCHO (5-15G)
- *   - ZENCHO消化終了 → CZ / BONUS_STANDBY(直撃) / NORMAL（結果抽選）
- *   - CZ中のチャンス目でART成功 → ART
+ *   - CZ中: 引いた役で ART成功抽選 (CZ_REROLL_TABLE)
  *   - CZ 10G経過 → NORMAL（失敗）
  *   - NORMAL normalGameCount >= TENJOU_GAMES → TENJOU
- *   - TENJOU中のレア役 → 強制BONUS内部成立
+ *   - TENJOU中のレア役 → 強制BONUS内部成立 (前兆なし即BONUS_STANDBY)
  */
 
 import { BONUS_GAME_COUNT, ART_CONSTANTS } from '../data/payouts.js';
-import { ZENCHO_GAMES, CZ_GAMES, TENJOU_GAMES } from '../data/probabilities.js';
+import { ZENCHO_BONUS_GAMES, ZENCHO_CZ_GAMES, CZ_GAMES, TENJOU_GAMES } from '../data/probabilities.js';
 
 /**
  * @typedef {Object} TransitionInput
  * @property {import('./SlotEngine.js').DrawResult} flags
  * @property {boolean} bonusSymbolsAligned
  * @property {boolean} blue7Aligned
- * @property {'cz'|'bonus_hit'|'fail'|null} [zenchoResult] - ZENCHO終了時に外部から渡される
  */
 
 /**
@@ -82,12 +81,29 @@ export function transition(state, input, rng) {
     return events;
   }
 
-  // BONUS内部成立（全NORMAL系phaseで共通チェック）→ BONUS_STANDBY
+  // BONUS内部成立（全NORMAL系phaseで共通チェック）
   if (input.flags.bonusFlag !== 'none' &&
       (state.phase === 'NORMAL' || state.phase === 'ZENCHO' || state.phase === 'CZ' ||
        state.phase === 'ART' || state.phase === 'TENJOU')) {
     if (state.phase === 'TENJOU' && input.flags.tenjouForceBonus) {
       events.push({ type: 'tenjou_hit' });
+    }
+    // ART中のBONUS当選は即BONUS_STANDBYへ (ART資源は維持される)
+    // ZENCHO/CZ/TENJOU中の当選も即BONUS_STANDBYへ (前兆/CZ消化中は別ロジック)
+    // NORMAL中のレア役→BONUS当選は前兆経由 (1〜3G)
+    if (state.phase === 'NORMAL' && input.flags.rareStrength !== null) {
+      state.phase = 'ZENCHO';
+      state.pendingResult = 'bonus';
+      state.pendingBonusKind = input.flags.bonusFlag;
+      const range = ZENCHO_BONUS_GAMES.max - ZENCHO_BONUS_GAMES.min + 1;
+      state.zenchoGamesRemaining = ZENCHO_BONUS_GAMES.min + rng.nextInt(range);
+      state.stats.zenchoCount++;
+      events.push({
+        type: 'zencho_start',
+        amount: state.zenchoGamesRemaining,
+        reason: 'bonus',
+      });
+      return events;
     }
     events.push({ type: 'bonus_standby_start', bonusKind: input.flags.bonusFlag });
     state.resumePhase = state.phase === 'TENJOU' ? 'NORMAL' : state.phase;
@@ -97,30 +113,29 @@ export function transition(state, input, rng) {
     return events;
   }
 
-  // ZENCHO中
+  // ZENCHO中: 前兆消化のみ (結果は突入時に確定済 — pendingResult/pendingBonusKind)
   if (state.phase === 'ZENCHO') {
     state.zenchoGamesRemaining--;
     if (state.zenchoGamesRemaining <= 0) {
-      // 結果抽選（SlotMachine側でrngを渡して判定済 or ここで引く）
-      // 本実装: SlotMachine が drawZenchoResult を呼んで input.zenchoResult を渡す
-      const result = input.zenchoResult || 'fail';
-      events.push({ type: 'zencho_end', reason: result });
+      const result = state.pendingResult;
+      events.push({ type: 'zencho_end', reason: result || 'fail' });
       if (result === 'cz') {
         state.phase = 'CZ';
         state.czGamesRemaining = CZ_GAMES;
         state.stats.czCount++;
         events.push({ type: 'cz_start' });
-      } else if (result === 'bonus_hit') {
-        // 直撃: BONUS_STANDBYへ（種別はRNGで決定、big:reg = 7:3）
-        const kind = rng.nextInt(10) < 7 ? 'big' : 'reg';
+      } else if (result === 'bonus') {
+        const kind = state.pendingBonusKind || 'big';
         events.push({ type: 'bonus_standby_start', bonusKind: kind });
         state.resumePhase = 'NORMAL';
         state.phase = 'BONUS_STANDBY';
         state.standbyBonusKind = kind;
       } else {
-        // 失敗: NORMAL復帰
+        // pendingResult が無い (フェイル前兆: 念のため) — NORMAL 復帰
         state.phase = 'NORMAL';
       }
+      state.pendingResult = null;
+      state.pendingBonusKind = null;
     }
     return events;
   }
@@ -155,13 +170,19 @@ export function transition(state, input, rng) {
       events.push({ type: 'tenjou_start' });
       return events;
     }
-    // ZENCHO突入判定
-    if (input.flags.zenchoTriggered) {
+    // CZ前兆突入判定 (レア役からCZ当選)
+    if (input.flags.czTriggered) {
       state.phase = 'ZENCHO';
-      const range = ZENCHO_GAMES.max - ZENCHO_GAMES.min + 1;
-      state.zenchoGamesRemaining = ZENCHO_GAMES.min + rng.nextInt(range);
+      state.pendingResult = 'cz';
+      state.pendingBonusKind = null;
+      const range = ZENCHO_CZ_GAMES.max - ZENCHO_CZ_GAMES.min + 1;
+      state.zenchoGamesRemaining = ZENCHO_CZ_GAMES.min + rng.nextInt(range);
       state.stats.zenchoCount++;
-      events.push({ type: 'zencho_start', amount: state.zenchoGamesRemaining });
+      events.push({
+        type: 'zencho_start',
+        amount: state.zenchoGamesRemaining,
+        reason: 'cz',
+      });
       return events;
     }
     return events;

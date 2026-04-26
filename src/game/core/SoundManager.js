@@ -89,6 +89,12 @@ class SoundManagerClass {
     this._casinoBgmStack = [];
     // 競合対策: start/stop の都度インクリメント。fadeコールバック内で自分の世代か確認
     this._casinoBgmPendingToken = 0;
+    // 現在再生(予定)のカジノBGMトラック。null は通常BGMに戻っている状態。
+    // bonus_end+art_start のように連続呼び出しが発生したとき、フェード未完了で
+    // audioEl.src が旧トラック(BONUS等)のままでも正しい復帰先をスタックに
+    // 積めるよう、同期的に追跡する。
+    /** @type {string|null} */
+    this._casinoBgmCurrentTrack = null;
 
     // --- プロシージャルBGM (フォールバック) ---
     this.proceduralActive = false;
@@ -412,12 +418,20 @@ class SoundManagerClass {
   startCasinoBGM(kind) {
     const track = CASINO_TRACKS[kind];
     if (!track) return;
-    if (this.audioEl) {
+    // スタックには「このカジノBGMを止めたときに復帰すべき再生状態」を積む。
+    // フェード中に連続呼び出しされても audioEl.src は旧値のままなので、
+    // 既にカジノBGM中なら _casinoBgmCurrentTrack を信頼する。
+    if (this._casinoBgmCurrentTrack !== null) {
+      this._casinoBgmStack.push({ src: this._casinoBgmCurrentTrack, time: 0 });
+    } else if (this.audioEl) {
       this._casinoBgmStack.push({
         src: this.audioEl.src || '',
         time: this.audioEl.currentTime || 0,
       });
+    } else {
+      this._casinoBgmStack.push({ src: '', time: 0 });
     }
+    this._casinoBgmCurrentTrack = track;
     const token = ++this._casinoBgmPendingToken;
     this._fadeOutThen(() => {
       // 世代が進んでいたら (stop等で割り込まれた) キャンセル
@@ -431,6 +445,10 @@ class SoundManagerClass {
   stopCasinoBGM() {
     if (this._casinoBgmStack.length === 0) return;
     const prev = this._casinoBgmStack.pop();
+    // スタックがまだ残っていれば、復帰先は別のカジノBGM (BONUS等)。
+    // 空になったら通常BGMへ戻る。
+    this._casinoBgmCurrentTrack =
+      this._casinoBgmStack.length === 0 ? null : (prev?.src || null);
     const token = ++this._casinoBgmPendingToken;
     this._fadeOutThen(() => {
       if (token !== this._casinoBgmPendingToken) return;

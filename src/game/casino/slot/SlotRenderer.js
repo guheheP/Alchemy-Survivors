@@ -228,14 +228,6 @@ export class SlotRenderer {
       target.strip.style.transition = 'none';
       target.strip.style.transform = `translateY(${normalizedOffset}px)`;
       void target.strip.offsetHeight;
-      // リール筐体にバウンスを発火
-      target.reel.classList.remove('is-stopped-bounce');
-      void target.reel.offsetHeight;
-      target.reel.classList.add('is-stopped-bounce');
-      const bounceTid = setTimeout(() => {
-        if (target.reel.isConnected) target.reel.classList.remove('is-stopped-bounce');
-      }, 240);
-      this._stopTimers.push(bounceTid);
     }, 320);
     this._stopTimers.push(snapTid);
   }

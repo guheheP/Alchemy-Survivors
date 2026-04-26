@@ -2,30 +2,174 @@
  * probabilities.js — 抽選テーブル
  *
  * 分母は 65536（16bit RNG 相当）
- * 6層構成:
- *   1. BONUS_PROB_TABLE: BONUS抽選（BONUS_STANDBY / BONUS 中は走らない）
- *   2. SMALLROLE_PROB_TABLE: 小役抽選（状態別）
- *   3. BLUE7_PROB_TABLE: BONUS中の青7フラグ抽選
- *   4. UPSELL_PROB_TABLE: ART中の上乗せ抽選
- *   5. ZENCHO_TRIGGER_PROB_TABLE: 通常時のレア役からZENCHO突入抽選
- *   6. ZENCHO_RESULT_TABLE: ZENCHO終了時の結果判定（CZ/BONUS/失敗）
- *   7. CZ_SUCCESS_PROB_TABLE: CZ中の成功（ART突入）判定
+ *
+ * 設計方針 (ART機, レア役複合方式):
+ *   レア役 (cherry/watermelon/chance) を「弱/強」に分岐させ、
+ *   強弱別にボーナス/CZ当選を抽選する。
+ *   レア役なし時のごく稀な直撃用に BONUS_DIRECT_PROB_TABLE を残す。
+ *   ZENCHO は当選種別 (BONUS or CZ) で前兆G数を分岐。
+ *
+ * 抽選テーブル:
+ *   1. RARE_STRENGTH_TABLE      : レア役成立時の弱/強判定
+ *   2. RARE_BONUS_TABLE         : レア役強弱別 BONUS当選 (設定差)
+ *   3. RARE_CZ_TABLE            : レア役強弱別 CZ当選 (BONUS外れ時のみ)
+ *   4. BONUS_DIRECT_PROB_TABLE  : レア役なし時の直撃保険 (設定差)
+ *   5. CZ_REROLL_TABLE          : CZ中の役別 ART成功抽選 (ハズレ含む全役)
+ *   6. SMALLROLE_PROB_TABLE     : 小役抽選 (状態別)
+ *   7. BLUE7_PROB_TABLE         : BONUS中の青7フラグ抽選
+ *   8. UPSELL_PROB_TABLE        : ART中の上乗せ抽選
  */
 
 /** 分母 */
 export const PROB_DENOM = 65536;
 
 /**
- * BONUS抽選テーブル
+ * レア役成立時の強弱判定 (分母65536)
+ * 値は「強」になる確率。残りは「弱」。
+ * @type {Record<'cherry'|'watermelon'|'chance', number>}
+ */
+export const RARE_STRENGTH_TABLE = {
+  cherry:     13107,  // 20%  (弱:強 = 8:2)
+  watermelon: 19660,  // 30%  (弱:強 = 7:3)
+  chance:     26214,  // 40%  (弱:強 = 6:4)
+};
+
+/**
+ * レア役強弱別 BONUS 当選テーブル (設定差ココで付ける)
+ * 値は分母65536の {big, reg, none}。
+ *
+ * 設計目標:
+ *   - 弱レア役 → ほぼハズレ (0.2〜5%)
+ *   - 強レア役 → 高確率で当選 (33〜55%)
+ *
+ * @type {Record<string, Record<1|2|3|4|5|6, {big:number, reg:number, none:number}>>}
+ */
+export const RARE_BONUS_TABLE = {
+  cherry_weak: {
+    1: { big:   400, reg:   500, none: 64636 },  //  1.37%
+    2: { big:   430, reg:   530, none: 64576 },
+    3: { big:   460, reg:   560, none: 64516 },
+    4: { big:   500, reg:   600, none: 64436 },  //  1.68%
+    5: { big:   550, reg:   650, none: 64336 },
+    6: { big:   620, reg:   700, none: 64216 },  //  2.01%
+  },
+  cherry_strong: {
+    // BIG偏重 (ART機: BIGからのART突入が出玉源)
+    1: { big: 26000, reg:  7000, none: 32536 },  // 50.4%
+    2: { big: 27500, reg:  6700, none: 31336 },
+    3: { big: 29000, reg:  6400, none: 30136 },
+    4: { big: 30500, reg:  6100, none: 28936 },  // 55.9%
+    5: { big: 32200, reg:  5900, none: 27436 },
+    6: { big: 34100, reg:  5700, none: 25736 },  // 60.7%
+  },
+  watermelon_weak: {
+    1: { big:   850, reg:  1000, none: 63686 },  //  2.82%
+    2: { big:   900, reg:  1050, none: 63586 },
+    3: { big:   950, reg:  1100, none: 63486 },
+    4: { big:  1000, reg:  1150, none: 63386 },  //  3.28%
+    5: { big:  1080, reg:  1230, none: 63226 },
+    6: { big:  1200, reg:  1350, none: 62986 },  //  3.89%
+  },
+  watermelon_strong: {
+    // BIG偏重
+    1: { big: 30500, reg:  7000, none: 28036 },  // 57.2%
+    2: { big: 31900, reg:  6700, none: 26936 },
+    3: { big: 33400, reg:  6400, none: 25736 },
+    4: { big: 34900, reg:  6100, none: 24536 },  // 62.6%
+    5: { big: 36400, reg:  5900, none: 23236 },
+    6: { big: 38300, reg:  5700, none: 21536 },  // 67.2%
+  },
+  chance_weak: {
+    1: { big:  2000, reg:  3500, none: 60036 },  //  8.39%
+    2: { big:  2150, reg:  3700, none: 59686 },
+    3: { big:  2300, reg:  3900, none: 59336 },
+    4: { big:  2450, reg:  4100, none: 58986 },  //  9.99%
+    5: { big:  2700, reg:  4350, none: 58486 },
+    6: { big:  3000, reg:  4600, none: 57936 },  // 11.59%
+  },
+  chance_strong: {
+    // BIG偏重: 強チャンス目はBIG確定級
+    1: { big: 36000, reg:  8000, none: 21536 },  // 67.1%
+    2: { big: 37500, reg:  8000, none: 20036 },
+    3: { big: 39000, reg:  8000, none: 18536 },
+    4: { big: 40500, reg:  8000, none: 17036 },  // 74.0%
+    5: { big: 41500, reg:  8000, none: 16036 },
+    6: { big: 42500, reg:  8000, none: 15036 },  // 77.0% (微調整: 設定6を控えめに)
+  },
+};
+
+/**
+ * レア役強弱別 CZ 当選テーブル (BONUS抽選外れ時のみ抽選)
+ * 値は分母65536のCZ当選確率。設定差なし(全設定共通)。
+ * @type {Record<string, number>}
+ */
+export const RARE_CZ_TABLE = {
+  cherry_weak:        8000,  // 12.2%
+  cherry_strong:     16500,  // 25.2%
+  watermelon_weak:   12000,  // 18.3%
+  watermelon_strong: 19500,  // 29.8%
+  chance_weak:       20000,  // 30.5%
+  chance_strong:     26500,  // 40.4%
+};
+
+/**
+ * レア役なし時の直撃 BONUS (保険) — 設定差付き
+ * NORMAL/ART/TENJOU で抽選。ZENCHO/CZ/BONUS_STANDBY/BONUS では走らない。
  * @type {Record<1|2|3|4|5|6, {big:number, reg:number, none:number}>}
  */
-export const BONUS_PROB_TABLE = {
-  1: { big: 258, reg: 170, none: 65108 },
-  2: { big: 264, reg: 173, none: 65099 },
-  3: { big: 267, reg: 175, none: 65094 },
-  4: { big: 268, reg: 176, none: 65092 },
-  5: { big: 272, reg: 178, none: 65086 },
-  6: { big: 280, reg: 183, none: 65073 },
+export const BONUS_DIRECT_PROB_TABLE = {
+  // NORMAL/ART/TENJOU で抽選。コイン持ち切下げ分の機械割補正用。
+  1: { big: 70, reg: 23, none: 65443 },  // 約 1/704
+  2: { big: 60, reg: 20, none: 65456 },  // 約 1/819
+  3: { big: 50, reg: 15, none: 65471 },  // 約 1/1009
+  4: { big: 50, reg: 14, none: 65472 },  // 約 1/1024
+  5: { big: 38, reg: 11, none: 65487 },  // 約 1/1338
+  6: { big: 30, reg:  8, none: 65498 },  // 約 1/1724
+};
+
+/**
+ * CZ中の役別 ART成功抽選テーブル (ハズレ含む全役)
+ * CZ中は引いた役ごとにART突入抽選を引き、勝てば即CZ_SUCCESS。
+ * 値は分母65536のART成功確率。
+ * @type {Record<1|2|3|4|5|6, Record<string, number>>}
+ */
+export const CZ_REROLL_TABLE = {
+  1: {
+    none: 1500, bell: 2500, replay: 2500, reachme: 8000,
+    cherry_weak: 4000, cherry_strong: 22000,
+    watermelon_weak: 5000, watermelon_strong: 28000,
+    chance_weak: 12000, chance_strong: 38000,
+  },
+  2: {
+    none: 1700, bell: 2800, replay: 2800, reachme: 9000,
+    cherry_weak: 4500, cherry_strong: 24000,
+    watermelon_weak: 5500, watermelon_strong: 30000,
+    chance_weak: 13000, chance_strong: 40000,
+  },
+  3: {
+    none: 2000, bell: 3000, replay: 3000, reachme: 10000,
+    cherry_weak: 5000, cherry_strong: 26000,
+    watermelon_weak: 6000, watermelon_strong: 32000,
+    chance_weak: 14000, chance_strong: 42000,
+  },
+  4: {
+    none: 2300, bell: 3300, replay: 3300, reachme: 11000,
+    cherry_weak: 5500, cherry_strong: 28000,
+    watermelon_weak: 6500, watermelon_strong: 34000,
+    chance_weak: 15000, chance_strong: 44000,
+  },
+  5: {
+    none: 2700, bell: 3800, replay: 3800, reachme: 12500,
+    cherry_weak: 6200, cherry_strong: 31000,
+    watermelon_weak: 7300, watermelon_strong: 37000,
+    chance_weak: 16500, chance_strong: 47000,
+  },
+  6: {
+    none: 3200, bell: 4500, replay: 4500, reachme: 14000,
+    cherry_weak: 7000, cherry_strong: 34000,
+    watermelon_weak: 8200, watermelon_strong: 40000,
+    chance_weak: 18000, chance_strong: 50000,
+  },
 };
 
 /**
@@ -35,12 +179,13 @@ export const BONUS_PROB_TABLE = {
  * @type {Record<1|2|3|4|5|6, {big:{blue7:number,none:number}, reg:{blue7:number,none:number}}>}
  */
 export const BLUE7_PROB_TABLE = {
-  1: { big: { blue7: 440,  none: 65096 }, reg: { blue7: 1050, none: 64486 } },
-  2: { big: { blue7: 480,  none: 65056 }, reg: { blue7: 1120, none: 64416 } },
-  3: { big: { blue7: 420,  none: 65116 }, reg: { blue7: 1000, none: 64536 } },
-  4: { big: { blue7: 720,  none: 64816 }, reg: { blue7: 1620, none: 63916 } },
-  5: { big: { blue7: 1000, none: 64536 }, reg: { blue7: 2250, none: 63286 } },
-  6: { big: { blue7: 1300, none: 64236 }, reg: { blue7: 2850, none: 62686 } },
+  // ART per BONUS 目標: 設定1=25% / 設定6=50% (NORMALコイン持ち厳しめでもBONUS経由のARTで補填)
+  1: { big: { blue7: 1500, none: 64036 }, reg: { blue7: 2800, none: 62736 } },
+  2: { big: { blue7: 1700, none: 63836 }, reg: { blue7: 3100, none: 62436 } },
+  3: { big: { blue7: 1900, none: 63636 }, reg: { blue7: 3400, none: 62136 } },
+  4: { big: { blue7: 2200, none: 63336 }, reg: { blue7: 3800, none: 61736 } },
+  5: { big: { blue7: 2600, none: 62936 }, reg: { blue7: 4200, none: 61336 } },
+  6: { big: { blue7: 3100, none: 62436 }, reg: { blue7: 4800, none: 60736 } },
 };
 
 /**
@@ -70,8 +215,10 @@ export const SMALLROLE_PROB_TABLE = {
       bonus_payout: 65536, none: 0,
     },
     art: {
-      bell: 7500, watermelon: 500, cherry: 400, chance: 400,
-      replay: 26000, reachme: 0, none: 30736,
+      // 実機準拠: ハズレ少なめ・リプレイ多め(吸い込まない)・ベル多め(ナビ純増+12)
+      // 純増 ~+2.0枚/G ターゲット
+      bell: 15500, watermelon: 500, cherry: 400, chance: 400,
+      replay: 30500, reachme: 0, none: 18236,
     },
     tenjou: {
       // 天井中: レア役頻度UPで早期救済（救済効果演出）
@@ -105,53 +252,12 @@ export const UPSELL_PROB_TABLE = {
 };
 
 /**
- * ZENCHO突入抽選テーブル
- * NORMAL中のレア役フラグ成立時に抽選（各フラグが独立テーブル）
- * 目標: 全設定で約 1/200〜1/150G程度のZENCHO発生
- * @type {Record<1|2|3|4|5|6, Record<'watermelon'|'cherry'|'chance', number>>}
- * 値は「レア役成立時にZENCHOへ移行する確率(分母=65536)」
+ * 前兆 (ZENCHO) 持続ゲーム数 — 当選種別で分岐
+ *  BONUS当選: 1〜3G (短い前兆)
+ *  CZ当選   : 10〜15G (じっくり煽り)
  */
-export const ZENCHO_TRIGGER_PROB_TABLE = {
-  1: { watermelon: 4500,  cherry: 3000,  chance: 13000 },
-  2: { watermelon: 4800,  cherry: 3200,  chance: 14000 },
-  3: { watermelon: 5000,  cherry: 3300,  chance: 14500 },
-  4: { watermelon: 5200,  cherry: 3400,  chance: 15000 },
-  5: { watermelon: 5500,  cherry: 3500,  chance: 15500 },
-  6: { watermelon: 5800,  cherry: 3700,  chance: 16500 },
-};
-
-/**
- * ZENCHO結果抽選（ZENCHO消化終了時）
- * 合計 65536
- * @type {Record<1|2|3|4|5|6, {cz:number, bonus_hit:number, fail:number}>}
- */
-export const ZENCHO_RESULT_TABLE = {
-  1: { cz: 28000, bonus_hit: 4000, fail: 33536 }, // CZ 43% / 直撃 6% / 失敗 51%
-  2: { cz: 30000, bonus_hit: 4500, fail: 31036 },
-  3: { cz: 32000, bonus_hit: 5000, fail: 28536 },
-  4: { cz: 34000, bonus_hit: 5500, fail: 26036 }, // CZ 52% / 直撃 8% / 失敗 40%
-  5: { cz: 36000, bonus_hit: 6000, fail: 23536 },
-  6: { cz: 38000, bonus_hit: 6500, fail: 21036 }, // CZ 58% / 直撃 10% / 失敗 32%
-};
-
-/**
- * CZ成功抽選（CZ中のチャンス目フラグ成立時にチェック）
- * チャンス目フラグ成立時、下記確率でART突入が確定
- * @type {Record<1|2|3|4|5|6, number>} 分母65536
- */
-export const CZ_SUCCESS_ON_CHANCE_TABLE = {
-  1: 11000,
-  2: 13000,
-  3: 15000,
-  4: 16000,
-  5: 18000,
-  6: 22000,
-};
-
-/**
- * ZENCHO持続ゲーム数（ランダム範囲）
- */
-export const ZENCHO_GAMES = { min: 5, max: 15 };
+export const ZENCHO_BONUS_GAMES = { min: 1, max: 3 };
+export const ZENCHO_CZ_GAMES    = { min: 10, max: 15 };
 
 /**
  * CZ持続ゲーム数

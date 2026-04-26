@@ -3,16 +3,28 @@
  *
  * 純粋関数に近いロジック層。RNG・確率テーブル・現phaseを入力として、
  * 1ゲーム分のフラグ成立結果を返す。
+ *
+ * 抽選フロー (NORMAL/ART/TENJOU):
+ *   1. 小役抽選 (smallFlag)
+ *   2. レア役なら RARE_STRENGTH_TABLE で弱/強を決定
+ *   3. レア役強弱別 RARE_BONUS_TABLE で BONUS抽選 (設定差ココ)
+ *   4. BONUS外れで NORMAL/TENJOU なら RARE_CZ_TABLE で CZ抽選
+ *   5. レア役なし時のみ BONUS_DIRECT_PROB_TABLE で直撃保険抽選
+ *   6. TENJOU中: レア役なら強制BONUS当選
+ *
+ * 抽選フロー (CZ):
+ *   - 引いた役 (ハズレ含む全役) を CZ_REROLL_TABLE で照合し ART成功抽選
  */
 
 import {
-  BONUS_PROB_TABLE,
+  RARE_STRENGTH_TABLE,
+  RARE_BONUS_TABLE,
+  RARE_CZ_TABLE,
+  BONUS_DIRECT_PROB_TABLE,
+  CZ_REROLL_TABLE,
   SMALLROLE_PROB_TABLE,
   BLUE7_PROB_TABLE,
   UPSELL_PROB_TABLE,
-  ZENCHO_TRIGGER_PROB_TABLE,
-  ZENCHO_RESULT_TABLE,
-  CZ_SUCCESS_ON_CHANCE_TABLE,
   PROB_DENOM,
 } from '../data/probabilities.js';
 import { drawFromDistribution } from '../util/rng.js';
@@ -21,6 +33,7 @@ import { drawFromDistribution } from '../util/rng.js';
  * @typedef {'big'|'reg'|'none'} BonusFlag
  * @typedef {'bell'|'watermelon'|'cherry'|'chance'|'replay'|'reachme'|'bonus_payout'|'none'} SmallFlag
  * @typedef {'blue7'|'none'} Blue7Flag
+ * @typedef {'weak'|'strong'|null} RareStrength
  */
 
 /**
@@ -29,9 +42,10 @@ import { drawFromDistribution } from '../util/rng.js';
  * @property {SmallFlag} smallFlag
  * @property {Blue7Flag} blue7Flag
  * @property {BonusFlag} standbyKind
- * @property {boolean} zenchoTriggered    - NORMAL中のレア役からZENCHO突入したか
- * @property {boolean} czSuccess          - CZ中にART成功したか
- * @property {boolean} tenjouForceBonus   - TENJOU中にレア役で強制BONUS成立したか（種別はbonusFlagで返す）
+ * @property {RareStrength} rareStrength    - レア役の強弱 (レア役以外は null)
+ * @property {boolean} czTriggered          - レア役からCZ前兆へ移行したか
+ * @property {boolean} czSuccess            - CZ中にART成功したか
+ * @property {boolean} tenjouForceBonus     - TENJOU中にレア役で強制BONUS成立したか
  */
 
 /**
@@ -49,14 +63,20 @@ export function drawFlags(phase, standbyKind, bonusKind, setting, rng) {
   /** @type {Blue7Flag} */
   let blue7Flag = 'none';
 
-  // (A) BONUS抽選: BONUS_STANDBY / BONUS 中はスキップ
-  if (phase !== 'BONUS_STANDBY' && phase !== 'BONUS') {
-    const bonusTable = BONUS_PROB_TABLE[setting];
-    const result = drawFromDistribution(bonusTable, PROB_DENOM, rng);
-    if (result !== 'none') bonusFlag = /** @type {BonusFlag} */ (result);
+  // (A) 小役抽選
+  const phaseKey = phaseToTableKey(phase);
+  const smallTable = SMALLROLE_PROB_TABLE[setting][phaseKey];
+  const smallFlag = /** @type {SmallFlag} */ (drawFromDistribution(smallTable, PROB_DENOM, rng));
+
+  // (B) レア役の強弱判定
+  /** @type {RareStrength} */
+  let rareStrength = null;
+  if (smallFlag === 'cherry' || smallFlag === 'watermelon' || smallFlag === 'chance') {
+    const strongThreshold = RARE_STRENGTH_TABLE[smallFlag] || 0;
+    rareStrength = rng.nextInt(PROB_DENOM) < strongThreshold ? 'strong' : 'weak';
   }
 
-  // (B) BONUS中のみ: 青7チャレンジ抽選
+  // (C) BONUS中の青7チャレンジ
   if (phase === 'BONUS' && bonusKind) {
     const blue7Table = BLUE7_PROB_TABLE[setting][bonusKind];
     if (blue7Table) {
@@ -65,34 +85,60 @@ export function drawFlags(phase, standbyKind, bonusKind, setting, rng) {
     }
   }
 
-  // (C) 小役抽選
-  const phaseKey = phaseToTableKey(phase);
-  const smallTable = SMALLROLE_PROB_TABLE[setting][phaseKey];
-  const smallFlag = /** @type {SmallFlag} */ (drawFromDistribution(smallTable, PROB_DENOM, rng));
-
-  // (D) NORMAL中のレア役からZENCHO突入抽選
-  let zenchoTriggered = false;
-  if (phase === 'NORMAL' && (smallFlag === 'watermelon' || smallFlag === 'cherry' || smallFlag === 'chance')) {
-    const trigger = ZENCHO_TRIGGER_PROB_TABLE[setting][smallFlag] || 0;
-    if (rng.nextInt(PROB_DENOM) < trigger) zenchoTriggered = true;
+  // BONUS_STANDBY/BONUS 中は当選系抽選なし
+  if (phase === 'BONUS_STANDBY' || phase === 'BONUS') {
+    return {
+      bonusFlag,
+      smallFlag,
+      blue7Flag,
+      standbyKind: standbyKind || 'none',
+      rareStrength,
+      czTriggered: false,
+      czSuccess: false,
+      tenjouForceBonus: false,
+    };
   }
 
-  // (E) CZ中: チャンス目フラグ成立時にART成功判定
-  let czSuccess = false;
-  if (phase === 'CZ' && smallFlag === 'chance') {
-    const threshold = CZ_SUCCESS_ON_CHANCE_TABLE[setting] || 0;
-    if (rng.nextInt(PROB_DENOM) < threshold) czSuccess = true;
-  }
-
-  // (F) TENJOU中: レア役で強制BONUS当選
-  let tenjouForceBonus = false;
-  if (phase === 'TENJOU' && bonusFlag === 'none') {
-    // レア役（watermelon/cherry/chance）で強制BONUS（BIGを優先）
-    if (smallFlag === 'watermelon' || smallFlag === 'cherry' || smallFlag === 'chance') {
-      // BIG:REG = 7:3 で強制当選
-      bonusFlag = rng.nextInt(10) < 7 ? 'big' : 'reg';
-      tenjouForceBonus = true;
+  // (D) レア役強弱別 BONUS 抽選
+  let czTriggered = false;
+  if (rareStrength !== null) {
+    const key = `${smallFlag}_${rareStrength}`;
+    const bonusTable = RARE_BONUS_TABLE[key]?.[setting];
+    if (bonusTable) {
+      const result = drawFromDistribution(bonusTable, PROB_DENOM, rng);
+      if (result !== 'none') bonusFlag = /** @type {BonusFlag} */ (result);
     }
+
+    // (E) BONUS外れ かつ NORMAL/TENJOU で CZ抽選 (ART中は除外)
+    if (bonusFlag === 'none' && (phase === 'NORMAL' || phase === 'TENJOU')) {
+      const czProb = RARE_CZ_TABLE[key] || 0;
+      if (rng.nextInt(PROB_DENOM) < czProb) czTriggered = true;
+    }
+  } else if (phase === 'NORMAL' || phase === 'ART' || phase === 'TENJOU') {
+    // (F) レア役なし: 直撃保険抽選
+    const directTable = BONUS_DIRECT_PROB_TABLE[setting];
+    if (directTable) {
+      const result = drawFromDistribution(directTable, PROB_DENOM, rng);
+      if (result !== 'none') bonusFlag = /** @type {BonusFlag} */ (result);
+    }
+  }
+
+  // (G) CZ中: 引いた役で ART成功抽選 (ハズレ含む全役)
+  let czSuccess = false;
+  if (phase === 'CZ') {
+    const rerollTable = CZ_REROLL_TABLE[setting];
+    if (rerollTable) {
+      const key = rareStrength !== null ? `${smallFlag}_${rareStrength}` : smallFlag;
+      const prob = rerollTable[key] ?? rerollTable.none ?? 0;
+      if (rng.nextInt(PROB_DENOM) < prob) czSuccess = true;
+    }
+  }
+
+  // (H) TENJOU中: レア役で強制BONUS当選 (BONUS抽選で外れた場合の救済)
+  let tenjouForceBonus = false;
+  if (phase === 'TENJOU' && bonusFlag === 'none' && rareStrength !== null) {
+    bonusFlag = rng.nextInt(10) < 7 ? 'big' : 'reg';
+    tenjouForceBonus = true;
   }
 
   return {
@@ -100,21 +146,11 @@ export function drawFlags(phase, standbyKind, bonusKind, setting, rng) {
     smallFlag,
     blue7Flag,
     standbyKind: bonusFlag !== 'none' ? bonusFlag : (standbyKind || 'none'),
-    zenchoTriggered,
+    rareStrength,
+    czTriggered,
     czSuccess,
     tenjouForceBonus,
   };
-}
-
-/**
- * ZENCHO結果抽選（ZENCHO終了ゲーム時に呼ばれる）
- * @param {1|2|3|4|5|6} setting
- * @param {import('../util/rng.js').Rng} rng
- * @returns {'cz'|'bonus_hit'|'fail'}
- */
-export function drawZenchoResult(setting, rng) {
-  const table = ZENCHO_RESULT_TABLE[setting];
-  return /** @type {'cz'|'bonus_hit'|'fail'} */ (drawFromDistribution(table, PROB_DENOM, rng));
 }
 
 /**

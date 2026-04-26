@@ -10,7 +10,7 @@
  *   6. 状態遷移（StateMachine.transition）
  */
 
-import { drawFlags, drawUpsell, drawZenchoResult } from './SlotEngine.js';
+import { drawFlags, drawUpsell } from './SlotEngine.js';
 import { computeStopFrame } from './ReelController.js';
 import { transition } from './StateMachine.js';
 import { PAYOUTS, ART_PAYOUTS, BONUS_PAYOUT_PER_GAME } from '../data/payouts.js';
@@ -107,19 +107,8 @@ export class SlotMachine {
       }
     }
 
-    // ZENCHO終了時の結果抽選（transitionに渡す）
-    // BONUS 内部成立が同時発生している場合、transition() は BONUS_STANDBY へ早期遷移して
-    // ZENCHO 結果を処理しない。抽選しても引き捨てになるため、抽選自体をスキップする。
-    // （プレイヤーは BONUS に入るので、ZENCHO の cz/fail 結果を失っても直撃 BONUS で救済される）
-    let zenchoResult = null;
-    if (this.state.phase === 'ZENCHO' &&
-        this.state.zenchoGamesRemaining <= 1 &&
-        flags.bonusFlag === 'none') {
-      zenchoResult = drawZenchoResult(setting, this.rng);
-    }
-
-    // 状態遷移
-    const events = transition(this.state, { flags, bonusSymbolsAligned, blue7Aligned, zenchoResult }, this.rng);
+    // 状態遷移 — ZENCHO の結果は突入時に確定済 (state.pendingResult)
+    const events = transition(this.state, { flags, bonusSymbolsAligned, blue7Aligned }, this.rng);
 
     return {
       ok: true,

@@ -87,13 +87,19 @@ export const SlotSFX = {
   // 小役
   bell()         { safeCall(() => SoundManager.playMaterialPickup?.()); },
   watermelon()   { safeCall(() => SoundManager.playMaterialPickupRare?.()); },
+  watermelonStrong() { safeCall(() => SoundManager.playSlotChanceMoku?.()); },
   cherry()       { safeCall(() => SoundManager.playMaterialPickup?.()); },
+  cherryStrong() { safeCall(() => SoundManager.playSlotChanceMoku?.()); },
+  chance()       { safeCall(() => SoundManager.playSlotChanceMoku?.()); },
+  chanceStrong() { safeCall(() => SoundManager.playSlotFreeze?.()); },
   replay()       { safeCall(() => SoundManager.playTabSwitch?.()); },
 
   // ZENCHO/CZ
-  zenchoStart()  { safeCall(() => SoundManager.playPuzzleMatch?.(2)); },
-  zenchoEndCz()  { safeCall(() => SoundManager.playEventChime?.()); },
-  zenchoEndFail(){ safeCall(() => SoundManager.playError?.()); },
+  zenchoStart()       { safeCall(() => SoundManager.playPuzzleMatch?.(2)); },
+  zenchoStartBonus()  { safeCall(() => SoundManager.playSlotBonusInternal?.('big')); },
+  zenchoEndCz()       { safeCall(() => SoundManager.playEventChime?.()); },
+  zenchoEndBonus()    { safeCall(() => SoundManager.playFanfare?.()); },
+  zenchoEndFail()     { safeCall(() => SoundManager.playError?.()); },
   czStart()      { safeCall(() => SoundManager.playEventChime?.()); },
   czSuccess()    { safeCall(() => SoundManager.playBattleVictory?.()); },
   czFail()       { safeCall(() => SoundManager.playDoorBell?.()); },

@@ -4,7 +4,7 @@
 
 /** 小役・ボーナスの払い出し定義（掛け枚数=3に対するトータル枚数） */
 export const PAYOUTS = {
-  BELL:       12,
+  BELL:       9,    // 共通ベル: 9枚 (通常時コイン持ち 50枚で約32G)
   WATERMELON: 10,
   CHERRY:     2,
   REPLAY:     3,
@@ -14,22 +14,22 @@ export const PAYOUTS = {
 
 /** ART中の払い出し（一部上書き、ナビによる純増を表現） */
 export const ART_PAYOUTS = {
-  BELL:       14,   // ナビベル: 12→14
+  BELL:       15,   // ナビベル: 12→15 (上限15、純増+12、ART純増の主因)
   WATERMELON: 12,
   CHERRY:     2,
-  REPLAY:     7,    // ナビリプレイ: 3→7（純増+4）
+  REPLAY:     3,    // 実機準拠: リプレイは BET相当を返すのみ (純増0)
 };
 
 /** BONUS消化中の1ゲームあたり強制払い出し */
 export const BONUS_PAYOUT_PER_GAME = {
-  BIG: 8,
-  REG: 8,
+  BIG: 15,
+  REG: 10,
 };
 
 /** BONUS継続ゲーム数 */
 export const BONUS_GAME_COUNT = {
-  BIG: 30,
-  REG: 10,
+  BIG: 20,
+  REG: 8,
 };
 
 /** ART関連の定数 */

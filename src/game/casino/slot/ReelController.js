@@ -194,8 +194,7 @@ export function computeStopFrame(flags, phase, standbyKind, rng) {
  * @param {import('../util/rng.js').Rng} rng
  */
 function computeNormalStopFrame(flags, phase, rng) {
-  const isBonusFlag = flags.bonusFlag && flags.bonusFlag !== 'none';
-  const isChanceContext = phase === 'CZ' || phase === 'ZENCHO';
+  const isStrong = flags.rareStrength === 'strong';
 
   switch (flags.smallFlag) {
     case 'replay':
@@ -206,17 +205,18 @@ function computeNormalStopFrame(flags, phase, rng) {
       return patternToStopResult(rng.pick(list));
     }
     case 'watermelon': {
-      // 上段はボーナス/CZ示唆。bonusFlag/CZ/ZENCHO時は上段確率UP。
-      const topBias = (isBonusFlag || isChanceContext) ? 0.6 : 0.2;
-      const list = rng.next() < topBias ? STOP_PATTERNS.watermelon_top : STOP_PATTERNS.watermelon_diag;
+      // 強スイカ = 上段並行揃い、弱スイカ = 斜めスイカ揃い
+      const list = isStrong ? STOP_PATTERNS.watermelon_top : STOP_PATTERNS.watermelon_diag;
       return patternToStopResult(rng.pick(list));
     }
     case 'cherry': {
-      const list = isBonusFlag ? STOP_PATTERNS.cherry_double : STOP_PATTERNS.cherry;
+      // 強チェリー = 斜めチェリー揃い (角チェリー)、弱チェリー = 左下チェリー
+      const list = isStrong ? STOP_PATTERNS.cherry_double : STOP_PATTERNS.cherry;
       return patternToStopResult(rng.pick(list));
     }
     case 'chance': {
-      const list = rng.nextInt(2) === 0 ? STOP_PATTERNS.chance_a : STOP_PATTERNS.chance_b;
+      // 強チャンス目 = 7-BELL-青7 (B型)、弱チャンス目 = スイカ-リプ-チェ (A型)
+      const list = isStrong ? STOP_PATTERNS.chance_b : STOP_PATTERNS.chance_a;
       return patternToStopResult(rng.pick(list));
     }
     case 'reachme':

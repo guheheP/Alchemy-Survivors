@@ -76,6 +76,10 @@ export class SlotScreen {
     this._payoutRollRaf = 0;
     /** 筐体シェイクのクリアタイマー */
     this._shakeTimer = null;
+    /** ZENCHO 突入時の総G数 (温度上昇正規化用) */
+    this._zenchoTotal = 0;
+    /** CZ前兆の演出ランク (1=静か / 2=中 / 3=激アツ) — zencho_startで抽選 */
+    this._zenchoRank = 1;
 
     // 予告抽選用RNG（内部抽選とは別系列）
     this._yokokuRng = new Rng(Date.now() & 0xffffffff);
@@ -343,6 +347,8 @@ export class SlotScreen {
     // ゲーム間クールダウンチェック
     const remaining = this._cooldownRemaining();
     if (remaining > 0) return; // レバー無効、何もしない
+    // メダル不足: そもそも回転開始しない
+    if (this.manager.getMedals() < BET_PER_GAME) return;
     // 再生中の演出があればキャンセル
     if (this.pixelDisplay?.isBusy()) {
       this.pixelDisplay.cancelEvents();
@@ -412,6 +418,12 @@ export class SlotScreen {
    * @param {() => void} [done] 全リール停止＋finalizeまで
    */
   _spinStart(done) {
+    // メダル不足時はそもそも回転開始しない (上位 _onSpinClick / _autoLoop でも事前チェック済み)
+    if (this.manager.getMedals() < BET_PER_GAME) {
+      if (done) done();
+      return;
+    }
+
     this.spinning = true;
     this._stoppedReels = [false, false, false];
     this._pressOrderIndex = 0;
@@ -420,12 +432,11 @@ export class SlotScreen {
     this._lastSpinStartAt = performance.now();
     if (this._cooldownTimer) { clearTimeout(this._cooldownTimer); this._cooldownTimer = null; }
     this._setLeverEnabled(false);
-    this.renderer.startSpinAll();
-    this._updateGainDisplay(null);
-    SlotSFX.lever();
 
+    // BET消費を先に行い、結果を確定してからリール回転を開始
     const result = this.machine.spin();
     if (!result.ok) {
+      // 上記のメダルチェックを通った後はここに来ないが、安全網として
       this.spinning = false;
       this._setLeverEnabled(true);
       if (done) done();
@@ -433,6 +444,15 @@ export class SlotScreen {
     }
     this._pendingResult = result;
     this._pendingDone = done;
+
+    // メダル表示を即時更新 (BET差し引き反映 — リール回転開始前に見える)
+    const medalsEl = this.el.querySelector('.casino-medals-value');
+    if (medalsEl) medalsEl.textContent = this._pad(this.manager.getMedals(), 5);
+    this._updateGainDisplay(null);
+
+    // リール回転開始 + レバーSFX
+    this.renderer.startSpinAll();
+    SlotSFX.lever();
 
     // 予告抽選 + 発火
     const yokoku = decideYokoku(result, this._yokokuRng);
@@ -682,11 +702,29 @@ export class SlotScreen {
       }, 350);
     }
 
+    const isStrong = result.flags?.rareStrength === 'strong';
+    const isStrongChance = isStrong && result.flags?.smallFlag === 'chance';
     if (result.flags?.smallFlag === 'bell' && result.payout > 0) SlotSFX.bell();
-    else if (result.flags?.smallFlag === 'watermelon' && result.payout > 0) SlotSFX.watermelon();
-    else if (result.flags?.smallFlag === 'cherry' && result.payout > 0) SlotSFX.cherry();
+    else if (result.flags?.smallFlag === 'watermelon' && result.payout > 0) {
+      if (isStrong) SlotSFX.watermelonStrong(); else SlotSFX.watermelon();
+    }
+    else if (result.flags?.smallFlag === 'cherry' && result.payout > 0) {
+      if (isStrong) SlotSFX.cherryStrong(); else SlotSFX.cherry();
+    }
     else if (result.flags?.smallFlag === 'replay') SlotSFX.replay();
-    else if (result.flags?.smallFlag === 'chance' && result.payout === 0) SlotSFX.chanceMoku();
+    else if (result.flags?.smallFlag === 'chance') {
+      if (isStrong) SlotSFX.chanceStrong(); else SlotSFX.chanceMoku();
+    }
+
+    // 強レア役の瞬間演出: 強チェリー/強スイカは控えめのフラッシュ、強チャンス目はプレミア級
+    if (isStrong) {
+      if (isStrongChance) {
+        this._triggerScreenFlash('premier');
+        this._shakeCabinet();
+      } else {
+        this._triggerScreenFlash('rare-strong');
+      }
+    }
 
     // ナビ取りこぼし（SFXのみ、トースト表示はしない）
     if (result.navMissed) {
@@ -696,6 +734,9 @@ export class SlotScreen {
     // BONUS中: 毎ゲームの強制払い出し
     if (result.phase === 'BONUS' && result.payout > 0) {
       SlotSFX.bonusPayout();
+      if (this.pixelDisplay) {
+        this.pixelDisplay.triggerEvent('bonus_payout', { amount: result.payout });
+      }
     }
 
     // BIG中: 旧「ビタ押しチャンス」の代替として一定確率で演出領域フラッシュ
@@ -708,10 +749,14 @@ export class SlotScreen {
     // 演出領域に区間別ステータスを反映
     if (this.pixelDisplay) {
       this.pixelDisplay.setStats({
-        bonusRemaining: this.machine.state.bonusGamesRemaining,
-        bonusGain:      this.machine.state.bonusGainTotal,
-        artRemaining:   this.machine.state.artGamesRemaining,
-        artGain:        this.machine.state.artGainTotal,
+        bonusRemaining:  this.machine.state.bonusGamesRemaining,
+        bonusGain:       this.machine.state.bonusGainTotal,
+        artRemaining:    this.machine.state.artGamesRemaining,
+        artGain:         this.machine.state.artGainTotal,
+        zenchoRemaining: this.machine.state.zenchoGamesRemaining,
+        zenchoTotal:     this._zenchoTotal,
+        pendingResult:   this.machine.state.pendingResult,
+        zenchoRank:      this._zenchoRank,
       });
     }
 
@@ -778,11 +823,23 @@ export class SlotScreen {
           SlotSFX.artEnd();
           this._onArtExit();
         } else if (ev.type === 'zencho_start') {
-          SlotSFX.zenchoStart();
+          if (ev.reason === 'bonus') SlotSFX.zenchoStartBonus();
+          else SlotSFX.zenchoStart();
+          // 前兆温度上昇の正規化用に総G数を保存
+          this._zenchoTotal = ev.amount || 1;
+          // CZ前兆の演出ランクを抽選 (30:40:30 = 静か:中:激アツ)
+          if (ev.reason === 'cz') {
+            const r = Math.random();
+            this._zenchoRank = r < 0.30 ? 1 : r < 0.70 ? 2 : 3;
+          } else {
+            this._zenchoRank = 1;
+          }
         } else if (ev.type === 'zencho_end') {
           if (ev.reason === 'cz') SlotSFX.zenchoEndCz();
-          else if (ev.reason === 'bonus_hit') SlotSFX.bonusInternal(ev.bonusKind || 'big');
+          else if (ev.reason === 'bonus') SlotSFX.zenchoEndBonus();
           else SlotSFX.zenchoEndFail();
+          this._zenchoTotal = 0;
+          this._zenchoRank = 1;
         } else if (ev.type === 'cz_start') {
           SlotSFX.czStart();
           this._triggerScreenFlash('cz');

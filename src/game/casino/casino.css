@@ -995,18 +995,6 @@
   }
 }
 
-/* リール停止時のショートバウンス（枠からはみ出ない程度の微小振幅 + 縦つぶし） */
-.casino-slot-reel.is-stopped-bounce {
-  animation: casino-reel-bounce 0.2s ease-out;
-  transform-origin: 50% 50%;
-}
-
-@keyframes casino-reel-bounce {
-  0%   { transform: translateY(0) scaleY(1); }
-  40%  { transform: translateY(1px) scaleY(0.985); }
-  100% { transform: translateY(0) scaleY(1); }
-}
-
 /* ===== 下部ステータスパネル ===== */
 .casino-slot-status-panel {
   position: relative;
@@ -1650,6 +1638,11 @@
 
 .casino-screen-flash-cz {
   background: radial-gradient(circle at center, rgba(96, 224, 192, 0.5), transparent 70%);
+}
+
+/* 強レア役引いた瞬間の控えめなフラッシュ (チェリー/スイカ用) */
+.casino-screen-flash-rare-strong {
+  background: radial-gradient(circle at center, rgba(255, 200, 80, 0.35), transparent 65%);
 }
 
 /* レイバースト（集中線/放射光）: bonus-start/premier で発動 */

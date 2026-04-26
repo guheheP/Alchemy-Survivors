@@ -31,6 +31,7 @@ const EVENT_DURATION = {
   art_add:               1000,
   upsell:                 800,
   bonus_flash:            500,
+  bonus_payout:           500,
 };
 
 export class PixelArtDisplay {
@@ -60,6 +61,14 @@ export class PixelArtDisplay {
       bonusGain: 0,
       artRemaining: 0,
       artGain: 0,
+      /** 前兆残りG数 (ZENCHO中のみ) */
+      zenchoRemaining: 0,
+      /** 前兆突入時の総G数 (温度上昇の0..1正規化用) */
+      zenchoTotal: 0,
+      /** 前兆の本命当選種別 — 'bonus' | 'cz' | null (ガセ) */
+      pendingResult: null,
+      /** CZ前兆の演出ランク (1=静か / 2=中 / 3=激アツ)。突入時に決定。 */
+      zenchoRank: 1,
     };
 
     /** @type {Array<{type:string, opts:object, startFrame:number, duration:number, resolve?:Function}>} */
@@ -100,7 +109,8 @@ export class PixelArtDisplay {
 
   /**
    * 演出領域に表示するステータスを更新
-   * @param {{ bonusRemaining?:number, bonusGain?:number, artRemaining?:number, artGain?:number }} stats
+   * @param {{ bonusRemaining?:number, bonusGain?:number, artRemaining?:number, artGain?:number,
+   *          zenchoRemaining?:number, zenchoTotal?:number, pendingResult?:'bonus'|'cz'|null }} stats
    */
   setStats(stats) {
     if (!stats) return;
@@ -108,6 +118,10 @@ export class PixelArtDisplay {
     if (typeof stats.bonusGain === 'number')      this.stats.bonusGain = stats.bonusGain;
     if (typeof stats.artRemaining === 'number')   this.stats.artRemaining = stats.artRemaining;
     if (typeof stats.artGain === 'number')        this.stats.artGain = stats.artGain;
+    if (typeof stats.zenchoRemaining === 'number') this.stats.zenchoRemaining = stats.zenchoRemaining;
+    if (typeof stats.zenchoTotal === 'number')     this.stats.zenchoTotal = stats.zenchoTotal;
+    if (stats.pendingResult !== undefined)         this.stats.pendingResult = stats.pendingResult;
+    if (typeof stats.zenchoRank === 'number')      this.stats.zenchoRank = stats.zenchoRank;
   }
 
   /**
@@ -328,15 +342,81 @@ export class PixelArtDisplay {
 
   _drawZencho() {
     const t = this.frame;
-    this._drawAlchemist(40, 34 - ((t >> 1) % 2), 'scared', t);
+    const remaining = this.stats.zenchoRemaining || 1;
+    const total = this.stats.zenchoTotal || 1;
+    const pending = this.stats.pendingResult; // 'bonus' | 'cz' | null
+    const rank = this.stats.zenchoRank || 1;
+    const progress = 1 - remaining / Math.max(total, 1);  // 0..1
+
+    // intensity 設計:
+    //   BONUS前兆 : 演出絡めず固定 (-1=演出計算をスキップ)
+    //   CZ前兆    : ランクで進行カーブが分岐 — 当選していても静か止まりがあり得る
+    //   ガセ      : 上限0.5、熱い演出(0.7+)には届かない
+    let intensity;
+    if (pending === 'bonus') {
+      // intensity演出はオフ。固定の弱フェイク演出のみ。
+      intensity = -1;
+    } else if (pending === 'cz') {
+      if (rank === 1)      intensity = Math.min(0.30, progress * 0.35);
+      else if (rank === 2) intensity = Math.min(0.55, progress * 0.65);
+      else                 intensity = progress * 0.95 + 0.05;
+    } else {
+      // ガセ: ある程度上がるが0.5止まり
+      intensity = Math.min(0.50, progress * 0.6);
+    }
+
+    // 錬金術師の揺れ — intensity > 0.6 でのみ (CZランク3終盤限定)
+    const shake = intensity > 0.6 ? ((t % 2 === 0) ? 1 : -1) : 0;
+    this._drawAlchemist(40 + shake, 34 - ((t >> 1) % 2), 'scared', t);
     this._drawFlask(100, 40, t);
-    // 「!?」点滅
+
+    // 「!?」点滅 — 熱い時のみ赤・黄フラッシュ
     const alt = (t % 4) < 2;
-    this._drawText('!?', 46, 14, alt ? '#ffe040' : '#ff8010', 14);
-    // キラキラ
-    if (t % 3 === 0) this._spawnSparkleBurst(50 + (t % 60), 30 + ((t * 3) % 30), 2, '#ffc040');
-    this._drawText('ZENCHO', 130, 22, '#ff8040', 14);
-    this._drawText('...', 160, 46, '#c06030', 12);
+    const exclColor = intensity > 0.7
+      ? (alt ? '#ff4040' : '#ffe000')
+      : (alt ? '#ffe040' : '#ff8010');
+    this._drawText('!?', 46, 14, exclColor, 14);
+
+    // キラキラ — BONUS前兆は固定3、それ以外はintensityで頻度
+    let sparkleEvery;
+    if (pending === 'bonus')         sparkleEvery = 3;
+    else if (intensity > 0.7)        sparkleEvery = 2;
+    else if (intensity > 0.3)        sparkleEvery = 3;
+    else                             sparkleEvery = 5;
+    if (t % sparkleEvery === 0) {
+      this._spawnSparkleBurst(50 + (t % 60), 30 + ((t * 3) % 30), 2, '#ffc040');
+    }
+    if (t % (sparkleEvery + 1) === 0) {
+      this._spawnSparkleBurst(140 + ((t * 5) % 50), 35 + ((t * 7) % 30), 2, '#ffd060');
+    }
+
+    // BIG7チラ見せ — 冒頭3Gは BONUS煽り風(高頻度)、それ以降は当選種別ごとに分岐
+    const elapsedG = Math.max(0, total - remaining);
+    const isOpeningBonusFake = elapsedG < 3;  // 冒頭3GはBONUSっぽく煽る
+    let flashCycle, flashSpan;
+    if (pending === 'bonus' || isOpeningBonusFake) {
+      flashCycle = 12; flashSpan = 5;        // 高頻度 (BONUS風)
+    } else if (pending === 'cz') {
+      flashCycle = 32; flashSpan = 3;        // 中頻度
+    } else {
+      flashCycle = 48; flashSpan = 2;        // 低頻度
+    }
+    if ((t % flashCycle) < flashSpan) {
+      const big7Color = (t % 2 === 0) ? 'red' : 'blue';
+      this._drawBig7(190, 8, big7Color, t);
+    }
+
+    // 端フラッシュ (intensity > 0.85) — CZランク3終盤のみ
+    if (intensity > 0.85 && (t % 3) === 0) {
+      this.ctx.fillStyle = 'rgba(255,200,80,0.14)';
+      this.ctx.fillRect(0, 0, PIXEL_W, 4);
+      this.ctx.fillRect(0, PIXEL_H - 4, PIXEL_W, 4);
+    }
+
+    // 火の粉 (intensity > 0.7) — CZランク3終盤限定
+    if (intensity > 0.7 && t % 4 === 0) {
+      this._spawnParticle(110 + ((t * 11) % 20), 50, (Math.random() - 0.5) * 0.5, -1.2, 16, '#ff6040', 'spark');
+    }
   }
 
   _drawCz() {
@@ -347,8 +427,8 @@ export class PixelArtDisplay {
     const flash = (t % 6) < 3;
     this._drawText('CHANCE', 124, 12, flash ? '#80ffd0' : '#40c0a0', 14);
     this._drawText('ZONE', 140, 30, flash ? '#80ffd0' : '#40c0a0', 14);
-    this._drawText('Chance目で', 124, 52, '#c0ffe0', 10);
-    this._drawText('ART確定!', 132, 66, '#60f0a0', 10);
+    this._drawText('全役で', 134, 52, '#c0ffe0', 10);
+    this._drawText('突破抽選!', 130, 66, '#60f0a0', 10);
     // ルーンが浮遊
     if (t % 4 === 0) this._spawnSparkleBurst(60, 42, 3, '#80ffd0');
   }
@@ -459,6 +539,31 @@ export class PixelArtDisplay {
       case 'art_add':               this._drawArtAdd(ev, progress); break;
       case 'upsell':                this._drawUpsell(ev, progress); break;
       case 'bonus_flash':           this._drawBonusFlash(ev, progress); break;
+      case 'bonus_payout':          this._drawBonusPayout(ev, progress); break;
+    }
+  }
+
+  /** BONUS中の1Gごと払い出し — +N枚 ポップアップ + コインバースト */
+  _drawBonusPayout(ev, progress) {
+    const amount = ev.opts?.amount || 0;
+    if (amount <= 0) return;
+    // 上方向にバウンドしながらスケール変化
+    const bounce = Math.sin(progress * Math.PI);
+    const y = PIXEL_H / 2 - 6 - bounce * 12;
+    const fade = progress < 0.7 ? 1 : (1 - progress) / 0.3;
+    const color = fade > 0.6 ? '#ffe040' : '#ff8020';
+    this.ctx.globalAlpha = Math.max(0, fade);
+    this._drawText(`+${amount}`, PIXEL_W / 2 - 16, y, color, 18);
+    this.ctx.globalAlpha = 1;
+    // コイン散らし
+    if (this.frame % 2 === 0 && progress < 0.6) {
+      this._spawnParticle(
+        PIXEL_W / 2 + (Math.random() - 0.5) * 30,
+        y + 8,
+        (Math.random() - 0.5) * 1.4,
+        -1.5 - Math.random(),
+        14, '#ffd040', 'coin',
+      );
     }
   }
 

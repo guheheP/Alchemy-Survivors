@@ -29,12 +29,18 @@ const TRIGGER_TABLE = {
   big_hit:        { wk: 0,   st: 50,  cn: 400, ci: 350, prem: 100 }, // 計 900 (発生90%)
   // REG 成立時
   reg_hit:        { wk: 0,   st: 100, cn: 400, ci: 250, prem: 50  }, // 計 800 (発生80%)
-  // スイカ成立時
-  watermelon_hit: { wk: 200, st: 300, cn: 150, ci: 50,  prem: 0   }, // 計 700
-  // チェリー成立時
-  cherry_hit:    { wk: 250, st: 150, cn: 100, ci: 0,   prem: 0   }, // 計 500
-  // チャンス目成立時
-  chance_hit:    { wk: 200, st: 300, cn: 300, ci: 100, prem: 0   }, // 計 900
+  // 弱スイカ
+  watermelon_weak_hit:   { wk: 350, st: 200, cn: 100, ci: 30,  prem: 0   }, // 計 680
+  // 強スイカ: 上段並行揃い — チャンス〜激アツ
+  watermelon_strong_hit: { wk: 0,   st: 100, cn: 350, ci: 400, prem: 50  }, // 計 900
+  // 弱チェリー
+  cherry_weak_hit:       { wk: 350, st: 100, cn: 50,  ci: 0,   prem: 0   }, // 計 500
+  // 強チェリー: 角チェリー — 強烈
+  cherry_strong_hit:     { wk: 0,   st: 200, cn: 300, ci: 350, prem: 50  }, // 計 900
+  // 弱チャンス目
+  chance_weak_hit:       { wk: 250, st: 350, cn: 200, ci: 50,  prem: 0   }, // 計 850
+  // 強チャンス目: ほぼボーナス確定 — プレミア多め
+  chance_strong_hit:     { wk: 0,   st: 100, cn: 200, ci: 500, prem: 200 }, // 計 1000
   // リプレイ成立時（ガセ）
   replay_miss:   { wk: 60,  st: 0,   cn: 30,  ci: 0,   prem: 0   }, // 計 90
   // 完全ハズレ（ガセ）
@@ -95,10 +101,11 @@ export function decideYokoku(spinResult, rng) {
 function _classifyFlags(flags) {
   if (flags.bonusFlag === 'big') return 'big_hit';
   if (flags.bonusFlag === 'reg') return 'reg_hit';
-  // bonusFlag が 'none' の場合は smallFlag を見る
-  if (flags.smallFlag === 'watermelon') return 'watermelon_hit';
-  if (flags.smallFlag === 'cherry')     return 'cherry_hit';
-  if (flags.smallFlag === 'chance')     return 'chance_hit';
+  // bonusFlag が 'none' の場合は smallFlag + rareStrength を見る
+  const strength = flags.rareStrength === 'strong' ? 'strong' : 'weak';
+  if (flags.smallFlag === 'watermelon') return `watermelon_${strength}_hit`;
+  if (flags.smallFlag === 'cherry')     return `cherry_${strength}_hit`;
+  if (flags.smallFlag === 'chance')     return `chance_${strength}_hit`;
   if (flags.smallFlag === 'replay')     return 'replay_miss';
   return 'pure_miss';
 }
@@ -109,9 +116,7 @@ function _classifyFlags(flags) {
 function _isHit(key) {
   return key === 'big_hit' ||
          key === 'reg_hit' ||
-         key === 'watermelon_hit' ||
-         key === 'cherry_hit' ||
-         key === 'chance_hit';
+         key.endsWith('_hit');
 }
 
 /**
