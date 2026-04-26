@@ -131,61 +131,74 @@ export const BONUS_DIRECT_PROB_TABLE = {
  * CZ中の役別 ART成功抽選テーブル (ハズレ含む全役)
  * CZ中は引いた役ごとにART突入抽選を引き、勝てば即CZ_SUCCESS。
  * 値は分母65536のART成功確率。
+ *
+ * 設計方針: 前兆発生率 (RARE_CZ_TABLE) は据え置き、CZ突破率を設定に応じて下げて
+ *           「ガセ前兆」を増やす。低設定は半分以下、設定6は据え置きで甘さを残す。
  * @type {Record<1|2|3|4|5|6, Record<string, number>>}
  */
 export const CZ_REROLL_TABLE = {
   1: {
-    none: 1500, bell: 2500, replay: 2500, reachme: 8000,
-    cherry_weak: 4000, cherry_strong: 22000,
-    watermelon_weak: 5000, watermelon_strong: 28000,
-    chance_weak: 12000, chance_strong: 38000,
+    // 設定1: ~50% of 設定6 (ガセ多め)
+    none: 850, bell: 1500, replay: 1500, reachme: 5000,
+    cherry_weak: 2500, cherry_strong: 13800,
+    watermelon_weak: 3000, watermelon_strong: 16500,
+    chance_weak: 7400, chance_strong: 22500,
   },
   2: {
-    none: 1700, bell: 2800, replay: 2800, reachme: 9000,
-    cherry_weak: 4500, cherry_strong: 24000,
-    watermelon_weak: 5500, watermelon_strong: 30000,
-    chance_weak: 13000, chance_strong: 40000,
+    // 設定2: ~67%
+    none: 1200, bell: 2100, replay: 2100, reachme: 6800,
+    cherry_weak: 3400, cherry_strong: 17800,
+    watermelon_weak: 4000, watermelon_strong: 21500,
+    chance_weak: 9700, chance_strong: 28500,
   },
   3: {
-    none: 2000, bell: 3000, replay: 3000, reachme: 10000,
-    cherry_weak: 5000, cherry_strong: 26000,
-    watermelon_weak: 6000, watermelon_strong: 32000,
-    chance_weak: 14000, chance_strong: 42000,
+    // 設定3: ~76%
+    none: 1700, bell: 2400, replay: 2400, reachme: 7800,
+    cherry_weak: 3950, cherry_strong: 19800,
+    watermelon_weak: 4600, watermelon_strong: 24000,
+    chance_weak: 10600, chance_strong: 32000,
   },
   4: {
-    none: 2300, bell: 3300, replay: 3300, reachme: 11000,
-    cherry_weak: 5500, cherry_strong: 28000,
-    watermelon_weak: 6500, watermelon_strong: 34000,
-    chance_weak: 15000, chance_strong: 44000,
+    // 設定4: ~76% (R6で下げ過ぎたため戻す。BIG/REG頻度の差も考慮)
+    none: 1900, bell: 2500, replay: 2500, reachme: 8200,
+    cherry_weak: 4100, cherry_strong: 21000,
+    watermelon_weak: 4900, watermelon_strong: 25000,
+    chance_weak: 11000, chance_strong: 32500,
   },
   5: {
-    none: 2700, bell: 3800, replay: 3800, reachme: 12500,
-    cherry_weak: 6200, cherry_strong: 31000,
-    watermelon_weak: 7300, watermelon_strong: 37000,
-    chance_weak: 16500, chance_strong: 47000,
+    // 設定5: ~95%
+    none: 2800, bell: 3700, replay: 3700, reachme: 12500,
+    cherry_weak: 6000, cherry_strong: 30000,
+    watermelon_weak: 7100, watermelon_strong: 35500,
+    chance_weak: 15500, chance_strong: 44500,
   },
   6: {
-    none: 3200, bell: 4500, replay: 4500, reachme: 14000,
-    cherry_weak: 7000, cherry_strong: 34000,
-    watermelon_weak: 8200, watermelon_strong: 40000,
-    chance_weak: 18000, chance_strong: 50000,
+    // 設定6: 甘めキープ (元値より上げ気味)
+    none: 3700, bell: 5000, replay: 5000, reachme: 16000,
+    cherry_weak: 8000, cherry_strong: 38500,
+    watermelon_weak: 9500, watermelon_strong: 45000,
+    chance_weak: 20500, chance_strong: 55000,
   },
 };
 
 /**
  * BONUS中の青7フラグ抽選テーブル
- * 目標: 1ボーナスあたりのART期待度を設定1〜6で 12〜28% に抑え、
+ * 目標: 1ボーナスあたりのART期待度を設定1〜6で 8〜24% に抑え、
  *       ARTストック消化（STOCK_BONUS_ADD=20G）を考慮して機械割を仕様値に収める。
+ *
+ * 設計方針:
+ *   - ART中BONUSは青7関係なく即ストック確定 (StateMachine 仕様変更)
+ *   - CZ/前兆中BONUSも青7関係なくART確定
+ *   - そのため青7成功率は単純に下げて機械割を抑える役割
  * @type {Record<1|2|3|4|5|6, {big:{blue7:number,none:number}, reg:{blue7:number,none:number}}>}
  */
 export const BLUE7_PROB_TABLE = {
-  // ART per BONUS 目標: 設定1=25% / 設定6=50% (NORMALコイン持ち厳しめでもBONUS経由のARTで補填)
-  1: { big: { blue7: 1500, none: 64036 }, reg: { blue7: 2800, none: 62736 } },
-  2: { big: { blue7: 1700, none: 63836 }, reg: { blue7: 3100, none: 62436 } },
-  3: { big: { blue7: 1900, none: 63636 }, reg: { blue7: 3400, none: 62136 } },
-  4: { big: { blue7: 2200, none: 63336 }, reg: { blue7: 3800, none: 61736 } },
-  5: { big: { blue7: 2600, none: 62936 }, reg: { blue7: 4200, none: 61336 } },
-  6: { big: { blue7: 3100, none: 62436 }, reg: { blue7: 4800, none: 60736 } },
+  1: { big: { blue7:  950, none: 64586 }, reg: { blue7: 1750, none: 63786 } },
+  2: { big: { blue7: 1100, none: 64436 }, reg: { blue7: 2050, none: 63486 } },
+  3: { big: { blue7: 1500, none: 64036 }, reg: { blue7: 2700, none: 62836 } },
+  4: { big: { blue7: 1500, none: 64036 }, reg: { blue7: 2700, none: 62836 } },
+  5: { big: { blue7: 2100, none: 63436 }, reg: { blue7: 3500, none: 62036 } },
+  6: { big: { blue7: 3100, none: 62436 }, reg: { blue7: 5000, none: 60536 } },
 };
 
 /**

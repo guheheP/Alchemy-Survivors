@@ -107,6 +107,10 @@ export function transition(state, input, rng) {
     }
     events.push({ type: 'bonus_standby_start', bonusKind: input.flags.bonusFlag });
     state.resumePhase = state.phase === 'TENJOU' ? 'NORMAL' : state.phase;
+    // ART中のBONUS当選はその時点で1セットストック確定
+    if (state.phase === 'ART') {
+      state.artStocks++;
+    }
     state.phase = 'BONUS_STANDBY';
     state.standbyBonusKind = input.flags.bonusFlag;
     // 各phase固有の残G消化は停止
@@ -207,6 +211,8 @@ export function transition(state, input, rng) {
       events.push({ type: 'art_end' });
       state.phase = 'NORMAL';
       state.artGamesRemaining = 0;
+      // ART終了時に獲得枚数をリセット
+      state.artGainTotal = 0;
       // ART終了後はnormal gameCountをリセット（天井リセット）
       state.normalGameCount = 0;
     }
@@ -232,11 +238,13 @@ function endBonus(state) {
   events.push({ type: 'bonus_end', bonusKind: state.bonusKind || undefined });
 
   const fromArt = state.resumePhase === 'ART';
+  // CZ/ZENCHO中のBONUS当選はART確定 (青7成否に関わらず新規ART突入)
+  const fromCzOrZencho = state.resumePhase === 'CZ' || state.resumePhase === 'ZENCHO';
 
   if (state.blue7Succeeded) {
     if (fromArt) {
+      // ART中の青7成功: +60G上乗せ。stockは BONUS_STANDBY 突入時に加算済 — 重複させない
       state.artGamesRemaining += ART_CONSTANTS.ART_IN_BONUS_ADD;
-      state.artStocks++;
       events.push({ type: 'art_add', amount: ART_CONSTANTS.ART_IN_BONUS_ADD });
       state.phase = 'ART';
     } else {
@@ -246,8 +254,16 @@ function endBonus(state) {
       state.stats.artCount++;
       events.push({ type: 'art_start', amount: ART_CONSTANTS.INITIAL_GAMES });
     }
+  } else if (fromCzOrZencho) {
+    // CZ/ZENCHO 中のBONUS当選 → ART確定 (青7なしでも新規ART)
+    state.artGamesRemaining = ART_CONSTANTS.INITIAL_GAMES;
+    state.artGainTotal = 0;
+    state.phase = 'ART';
+    state.stats.artCount++;
+    events.push({ type: 'art_start', amount: ART_CONSTANTS.INITIAL_GAMES });
   } else {
     if (fromArt && state.artGamesRemaining > 0) {
+      // ART中BONUS (青7なし): stockは突入時に追加済。残G維持で復帰
       state.phase = 'ART';
       events.push({ type: 'art_resume' });
     } else {

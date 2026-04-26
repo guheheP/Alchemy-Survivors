@@ -63,12 +63,16 @@ for (const [key, list] of Object.entries(STOP_PATTERNS)) {
       const conflict = aligned.filter(a => a.includes('BELL') || a.includes('WATERMELON'));
       if (conflict.length > 0) violations.push(`競合揃い:${conflict}`);
     }
-    if (key === 'bell_top' || key === 'bell_diag') {
+    if (key === 'bell_diag') {
       if (cherryLeft) violations.push('left-CHERRY禁止');
+      // 通常時ベル揃いは右下がりのみ
+      if (p.winLine?.name !== 'diag-down') violations.push('右下がり以外の揃い禁止');
       const conflict = aligned.filter(a => a.includes('WATERMELON') || a.includes('REPLAY'));
       if (conflict.length > 0) violations.push(`競合揃い:${conflict}`);
     }
     if (key === 'watermelon_diag' || key === 'watermelon_top') {
+      // 左リール中段にWATERMELONを引き込まない
+      if (p.frame[0][1] === 'WATERMELON') violations.push('左中段WATERMELON引き込み禁止');
       const conflict = aligned.filter(a => a.includes('BELL') || a.includes('REPLAY'));
       if (conflict.length > 0) violations.push(`競合揃い:${conflict}`);
     }

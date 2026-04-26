@@ -94,8 +94,15 @@ export class SlotMachine {
     // 演出表示用の区間別獲得トラッキング
     if (this.state.phase === 'BONUS') {
       this.state.bonusGainTotal += payout;
-    } else if (this.state.phase === 'ART') {
-      this.state.artGainTotal += (payout - BET_PER_GAME);
+    }
+    // ART区間 (ART本編 + ART中に発生したBONUS_STANDBY/BONUS) の総獲得
+    const inArtSession = (
+      this.state.phase === 'ART' ||
+      ((this.state.phase === 'BONUS' || this.state.phase === 'BONUS_STANDBY') &&
+        this.state.resumePhase === 'ART')
+    );
+    if (inArtSession) {
+      this.state.artGainTotal += payout;
     }
 
     // ART中のレア小役で上乗せ抽選

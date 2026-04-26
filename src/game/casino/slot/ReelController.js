@@ -182,8 +182,8 @@ export function computeStopFrame(flags, phase, standbyKind, rng) {
  *
  * 仕様 (詳細は data/stopPatterns.js):
  *   - REPLAY   : 中段揃い (左にCHERRY引き込みなし、BELL/WATERMELON他ライン揃いなし)
- *   - BELL     : 上段 or 斜め揃い (左にCHERRY引き込みなし、WATERMELON/REPLAY他ライン揃いなし)
- *   - WATERMELON: 斜め or 上段揃い。bonusFlag/CZ/ZENCHO時は上段確率UP (示唆)
+ *   - BELL     : 通常時は右下がり揃いのみ (左にCHERRY引き込みなし、WATERMELON/REPLAY他ライン揃いなし)
+ *   - WATERMELON: 斜め or 上段揃い。左中段にスイカ引き込みなし。bonusFlag/CZ/ZENCHO時は上段確率UP (示唆)
  *   - CHERRY   : 左リール下段のみ。bonusFlag成立時は斜めダブルチェリー (大チャンス示唆)
  *   - REACHME  : 左リール中段CHERRY (BONUS確定示唆)
  *   - CHANCE   : 中段スイカ・リプレイ・チェリー / 右下がり赤7テンパイハズレ
@@ -200,9 +200,8 @@ function computeNormalStopFrame(flags, phase, rng) {
     case 'replay':
       return patternToStopResult(rng.pick(STOP_PATTERNS.replay));
     case 'bell': {
-      // 上段 vs 斜め: 半々
-      const list = rng.next() < 0.5 ? STOP_PATTERNS.bell_top : STOP_PATTERNS.bell_diag;
-      return patternToStopResult(rng.pick(list));
+      // 通常時は右下がり (diag-down) のみ
+      return patternToStopResult(rng.pick(STOP_PATTERNS.bell_diag));
     }
     case 'watermelon': {
       // 強スイカ = 上段並行揃い、弱スイカ = 斜めスイカ揃い

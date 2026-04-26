@@ -462,8 +462,11 @@ export class SlotScreen {
     const yokoku = decideYokoku(result, this._yokokuRng);
     if (yokoku && this.pixelDisplay) {
       this._currentYokoku = yokoku;
+      // cancelEvents() で前スピンの予告 promise が resolve されると、
+      // その .then が遅れて発火し新しい _currentYokoku を null で上書きする
+      // 競合があったため、自分の予告のみクリアするようトークン照合する。
       this.pixelDisplay.triggerEvent(yokoku.type, yokoku.opts).then(() => {
-        this._currentYokoku = null;
+        if (this._currentYokoku === yokoku) this._currentYokoku = null;
       });
     }
 
