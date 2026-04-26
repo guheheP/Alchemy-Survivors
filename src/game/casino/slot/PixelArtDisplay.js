@@ -246,9 +246,14 @@ export class PixelArtDisplay {
   // ===== Events =====
 
   _updateEvents() {
+    // setMode は frame=0 にリセットするため、フレームカウンタを直接使うと
+    // モード変更前にキューされたイベントの elapsed が負になり、duration 判定が
+    // 機能しなくなる (STEP1 が次ゲーム以降も残るバグの原因)。
+    // remainingMs と一致する wall-clock (startAt) ベースに揃える。
+    const now = Date.now();
     const alive = [];
     for (const ev of this._events) {
-      const elapsed = (this.frame - ev.startFrame) * FRAME_MS;
+      const elapsed = ev.startAt != null ? now - ev.startAt : (this.frame - ev.startFrame) * FRAME_MS;
       if (elapsed >= ev.duration) {
         if (ev.resolve) ev.resolve();
       } else {
@@ -522,9 +527,10 @@ export class PixelArtDisplay {
 
   // ---- イベント層描画 ----
   _drawEvents() {
+    const now = Date.now();
     for (const ev of this._events) {
-      const elapsed = (this.frame - ev.startFrame) * FRAME_MS;
-      const progress = Math.min(1, elapsed / ev.duration);
+      const elapsed = ev.startAt != null ? now - ev.startAt : (this.frame - ev.startFrame) * FRAME_MS;
+      const progress = Math.max(0, Math.min(1, elapsed / ev.duration));
       this._drawEvent(ev, progress);
     }
   }
