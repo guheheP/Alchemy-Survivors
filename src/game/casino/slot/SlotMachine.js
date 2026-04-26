@@ -95,14 +95,14 @@ export class SlotMachine {
     if (this.state.phase === 'BONUS') {
       this.state.bonusGainTotal += payout;
     }
-    // ART区間 (ART本編 + ART中に発生したBONUS_STANDBY/BONUS) の総獲得
+    // ART区間 (ART本編 + ART中に発生したBONUS_STANDBY/BONUS) の差枚 (払い出し - 投入)
     const inArtSession = (
       this.state.phase === 'ART' ||
       ((this.state.phase === 'BONUS' || this.state.phase === 'BONUS_STANDBY') &&
         this.state.resumePhase === 'ART')
     );
     if (inArtSession) {
-      this.state.artGainTotal += payout;
+      this.state.artGainTotal += (payout - BET_PER_GAME);
     }
 
     // ART中のレア小役で上乗せ抽選
