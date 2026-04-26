@@ -106,7 +106,6 @@ function deterministicSample(arr, n) {
 
 const TARGET_COUNTS = {
   replay: 6,
-  bell_top: 4,
   bell_diag: 6,
   watermelon_diag: 6,
   watermelon_top: 4,
@@ -129,28 +128,15 @@ function buildReplayPatterns() {
   return deterministicSample(all, TARGET_COUNTS.replay);
 }
 
-function buildBellTopPatterns() {
+function buildBellDiagPatterns() {
+  // 通常時ベル揃いは右下がり (diag-down) のみ
   const all = enumerate((frame) => {
-    if (!lineMatches(LINE_TOP, frame, 'BELL')) return null;
+    if (!lineMatches(LINE_DIAG_DOWN, frame, 'BELL')) return null;
     if (frameColContains(frame, 0, 'CHERRY')) return null;
     if (!noConflictAlignment(frame, ['WATERMELON', 'REPLAY'])) return null;
-    return { winLine: LINE_TOP };
+    return { winLine: LINE_DIAG_DOWN };
   });
-  return deterministicSample(all, TARGET_COUNTS.bell_top);
-}
-
-function buildBellDiagPatterns() {
-  const out = [];
-  for (const line of [LINE_DIAG_DOWN, LINE_DIAG_UP]) {
-    const all = enumerate((frame) => {
-      if (!lineMatches(line, frame, 'BELL')) return null;
-      if (frameColContains(frame, 0, 'CHERRY')) return null;
-      if (!noConflictAlignment(frame, ['WATERMELON', 'REPLAY'])) return null;
-      return { winLine: line };
-    });
-    out.push(...deterministicSample(all, Math.ceil(TARGET_COUNTS.bell_diag / 2)));
-  }
-  return out;
+  return deterministicSample(all, TARGET_COUNTS.bell_diag);
 }
 
 function buildWatermelonDiagPatterns() {
@@ -158,6 +144,8 @@ function buildWatermelonDiagPatterns() {
   for (const line of [LINE_DIAG_DOWN, LINE_DIAG_UP]) {
     const all = enumerate((frame) => {
       if (!lineMatches(line, frame, 'WATERMELON')) return null;
+      // 左リール中段にWATERMELONを引き込まない (中段スイカリプチェ等の弱役パターンと衝突しないため)
+      if (frame[0][1] === 'WATERMELON') return null;
       if (!noConflictAlignment(frame, ['BELL', 'REPLAY'])) return null;
       return { winLine: line };
     });
@@ -169,6 +157,8 @@ function buildWatermelonDiagPatterns() {
 function buildWatermelonTopPatterns() {
   const all = enumerate((frame) => {
     if (!lineMatches(LINE_TOP, frame, 'WATERMELON')) return null;
+    // 左リール中段にWATERMELONを引き込まない
+    if (frame[0][1] === 'WATERMELON') return null;
     if (!noConflictAlignment(frame, ['BELL', 'REPLAY'])) return null;
     return { winLine: LINE_TOP };
   });
@@ -255,7 +245,6 @@ function buildNonePatterns() {
 /** @type {Record<string, StopPattern[]>} */
 export const STOP_PATTERNS = {
   replay: buildReplayPatterns(),
-  bell_top: buildBellTopPatterns(),
   bell_diag: buildBellDiagPatterns(),
   watermelon_diag: buildWatermelonDiagPatterns(),
   watermelon_top: buildWatermelonTopPatterns(),
