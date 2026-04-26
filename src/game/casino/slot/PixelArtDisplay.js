@@ -32,6 +32,9 @@ const EVENT_DURATION = {
   upsell:                 800,
   bonus_flash:            500,
   bonus_payout:           500,
+  chance_tease_step:     1800,
+  chance_tease_cutin:    1000,
+  chance_tease_flask:    1500,
 };
 
 export class PixelArtDisplay {
@@ -540,6 +543,163 @@ export class PixelArtDisplay {
       case 'upsell':                this._drawUpsell(ev, progress); break;
       case 'bonus_flash':           this._drawBonusFlash(ev, progress); break;
       case 'bonus_payout':          this._drawBonusPayout(ev, progress); break;
+      case 'chance_tease_step':     this._drawChanceTeaseStep(ev, progress); break;
+      case 'chance_tease_cutin':    this._drawChanceTeaseCutin(ev, progress); break;
+      case 'chance_tease_flask':    this._drawChanceTeaseFlask(ev, progress); break;
+    }
+  }
+
+  /** ステップアップ予告 (3段階で発展、白→黄→赤) */
+  _drawChanceTeaseStep(ev, progress) {
+    const t = this.frame;
+    const stage = progress < 0.34 ? 1 : progress < 0.67 ? 2 : 3;
+
+    // 段階別オーバーレイ色
+    const overlay = stage === 1
+      ? 'rgba(255,255,255,0.18)'
+      : stage === 2
+      ? 'rgba(255,224,64,0.30)'
+      : 'rgba(255,64,40,0.45)';
+    this.ctx.fillStyle = overlay;
+    this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
+
+    // 段階アップ瞬間の白フラッシュ
+    if ((progress > 0.32 && progress < 0.36) || (progress > 0.65 && progress < 0.69)) {
+      this.ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
+    }
+
+    // 段階別文字
+    const text = stage === 1 ? 'STEP 1' : stage === 2 ? 'STEP 2' : 'STEP 3!!';
+    const fontSize = stage === 1 ? 18 : stage === 2 ? 22 : 26;
+    const color = stage === 1 ? '#e0e0e0' : stage === 2 ? '#ffd040' : '#ff5040';
+    const w = this._textWidthApprox(text, fontSize);
+    this._drawText(text, Math.floor((PIXEL_W - w) / 2), 18, color, fontSize);
+
+    // サブ文字
+    const sub = stage === 1 ? '...?' : stage === 2 ? 'CHANCE!?' : '激アツ!!';
+    const subSize = stage === 3 ? 16 : 14;
+    const subW = this._textWidthApprox(sub, subSize);
+    this._drawText(sub, Math.floor((PIXEL_W - subW) / 2), PIXEL_H - subSize - 4,
+                   stage === 3 ? '#ffe060' : '#c0c0c0', subSize);
+
+    // パーティクル (段階で頻度UP)
+    const sparkleEvery = stage === 1 ? 4 : stage === 2 ? 2 : 1;
+    if (t % sparkleEvery === 0) {
+      this._spawnSparkleBurst(
+        20 + Math.random() * (PIXEL_W - 40),
+        30 + Math.random() * 25,
+        2 + stage,
+        color,
+      );
+    }
+  }
+
+  /** カットイン予告 (賢者ドアップ、暗転背景、集中線) */
+  _drawChanceTeaseCutin(ev, progress) {
+    const t = this.frame;
+    // 入場 0-15% / 維持 15-80% / 退場 80-100%
+    let alpha;
+    if (progress < 0.15)      alpha = progress / 0.15;
+    else if (progress > 0.80) alpha = (1 - progress) / 0.20;
+    else                       alpha = 1;
+    alpha = Math.max(0, Math.min(1, alpha));
+
+    // 暗転背景
+    this.ctx.fillStyle = `rgba(10,0,30,${0.75 * alpha})`;
+    this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
+
+    // 集中線 (ガッ! と入る)
+    if (progress > 0.10 && progress < 0.85) {
+      this.ctx.strokeStyle = `rgba(255,200,80,${0.5 * alpha})`;
+      this.ctx.lineWidth = 2;
+      const cx = 60;
+      const cy = PIXEL_H / 2;
+      for (let i = 0; i < 14; i++) {
+        const angle = (i / 14) * Math.PI * 2 + t * 0.15;
+        this.ctx.beginPath();
+        this.ctx.moveTo(cx + Math.cos(angle) * 35, cy + Math.sin(angle) * 35);
+        this.ctx.lineTo(cx + Math.cos(angle) * 130, cy + Math.sin(angle) * 130);
+        this.ctx.stroke();
+      }
+    }
+
+    // 賢者ドアップ (左寄り、揺れあり)
+    this.ctx.globalAlpha = alpha;
+    const shake = (t % 2 === 0) ? 1 : -1;
+    this._drawAlchemist(40 + shake, 22 - ((t >> 1) % 2), 'excited', t * 2);
+    this.ctx.globalAlpha = 1;
+
+    // セリフ風吹き出し (右側)
+    if (progress > 0.20) {
+      const text = '気配を感じる...';
+      this._drawText(text, 130, 30, '#ffe080', 11);
+      this._drawText('!?', 158, 50, alpha * (t % 4 < 2 ? 1 : 0.4) > 0.5 ? '#ff4040' : '#ffe040', 24);
+    }
+  }
+
+  /** フラスコ沸騰予告 (中央フラスコ大写し、青→紫→赤、泡爆発) */
+  _drawChanceTeaseFlask(ev, progress) {
+    const t = this.frame;
+
+    // 暗転
+    this.ctx.fillStyle = 'rgba(10,0,20,0.55)';
+    this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
+
+    // 色変化: 青 → 紫 → 赤
+    const r = Math.floor(20 + progress * 235);
+    const g = Math.floor(60 + progress * 40);
+    const b = Math.floor(255 - progress * 200);
+    const liquidColor = `rgb(${r},${g},${b})`;
+    const glowColor = `rgba(${r},${g},${b},0.4)`;
+
+    const cx = PIXEL_W / 2;
+    const cy = PIXEL_H / 2 + 6;
+
+    // フラスコ周囲のグロー
+    this.ctx.fillStyle = glowColor;
+    this.ctx.fillRect(cx - 32, cy - 24, 64, 40);
+
+    // フラスコ本体 (フラスコ形)
+    this.ctx.fillStyle = liquidColor;
+    // 球状本体
+    this.ctx.fillRect(cx - 14, cy - 4, 28, 16);
+    this.ctx.fillRect(cx - 16, cy, 32, 8);
+    // 注ぎ口
+    this.ctx.fillRect(cx - 4, cy - 16, 8, 12);
+    // 縁取り (黒)
+    this.ctx.strokeStyle = '#000';
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeRect(cx - 14, cy - 4, 28, 16);
+    this.ctx.strokeRect(cx - 4, cy - 16, 8, 12);
+
+    // 泡 (沸騰激化)
+    const bubbleEvery = progress < 0.3 ? 6 : progress < 0.6 ? 3 : 2;
+    if (t % bubbleEvery === 0) {
+      this._spawnParticle(
+        cx + (Math.random() - 0.5) * 24,
+        cy - 14,
+        (Math.random() - 0.5) * 0.8,
+        -1.0 - Math.random() * 0.8,
+        16,
+        liquidColor,
+        'spark',
+      );
+    }
+
+    // 沸騰時の文字
+    if (progress > 0.55) {
+      const fontSize = 14;
+      const text = progress > 0.85 ? '爆発寸前!!' : 'CHANCE!?';
+      const w = this._textWidthApprox(text, fontSize);
+      const color = progress > 0.85 ? '#ff5040' : '#ffd060';
+      this._drawText(text, Math.floor((PIXEL_W - w) / 2), 8, color, fontSize);
+    }
+
+    // 終盤フラッシュ
+    if (progress > 0.85 && t % 3 === 0) {
+      this.ctx.fillStyle = 'rgba(255,80,40,0.25)';
+      this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
     }
   }
 
@@ -609,15 +769,38 @@ export class PixelArtDisplay {
 
   _drawChanceTeaseNormal(ev, progress) {
     const t = this.frame;
-    this.ctx.strokeStyle = `rgba(255, 200, 40, ${1 - progress * 0.3})`;
-    this.ctx.lineWidth = 3;
+
+    // ふわっと光る背景グラデーション
+    const breath = 0.4 + Math.sin(progress * Math.PI * 2) * 0.2;
+    this.ctx.fillStyle = `rgba(255, 180, 60, ${breath * 0.18})`;
+    this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
+
+    // 二重枠 (内側点滅)
+    this.ctx.strokeStyle = `rgba(255, 200, 60, ${1 - progress * 0.3})`;
+    this.ctx.lineWidth = 2;
     this.ctx.strokeRect(2, 2, PIXEL_W - 4, PIXEL_H - 4);
-    const wiggle = Math.sin(progress * Math.PI * 4) * 3;
-    const color = (t % 2) === 0 ? '#ffff80' : '#ff8040';
-    this._drawText('CHANCE!?', PIXEL_W / 2 - 52, 28 + wiggle, color, 20);
+    if (t % 4 < 2) {
+      this.ctx.strokeStyle = `rgba(255, 255, 200, 0.6)`;
+      this.ctx.lineWidth = 1;
+      this.ctx.strokeRect(6, 6, PIXEL_W - 12, PIXEL_H - 12);
+    }
+
+    // メイン文字 (ふわふわ揺れる)
+    const wiggleY = Math.sin(progress * Math.PI * 3) * 2;
+    const color = (t % 2) === 0 ? '#fff080' : '#ff9040';
+    const text = 'CHANCE!?';
+    const w = this._textWidthApprox(text, 18);
+    this._drawText(text, Math.floor((PIXEL_W - w) / 2), Math.floor(PIXEL_H / 2 - 9 + wiggleY), color, 18);
+
+    // 粒子 (左右両側からふわっと上昇)
+    if (t % 3 === 0) {
+      const side = Math.random() < 0.5 ? 0 : 1;
+      const x = side === 0 ? 8 + Math.random() * 30 : PIXEL_W - 8 - Math.random() * 30;
+      this._spawnParticle(x, PIXEL_H - 5, (side === 0 ? 0.2 : -0.2), -0.6, 18, '#ffe080', 'smoke');
+    }
     if (t % 2 === 0) {
       this._spawnSparkleBurst(
-        20 + Math.random() * 200,
+        20 + Math.random() * (PIXEL_W - 40),
         20 + Math.random() * 40,
         2, '#ffe080',
       );
@@ -626,22 +809,52 @@ export class PixelArtDisplay {
 
   _drawChanceTeaseIntense(ev, progress) {
     const t = this.frame;
-    if (t % 4 < 2) {
-      this.ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
-    }
-    this.ctx.strokeStyle = (t % 2) ? '#ff4040' : '#ffff40';
-    this.ctx.lineWidth = 4;
+
+    // 全画面赤フラッシュ (パルス)
+    const pulse = (t % 4 < 2) ? 0.4 : 0.18;
+    this.ctx.fillStyle = `rgba(255, 60, 60, ${pulse})`;
+    this.ctx.fillRect(0, 0, PIXEL_W, PIXEL_H);
+
+    // 太い赤/黄交互枠
+    this.ctx.strokeStyle = (t % 2) ? '#ff3030' : '#ffd040';
+    this.ctx.lineWidth = 3;
     this.ctx.strokeRect(0, 0, PIXEL_W, PIXEL_H);
+    this.ctx.strokeStyle = (t % 2) ? '#ffd040' : '#ff3030';
+    this.ctx.strokeRect(4, 4, PIXEL_W - 8, PIXEL_H - 8);
+
+    // 上下から斜め放射線
+    this.ctx.strokeStyle = `rgba(255, 240, 100, 0.45)`;
+    this.ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+      const offset = (i * 30 + t * 4) % PIXEL_W;
+      this.ctx.beginPath();
+      this.ctx.moveTo(offset, 0);
+      this.ctx.lineTo(offset + 20, PIXEL_H);
+      this.ctx.stroke();
+    }
+
+    // 大文字 (上下2段、強烈)
     const flash = (t % 2) === 0;
-    this._drawText('★SUPER★', PIXEL_W / 2 - 52, 18, flash ? '#ffff80' : '#ff4040', 18);
-    this._drawText('CHANCE!!', PIXEL_W / 2 - 52, 48, flash ? '#ffa040' : '#ffff80', 18);
+    const top = '★SUPER★';
+    const bot = 'CHANCE!!';
+    const topSize = 18;
+    const botSize = 22;
+    const topW = this._textWidthApprox(top, topSize);
+    const botW = this._textWidthApprox(bot, botSize);
+    this._drawText(top, Math.floor((PIXEL_W - topW) / 2), 14, flash ? '#ffff80' : '#ff4040', topSize);
+    this._drawText(bot, Math.floor((PIXEL_W - botW) / 2), 44, flash ? '#ff8040' : '#ffff80', botSize);
+
+    // 火花 (下から噴き上がる)
     if (t % 2 === 0) {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         this._spawnParticle(
-          Math.random() * PIXEL_W, PIXEL_H,
-          (Math.random() - 0.5) * 1, -1 - Math.random(),
-          10, ['#ff4040', '#ff8040', '#ffe040'][i % 3], 'spark',
+          Math.random() * PIXEL_W,
+          PIXEL_H,
+          (Math.random() - 0.5) * 1.4,
+          -1.4 - Math.random() * 0.8,
+          12,
+          ['#ff3030', '#ff8040', '#ffe040', '#ffffff'][i % 4],
+          'spark',
         );
       }
     }

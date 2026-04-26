@@ -454,6 +454,10 @@ export class SlotScreen {
     this.renderer.startSpinAll();
     SlotSFX.lever();
 
+    // リール消灯演出 — 1=リプレイ以上, 2=レア役以上(CZ可能性), 3=BONUS確定
+    const dimCount = this._decideReelDimCount(result.flags);
+    if (dimCount > 0) this._triggerReelDim(dimCount);
+
     // 予告抽選 + 発火
     const yokoku = decideYokoku(result, this._yokokuRng);
     if (yokoku && this.pixelDisplay) {
@@ -632,6 +636,9 @@ export class SlotScreen {
    * @param {import('./SlotMachine.js').SpinResult} result
    */
   _onSpinFinalized(result) {
+    // リール消灯を解除
+    this._clearReelDim();
+
     // 残高表示更新（7セグ風）
     const medalsEl = this.el.querySelector('.casino-medals-value');
     if (medalsEl) medalsEl.textContent = this._pad(this.manager.getMedals(), 5);
@@ -983,6 +990,83 @@ export class SlotScreen {
   /** ART終了時のBGM復元 */
   _onArtExit() {
     SoundManager.stopCasinoBGM?.();
+  }
+
+  /**
+   * リール消灯枚数を決定
+   *   3消灯 = BONUS確定 (BIG/REG内部成立時のみ)
+   *   2消灯 = レア役以上 (CZ突入の可能性)
+   *   1消灯 = リプレイ以上
+   * @param {import('./SlotEngine.js').DrawResult} flags
+   * @returns {0|1|2|3}
+   */
+  _decideReelDimCount(flags) {
+    if (!flags) return 0;
+    const r = this._yokokuRng.nextInt(1000);
+    const isBonus = flags.bonusFlag && flags.bonusFlag !== 'none';
+    const isStrongRare = flags.rareStrength === 'strong';
+    const isWeakRare = flags.rareStrength === 'weak';
+    const isCz = flags.czTriggered === true;
+    const sf = flags.smallFlag;
+
+    // BIG/REG 内部成立: 3消灯30% / 2消灯35% / 1消灯20% / なし15%
+    if (isBonus) {
+      if (r < 150) return 0;
+      if (r < 350) return 1;
+      if (r < 700) return 2;
+      return 3;
+    }
+    // 強レア役 + CZ当選: 2消灯40% / 1消灯30% / なし30% (3消灯はBONUS限定)
+    if (isStrongRare && isCz) {
+      if (r < 300) return 0;
+      if (r < 600) return 1;
+      return 2;
+    }
+    // 強レア役: 2消灯20% / 1消灯30% / なし50%
+    if (isStrongRare) {
+      if (r < 500) return 0;
+      if (r < 800) return 1;
+      return 2;
+    }
+    // 弱レア役 + CZ当選: 2消灯15% / 1消灯35% / なし50%
+    if (isWeakRare && isCz) {
+      if (r < 500) return 0;
+      if (r < 850) return 1;
+      return 2;
+    }
+    // 弱レア役: 1消灯25% / 2消灯3% / なし72%
+    if (isWeakRare) {
+      if (r < 720) return 0;
+      if (r < 970) return 1;
+      return 2;
+    }
+    // リプレイ: 1消灯3%
+    if (sf === 'replay') {
+      return r < 970 ? 0 : 1;
+    }
+    // ベル: 1消灯1% (非常に稀)
+    if (sf === 'bell') {
+      return r < 990 ? 0 : 1;
+    }
+    return 0;
+  }
+
+  /**
+   * 左から `count` 個のリールを消灯 (filter で暗くする)
+   * @param {number} count
+   */
+  _triggerReelDim(count) {
+    const reels = this.el.querySelectorAll('.casino-slot-reel');
+    for (let i = 0; i < Math.min(count, reels.length); i++) {
+      reels[i].classList.add('is-dimmed');
+    }
+  }
+
+  /** 全リールの消灯を解除 */
+  _clearReelDim() {
+    this.el.querySelectorAll('.casino-slot-reel.is-dimmed').forEach((r) => {
+      r.classList.remove('is-dimmed');
+    });
   }
 
   /** 筐体シェイク（大当たり突入時など） */

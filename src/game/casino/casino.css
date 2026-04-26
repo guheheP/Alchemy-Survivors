@@ -789,6 +789,16 @@
   /* 図柄の背景は黒 */
   background: #000;
   position: relative;
+  transition: filter 0.18s ease-out, opacity 0.18s ease-out;
+}
+
+/* リール消灯演出 — リプレイ以上で発生、2消灯=レア役以上 (CZ可能性あり)、3消灯=ボーナス確定 */
+.casino-slot-reel.is-dimmed {
+  filter: brightness(0.18) saturate(0.4);
+}
+.casino-slot-reel.is-dimmed::before {
+  /* 円筒シェーディングも合わせて暗く */
+  opacity: 0.4;
 }
 
 /* 停止中も常に表示される円筒シェーディング（立体感） */
