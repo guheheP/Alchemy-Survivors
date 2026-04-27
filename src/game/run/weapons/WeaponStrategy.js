@@ -7,6 +7,7 @@ import { ItemBlueprints, TraitDefs } from '../../data/items.js';
 import { WeaponSkillDefs } from '../../data/weaponSkills.js';
 import { eventBus } from '../../core/EventBus.js';
 import { SKILL_EXECUTORS } from './skills/executors.js';
+import { resolveWeaponSkillTiers } from './skillTierResolver.js';
 
 /** 属性→状態異常の変換テーブル
  * dpsRatio: DoT の毎秒ダメージを「そのヒットで実際に与えたダメージ」の何割にするか。
@@ -62,22 +63,22 @@ export class WeaponStrategy {
     }
 
     // スキルシステム
-    this.skillTier = this._calcSkillTier(bp.baseValue);
     this.skillCooldown = 0;
-    this.skillCooldownMax = Math.max(6, 15 - this.skillTier * 2); // T1:13s T2:11s T3:9s T4:7s
     this._enemies = null; // update時に保持
     this.skillDef = WeaponSkillDefs[weaponItem.blueprintId] || null;
+    // 品質による段階的アンロック解決 — params/flags/解放tier数を一括取得
+    const resolved = resolveWeaponSkillTiers(weaponItem.blueprintId, weaponItem);
+    this.resolvedSkillParams = resolved.params;
+    this.resolvedSkillFlags = resolved.flags;
+    this.unlockedSkillTier = resolved.unlockedTier; // 0-4
+    // 演出 tier: 解放済み tier 数 + 1 (1-4 にクランプ)。
+    // Q0 の最終武器も演出 tier 1（地味）から始まり、磨き込みで 4 まで派手になる。
+    this.skillTier = Math.max(1, Math.min(4, this.unlockedSkillTier + 1));
     if (this.skillDef) {
       this.skillCooldownMax = this.skillDef.cooldown;
+    } else {
+      this.skillCooldownMax = Math.max(6, 15 - this.skillTier * 2);
     }
-  }
-
-  /** baseValueからスキルティアを算出 (1-4) */
-  _calcSkillTier(baseValue) {
-    if (baseValue >= 400) return 4;
-    if (baseValue >= 150) return 3;
-    if (baseValue >= 50) return 2;
-    return 1;
   }
 
   get damage() {
@@ -115,6 +116,18 @@ export class WeaponStrategy {
       }
     }
 
+    // aftershock キュー: T4 アンロックの追従発動
+    if (this._aftershockQueue && this._aftershockQueue.length > 0) {
+      for (let i = this._aftershockQueue.length - 1; i >= 0; i--) {
+        const a = this._aftershockQueue[i];
+        a.timer -= dt;
+        if (a.timer <= 0) {
+          this._executeAftershock(a.dmgScale, enemies);
+          this._aftershockQueue.splice(i, 1);
+        }
+      }
+    }
+
     // 通常攻撃
     this.cooldownTimer -= dt;
     if (this.cooldownTimer <= 0) {
@@ -141,7 +154,8 @@ export class WeaponStrategy {
     const angle = this.player.facingAngle;
     const dmg = this.damage;
     const def = this.skillDef;
-    const p = def.params;
+    // 品質で解決された params + flags を executor に渡す
+    const p = { ...this.resolvedSkillParams, ...this.resolvedSkillFlags };
     const color = def.color || '#ff8';
     // フラリッシュ中心位置 — 遠隔スキル(meteor/burn_zone_at)はbestX/bestYに上書きされる
     let flourishX = px, flourishY = py;
@@ -177,6 +191,61 @@ export class WeaponStrategy {
     this._emitSkillFlourish(flourishX, flourishY, color, angle, def.type);
 
     eventBus.emit('skill:activated', { name: def.name, color, tier: this.skillTier });
+
+    // T4 アンロック: aftershock — delay秒後に60%威力で再発動。
+    // 再帰防止のため、_executeAftershock 内では再キューイングしない。
+    if (this.resolvedSkillFlags.aftershock && !this._isAftershockExecution) {
+      this._aftershockQueue = this._aftershockQueue || [];
+      this._aftershockQueue.push({ timer: 0.4, dmgScale: 0.6 });
+    }
+  }
+
+  /**
+   * aftershock 用の追従発動。executeSkill の本体を再利用するが、
+   * dmgScale でダメージを縮小し、再キューイングを抑止する。
+   */
+  _executeAftershock(dmgScale, enemies) {
+    if (!this.skillDef) return;
+    const px = this.player.x;
+    const py = this.player.y;
+    const angle = this.player.facingAngle;
+    const dmg = this.damage * dmgScale;
+    const def = this.skillDef;
+    const p = { ...this.resolvedSkillParams, ...this.resolvedSkillFlags };
+    const color = def.color || '#ff8';
+    let flourishX = px, flourishY = py;
+
+    this._isAftershockExecution = true;
+    try {
+      const exec = SKILL_EXECUTORS[def.type];
+      if (exec) {
+        const result = exec(this, { enemies, px, py, angle, dmg, color, p, flourishX, flourishY });
+        if (result && typeof result.flourishX === 'number') {
+          flourishX = result.flourishX;
+          flourishY = result.flourishY;
+        }
+      }
+      // 状態異常は通常発動と同様に付与（dmg は縮小済み）
+      if (this.element) {
+        const skillRadius = p.radius || p.lineRange || p.range || 200;
+        for (const enemy of enemies) {
+          if (!enemy.active) continue;
+          const edx = enemy.x - flourishX;
+          const edy = enemy.y - flourishY;
+          if (edx * edx + edy * edy < skillRadius * skillRadius) {
+            this._tryApplyStatus(enemy, dmg, true);
+          }
+        }
+      }
+      // 軽い演出（光柱なし、メイン演出より控えめ）
+      this.effects.push({
+        type: 'tier_ring', x: flourishX, y: flourishY,
+        range: 60, width: 3, timer: 0.35, maxTimer: 0.35, color,
+      });
+      this._shake(4, 0.15);
+    } finally {
+      this._isAftershockExecution = false;
+    }
   }
 
   /**

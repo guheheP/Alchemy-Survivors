@@ -16,6 +16,8 @@
 import { ItemBlueprints, TraitDefs } from '../../../src/game/data/items.js';
 import { GameConfig } from '../../../src/game/data/config.js';
 import { PetDefs, getPetBehaviorParams, getPetLevelStats } from '../../../src/game/data/pets.js';
+import { WeaponSkillDefs } from '../../../src/game/data/weaponSkills.js';
+import { resolveWeaponSkillTiers } from '../../../src/game/run/weapons/skillTierResolver.js';
 
 const wc = GameConfig.weapon;
 
@@ -155,11 +157,139 @@ export function weaponDps(weapon, opts = {}) {
       break;
   }
 
-  return { singleTarget, multiTarget, perAttack, cooldown: cd, atkSpeed };
+  // 武器スキルDPSを加算（品質段階アンロック反映）
+  const skill = calcSkillDps(weapon, expectedDmg, { avgTargets });
+  singleTarget += skill.single;
+  multiTarget += skill.multi;
+
+  return {
+    singleTarget,
+    multiTarget,
+    perAttack,
+    cooldown: cd,
+    atkSpeed,
+    skillDpsSingle: skill.single,
+    skillDpsMulti: skill.multi,
+  };
 }
 
 function zero() {
   return { singleTarget: 0, multiTarget: 0, perAttack: 0, cooldown: 0, atkSpeed: 0 };
+}
+
+/**
+ * 武器スキル DPS の近似計算 (品質段階アンロック反映)
+ *
+ * 武器スキルは cooldown ベースで自動発動するので、
+ * 期待ヒット数 × ヒットあたりダメージ ÷ cooldown を DPS として加算する。
+ * type 別にヒット数モデルを使い分け、品質で解放された tier の dmgMult/radius/waves 等を反映。
+ *
+ * @param {object} weapon - { blueprintId, quality, traits }
+ * @param {number} expectedDmg - クリ平均込みの基本ダメージ
+ * @param {{ avgTargets?: number }} opts
+ * @returns {{ single: number, multi: number }}
+ */
+function calcSkillDps(weapon, expectedDmg, opts = {}) {
+  const def = WeaponSkillDefs[weapon.blueprintId];
+  if (!def) return { single: 0, multi: 0 };
+  const { params, flags } = resolveWeaponSkillTiers(weapon.blueprintId, weapon);
+  const cd = def.cooldown || 10;
+  const at = Math.max(1, opts.avgTargets ?? 4);
+  const dmgMult = params.dmgMult ?? 1.0;
+  const skillDmg = expectedDmg * dmgMult;
+  const waves = Math.max(1, params.waves || 1);
+
+  let singleHits = 1;
+  let multiHits = 1;
+
+  switch (def.type) {
+    case 'shockwave':
+    case 'freeze_zone':
+    case 'lightning_storm':
+    case 'meteor':
+    case 'burn_zone_at':
+    case 'burn_zone':
+    case 'blade_rain':
+    case 'world_break': {
+      const radius = params.radius || 150;
+      singleHits = 1 * waves;
+      multiHits = Math.min(at, Math.max(2, radius / 40)) * waves;
+      break;
+    }
+    case 'multi_thrust':
+    case 'multi_thrust_burn':
+    case 'multi_thrust_poison':
+    case 'multi_chain': {
+      const lines = params.lineCount || 3;
+      singleHits = 1;
+      multiHits = Math.min(lines, at);
+      break;
+    }
+    case 'arrow_fan': {
+      const arrows = params.arrowCount || 7;
+      singleHits = 1;
+      multiHits = Math.min(arrows, at);
+      break;
+    }
+    case 'arrow_rain': {
+      const arrows = params.arrowCount || 14;
+      singleHits = 1;
+      multiHits = Math.min(arrows, at * 2);
+      break;
+    }
+    case 'piercing_shot': {
+      singleHits = 1;
+      multiHits = Math.min(at, 4);
+      break;
+    }
+    case 'flurry': {
+      const hits = params.hitCount || 6;
+      singleHits = hits;
+      multiHits = hits * Math.min(2, at);
+      break;
+    }
+    case 'blade_storm': {
+      const blades = params.bladeCount || 4;
+      const dur = params.duration || 2.0;
+      const ticksPerSec = 4; // 0.25s tick 想定
+      singleHits = Math.round(dur * ticksPerSec);
+      multiHits = singleHits * Math.min(blades, at);
+      break;
+    }
+    case 'spin_blade': {
+      const spins = params.spins || 2;
+      singleHits = spins;
+      multiHits = spins * Math.min(at, 4);
+      break;
+    }
+    case 'barrier':
+    case 'barrier_heal':
+    case 'barrier_shockwave':
+    case 'freeze_barrier': {
+      singleHits = 1 * waves;
+      multiHits = Math.min(at, 5) * waves;
+      break;
+    }
+    case 'chain_lightning': {
+      const bounces = params.bounces || 5;
+      singleHits = 1;
+      multiHits = Math.min(bounces, at);
+      break;
+    }
+    case 'regen_zone': {
+      // 回復系はDPSに加算しない
+      return { single: 0, multi: 0 };
+    }
+    default:
+      singleHits = 1;
+      multiHits = Math.min(2, at);
+  }
+  // aftershock フラグ: 0.4秒後に60%威力で再発動 → 実効ダメージ x1.6
+  const aftershockMult = flags?.aftershock ? 1.6 : 1.0;
+  return {
+    single: (skillDmg * singleHits * aftershockMult) / cd,
+    multi: (skillDmg * multiHits * aftershockMult) / cd,
+  };
 }
 
 /** 武器スロット全体の DPS 合計 */

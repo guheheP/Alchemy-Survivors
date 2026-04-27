@@ -1,0 +1,427 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "🧪 Alchemy Survivors — Balance Simulator" [level=1] [ref=e4]
+    - navigation [ref=e5]:
+      - 'button "Layer 1: DPS/EHP" [ref=e6] [cursor=pointer]'
+      - 'button "Layer 2: 確率シム" [ref=e7] [cursor=pointer]'
+      - 'button "Layer 3: フルラン" [ref=e8] [cursor=pointer]'
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - heading "装備構成" [level=3] [ref=e12]
+        - generic [ref=e13]:
+          - generic [ref=e14]: 武器 1
+          - combobox "武器 1 50" [ref=e15]:
+            - option "未装備"
+            - option "鉄の剣 (T?)"
+            - option "木の盾 (T?)"
+            - option "木の弓 (T?)"
+            - option "石斧 (T?)" [selected]
+            - option "炎の剣 (T?)"
+            - option "氷の盾 (T?)"
+            - option "銀の短剣 (T?)"
+            - option "鉄の槍 (T?)"
+            - option "魔法の杖 (T?)"
+            - option "風の弓 (T?)"
+            - option "暗黒の刃 (T?)"
+            - option "毒塗りの短剣 (T?)"
+            - option "聖剣 (T?)"
+            - option "炎の槍 (T?)"
+            - option "月光の杖 (T?)"
+            - option "雷鳴のハンマー (T?)"
+            - option "溶岩の盾 (T?)"
+            - option "海神の三叉槍 (T?)"
+            - option "潮流の弓 (T?)"
+            - option "ミスリルの剣 (T?)"
+            - option "ミスリルの盾 (T?)"
+            - option "凍てつく刃 (T?)"
+            - option "長老樹の杖 (T?)"
+            - option "海竜の鞭 (T?)"
+            - option "竜殺しの大剣 (T?)"
+            - option "竜骨の弓 (T?)"
+            - option "虚無の剣 (T?)"
+            - option "雷光の槍 (T?)"
+            - option "竜鱗の大盾 (T?)"
+            - option "天空の剣 (T?)"
+            - option "星盾 (T?)"
+            - option "エーテルの杖 (T?)"
+            - option "天翔ける弓 (T?)"
+            - option "疾風の槍 (T?)"
+            - option "不死鳥の弓 (T?)"
+            - option "伝説の刃 (T?)"
+            - option "世界樹の杖 (T?)"
+            - option "時渡りの剣 (T?)"
+            - option "星界弓コスモス (T?)"
+            - option "忘却の盾 (T?)"
+          - spinbutton "品質" [ref=e16]: "50"
+        - generic [ref=e17]:
+          - generic [ref=e18]: 武器 2
+          - combobox "武器 2 50" [ref=e19]:
+            - option "未装備" [selected]
+            - option "鉄の剣 (T?)"
+            - option "木の盾 (T?)"
+            - option "木の弓 (T?)"
+            - option "石斧 (T?)"
+            - option "炎の剣 (T?)"
+            - option "氷の盾 (T?)"
+            - option "銀の短剣 (T?)"
+            - option "鉄の槍 (T?)"
+            - option "魔法の杖 (T?)"
+            - option "風の弓 (T?)"
+            - option "暗黒の刃 (T?)"
+            - option "毒塗りの短剣 (T?)"
+            - option "聖剣 (T?)"
+            - option "炎の槍 (T?)"
+            - option "月光の杖 (T?)"
+            - option "雷鳴のハンマー (T?)"
+            - option "溶岩の盾 (T?)"
+            - option "海神の三叉槍 (T?)"
+            - option "潮流の弓 (T?)"
+            - option "ミスリルの剣 (T?)"
+            - option "ミスリルの盾 (T?)"
+            - option "凍てつく刃 (T?)"
+            - option "長老樹の杖 (T?)"
+            - option "海竜の鞭 (T?)"
+            - option "竜殺しの大剣 (T?)"
+            - option "竜骨の弓 (T?)"
+            - option "虚無の剣 (T?)"
+            - option "雷光の槍 (T?)"
+            - option "竜鱗の大盾 (T?)"
+            - option "天空の剣 (T?)"
+            - option "星盾 (T?)"
+            - option "エーテルの杖 (T?)"
+            - option "天翔ける弓 (T?)"
+            - option "疾風の槍 (T?)"
+            - option "不死鳥の弓 (T?)"
+            - option "伝説の刃 (T?)"
+            - option "世界樹の杖 (T?)"
+            - option "時渡りの剣 (T?)"
+            - option "星界弓コスモス (T?)"
+            - option "忘却の盾 (T?)"
+          - spinbutton "品質" [ref=e20]: "50"
+        - generic [ref=e21]:
+          - generic [ref=e22]: 武器 3
+          - combobox "武器 3 50" [ref=e23]:
+            - option "未装備" [selected]
+            - option "鉄の剣 (T?)"
+            - option "木の盾 (T?)"
+            - option "木の弓 (T?)"
+            - option "石斧 (T?)"
+            - option "炎の剣 (T?)"
+            - option "氷の盾 (T?)"
+            - option "銀の短剣 (T?)"
+            - option "鉄の槍 (T?)"
+            - option "魔法の杖 (T?)"
+            - option "風の弓 (T?)"
+            - option "暗黒の刃 (T?)"
+            - option "毒塗りの短剣 (T?)"
+            - option "聖剣 (T?)"
+            - option "炎の槍 (T?)"
+            - option "月光の杖 (T?)"
+            - option "雷鳴のハンマー (T?)"
+            - option "溶岩の盾 (T?)"
+            - option "海神の三叉槍 (T?)"
+            - option "潮流の弓 (T?)"
+            - option "ミスリルの剣 (T?)"
+            - option "ミスリルの盾 (T?)"
+            - option "凍てつく刃 (T?)"
+            - option "長老樹の杖 (T?)"
+            - option "海竜の鞭 (T?)"
+            - option "竜殺しの大剣 (T?)"
+            - option "竜骨の弓 (T?)"
+            - option "虚無の剣 (T?)"
+            - option "雷光の槍 (T?)"
+            - option "竜鱗の大盾 (T?)"
+            - option "天空の剣 (T?)"
+            - option "星盾 (T?)"
+            - option "エーテルの杖 (T?)"
+            - option "天翔ける弓 (T?)"
+            - option "疾風の槍 (T?)"
+            - option "不死鳥の弓 (T?)"
+            - option "伝説の刃 (T?)"
+            - option "世界樹の杖 (T?)"
+            - option "時渡りの剣 (T?)"
+            - option "星界弓コスモス (T?)"
+            - option "忘却の盾 (T?)"
+          - spinbutton "品質" [ref=e24]: "50"
+        - generic [ref=e25]:
+          - generic [ref=e26]: 武器 4
+          - combobox "武器 4 50" [ref=e27]:
+            - option "未装備" [selected]
+            - option "鉄の剣 (T?)"
+            - option "木の盾 (T?)"
+            - option "木の弓 (T?)"
+            - option "石斧 (T?)"
+            - option "炎の剣 (T?)"
+            - option "氷の盾 (T?)"
+            - option "銀の短剣 (T?)"
+            - option "鉄の槍 (T?)"
+            - option "魔法の杖 (T?)"
+            - option "風の弓 (T?)"
+            - option "暗黒の刃 (T?)"
+            - option "毒塗りの短剣 (T?)"
+            - option "聖剣 (T?)"
+            - option "炎の槍 (T?)"
+            - option "月光の杖 (T?)"
+            - option "雷鳴のハンマー (T?)"
+            - option "溶岩の盾 (T?)"
+            - option "海神の三叉槍 (T?)"
+            - option "潮流の弓 (T?)"
+            - option "ミスリルの剣 (T?)"
+            - option "ミスリルの盾 (T?)"
+            - option "凍てつく刃 (T?)"
+            - option "長老樹の杖 (T?)"
+            - option "海竜の鞭 (T?)"
+            - option "竜殺しの大剣 (T?)"
+            - option "竜骨の弓 (T?)"
+            - option "虚無の剣 (T?)"
+            - option "雷光の槍 (T?)"
+            - option "竜鱗の大盾 (T?)"
+            - option "天空の剣 (T?)"
+            - option "星盾 (T?)"
+            - option "エーテルの杖 (T?)"
+            - option "天翔ける弓 (T?)"
+            - option "疾風の槍 (T?)"
+            - option "不死鳥の弓 (T?)"
+            - option "伝説の刃 (T?)"
+            - option "世界樹の杖 (T?)"
+            - option "時渡りの剣 (T?)"
+            - option "星界弓コスモス (T?)"
+            - option "忘却の盾 (T?)"
+          - spinbutton "品質" [ref=e28]: "50"
+        - generic [ref=e29]:
+          - generic [ref=e30]: 防具
+          - combobox "防具 50" [ref=e31]:
+            - option "未装備" [selected]
+            - option "木の盾 (T?)"
+            - option "氷の盾 (T?)"
+            - option "革鎧 (T?)"
+            - option "鉄兜 (T?)"
+            - option "鎖帷子 (T?)"
+            - option "精霊のローブ (T?)"
+            - option "蜘蛛糸のマント (T?)"
+            - option "竜鱗の鎧 (T?)"
+            - option "銀糸の鎧 (T?)"
+            - option "溶岩の盾 (T?)"
+            - option "焔纏いのマント (T?)"
+            - option "珊瑚の鎧 (T?)"
+            - option "ミスリルの盾 (T?)"
+            - option "嵐のマント (T?)"
+            - option "不死鳥のローブ (T?)"
+            - option "竜鱗の大盾 (T?)"
+            - option "星盾 (T?)"
+            - option "神鉄の鎧 (T?)"
+            - option "虹のローブ (T?)"
+            - option "始原の鎧 (T?)"
+            - option "忘却の盾 (T?)"
+            - option "星衣アストラル (T?)"
+          - spinbutton "品質" [ref=e32]: "50"
+        - generic [ref=e33]:
+          - generic [ref=e34]: アクセサリ
+          - combobox "アクセサリ 50" [ref=e35]:
+            - option "未装備" [selected]
+            - option "粘土の壺 (T?)"
+            - option "琥珀の指輪 (T?)"
+            - option "骨のお守り (T?)"
+            - option "水晶の宝珠 (T?)"
+            - option "妖精のネックレス (T?)"
+            - option "不死鳥のお守り (T?)"
+            - option "呪いの指輪 (T?)"
+            - option "真珠のティアラ (T?)"
+            - option "虚空のアミュレット (T?)"
+            - option "古代王の冠 (T?)"
+            - option "神秘のアミュレット (T?)"
+            - option "呪王の冠 (T?)"
+            - option "時の砂時計 (T?)"
+            - option "混沌の指輪 (T?)"
+            - option "星のペンダント (T?)"
+            - option "始原の冠 (T?)"
+            - option "永遠の指輪 (T?)"
+          - spinbutton "品質" [ref=e36]: "50"
+        - generic [ref=e37]:
+          - generic [ref=e38]: ペット
+          - combobox "ペット 1" [ref=e39]:
+            - option "未装備" [selected]
+            - option "🟢 スライム"
+            - option "🐺 子狼"
+            - option "🔥 フェニックス"
+            - option "🦉 フクロウ"
+            - option "👹 インプ"
+            - option "🐲 子龍"
+          - spinbutton "ペットLv" [ref=e40]: "1"
+        - generic [ref=e41]:
+          - generic [ref=e42]: 想定被弾DPS
+          - spinbutton "想定被弾DPS 敵から受ける平均ダメージ/秒" [ref=e43]: "1.5"
+          - generic [ref=e44]: 敵から受ける平均ダメージ/秒
+      - generic [ref=e45]:
+        - heading "結果" [level=3] [ref=e46]
+        - table [ref=e48]:
+          - rowgroup [ref=e49]:
+            - row "攻撃" [ref=e50]:
+              - columnheader "攻撃" [ref=e51]
+            - row "武器 DPS 52.8 /秒" [ref=e52]:
+              - cell "武器 DPS" [ref=e53]
+              - cell "52.8 /秒" [ref=e54]:
+                - strong [ref=e55]: "52.8"
+                - text: /秒
+            - row "ペット DPS 0.0 /秒" [ref=e56]:
+              - cell "ペット DPS" [ref=e57]
+              - cell "0.0 /秒" [ref=e58]
+            - row "合計 DPS 52.8 /秒" [ref=e59]:
+              - cell "合計 DPS" [ref=e60]
+              - cell "52.8 /秒" [ref=e61]:
+                - strong [ref=e62]: "52.8"
+                - text: /秒
+            - row "防御" [ref=e63]:
+              - columnheader "防御" [ref=e64]
+            - row "最大HP 100" [ref=e65]:
+              - cell "最大HP" [ref=e66]
+              - cell "100" [ref=e67]
+            - row "防御値 0.0" [ref=e68]:
+              - cell "防御値" [ref=e69]
+              - cell "0.0" [ref=e70]
+            - row "軽減率 0.0%" [ref=e71]:
+              - cell "軽減率" [ref=e72]
+              - cell "0.0%" [ref=e73]
+            - row "有効HP (EHP) 100" [ref=e74]:
+              - cell "有効HP (EHP)" [ref=e75]
+              - cell "100" [ref=e76]:
+                - strong [ref=e77]: "100"
+            - row "推定生存" [ref=e78]:
+              - columnheader "推定生存" [ref=e79]
+            - row "被弾 1.5DPS 想定 0.3 分 (17秒)" [ref=e80]:
+              - cell "被弾 1.5DPS 想定" [ref=e81]
+              - cell "0.3 分 (17秒)" [ref=e82]:
+                - strong [ref=e83]: "0.3"
+                - text: 分 (17秒)
+    - generic [ref=e84]:
+      - heading "武器別 DPS 比較" [level=3] [ref=e85]
+      - generic [ref=e86]:
+        - table [ref=e87]:
+          - rowgroup [ref=e88]:
+            - row "1 時渡りの剣 462.8" [ref=e89]:
+              - cell "1" [ref=e90]
+              - cell "時渡りの剣" [ref=e91]
+              - cell "462.8" [ref=e92]:
+                - generic [ref=e93]: "462.8"
+            - row "2 伝説の刃 240.4" [ref=e94]:
+              - cell "2" [ref=e95]
+              - cell "伝説の刃" [ref=e96]
+              - cell "240.4" [ref=e97]:
+                - generic [ref=e98]: "240.4"
+            - row "3 ミスリルの剣 191.8" [ref=e99]:
+              - cell "3" [ref=e100]
+              - cell "ミスリルの剣" [ref=e101]
+              - cell "191.8" [ref=e102]:
+                - generic [ref=e103]: "191.8"
+            - row "4 竜殺しの大剣 180.7" [ref=e104]:
+              - cell "4" [ref=e105]
+              - cell "竜殺しの大剣" [ref=e106]
+              - cell "180.7" [ref=e107]:
+                - generic [ref=e108]: "180.7"
+            - row "5 星盾 169.8" [ref=e109]:
+              - cell "5" [ref=e110]
+              - cell "星盾" [ref=e111]
+              - cell "169.8" [ref=e112]:
+                - generic [ref=e113]: "169.8"
+            - row "6 虚無の剣 161.0" [ref=e114]:
+              - cell "6" [ref=e115]
+              - cell "虚無の剣" [ref=e116]
+              - cell "161.0" [ref=e117]:
+                - generic [ref=e118]: "161.0"
+            - row "7 世界樹の杖 147.4" [ref=e119]:
+              - cell "7" [ref=e120]
+              - cell "世界樹の杖" [ref=e121]
+              - cell "147.4" [ref=e122]:
+                - generic [ref=e123]: "147.4"
+            - row "8 星界弓コスモス 143.0" [ref=e124]:
+              - cell "8" [ref=e125]
+              - cell "星界弓コスモス" [ref=e126]
+              - cell "143.0" [ref=e127]:
+                - generic [ref=e128]: "143.0"
+            - row "9 疾風の槍 131.1" [ref=e129]:
+              - cell "9" [ref=e130]
+              - cell "疾風の槍" [ref=e131]
+              - cell "131.1" [ref=e132]:
+                - generic [ref=e133]: "131.1"
+            - row "10 聖剣 129.9" [ref=e134]:
+              - cell "10" [ref=e135]
+              - cell "聖剣" [ref=e136]
+              - cell "129.9" [ref=e137]:
+                - generic [ref=e138]: "129.9"
+            - row "11 天空の剣 116.3" [ref=e139]:
+              - cell "11" [ref=e140]
+              - cell "天空の剣" [ref=e141]
+              - cell "116.3" [ref=e142]:
+                - generic [ref=e143]: "116.3"
+            - row "12 天翔ける弓 116.1" [ref=e144]:
+              - cell "12" [ref=e145]
+              - cell "天翔ける弓" [ref=e146]
+              - cell "116.1" [ref=e147]:
+                - generic [ref=e148]: "116.1"
+            - row "13 海竜の鞭 115.5" [ref=e149]:
+              - cell "13" [ref=e150]
+              - cell "海竜の鞭" [ref=e151]
+              - cell "115.5" [ref=e152]:
+                - generic [ref=e153]: "115.5"
+            - row "14 エーテルの杖 108.9" [ref=e154]:
+              - cell "14" [ref=e155]
+              - cell "エーテルの杖" [ref=e156]
+              - cell "108.9" [ref=e157]:
+                - generic [ref=e158]: "108.9"
+            - row "15 雷光の槍 98.0" [ref=e159]:
+              - cell "15" [ref=e160]
+              - cell "雷光の槍" [ref=e161]
+              - cell "98.0" [ref=e162]:
+                - generic [ref=e163]: "98.0"
+            - row "16 銀の短剣 88.6" [ref=e164]:
+              - cell "16" [ref=e165]
+              - cell "銀の短剣" [ref=e166]
+              - cell "88.6" [ref=e167]:
+                - generic [ref=e168]: "88.6"
+            - row "17 不死鳥の弓 80.0" [ref=e169]:
+              - cell "17" [ref=e170]
+              - cell "不死鳥の弓" [ref=e171]
+              - cell "80.0" [ref=e172]:
+                - generic [ref=e173]: "80.0"
+            - row "18 竜骨の弓 79.7" [ref=e174]:
+              - cell "18" [ref=e175]
+              - cell "竜骨の弓" [ref=e176]
+              - cell "79.7" [ref=e177]:
+                - generic [ref=e178]: "79.7"
+            - row "19 鉄の剣 79.7" [ref=e179]:
+              - cell "19" [ref=e180]
+              - cell "鉄の剣" [ref=e181]
+              - cell "79.7" [ref=e182]:
+                - generic [ref=e183]: "79.7"
+            - row "20 忘却の盾 77.1" [ref=e184]:
+              - cell "20" [ref=e185]
+              - cell "忘却の盾" [ref=e186]
+              - cell "77.1" [ref=e187]:
+                - generic [ref=e188]: "77.1"
+            - row "21 海神の三叉槍 77.0" [ref=e189]:
+              - cell "21" [ref=e190]
+              - cell "海神の三叉槍" [ref=e191]
+              - cell "77.0" [ref=e192]:
+                - generic [ref=e193]: "77.0"
+            - row "22 月光の杖 74.4" [ref=e194]:
+              - cell "22" [ref=e195]
+              - cell "月光の杖" [ref=e196]
+              - cell "74.4" [ref=e197]:
+                - generic [ref=e198]: "74.4"
+            - row "23 凍てつく刃 73.6" [ref=e199]:
+              - cell "23" [ref=e200]
+              - cell "凍てつく刃" [ref=e201]
+              - cell "73.6" [ref=e202]:
+                - generic [ref=e203]: "73.6"
+            - row "24 炎の剣 70.7" [ref=e204]:
+              - cell "24" [ref=e205]
+              - cell "炎の剣" [ref=e206]
+              - cell "70.7" [ref=e207]:
+                - generic [ref=e208]: "70.7"
+            - row "25 雷鳴のハンマー 68.2" [ref=e209]:
+              - cell "25" [ref=e210]
+              - cell "雷鳴のハンマー" [ref=e211]
+              - cell "68.2" [ref=e212]:
+                - generic [ref=e213]: "68.2"
+        - paragraph [ref=e214]: ※ 全武器を Q50 / 単独装備 / 特性なしで比較
