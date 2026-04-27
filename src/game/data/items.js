@@ -123,7 +123,7 @@ export const ItemBlueprints = {
 
   // ===== Rank 1: 初期レシピ (8種) =====
   sword: { id: 'sword', name: '鉄の剣', type: 'equipment', equipType: 'sword', baseValue: 32, baseDamageMultiplier: 2.0, image: '/art/items/sword.png' },
-  shield: { id: 'shield', name: '木の盾', type: 'equipment', equipType: 'shield', baseValue: 15, image: '/art/items/shield.png' },
+  shield: { id: 'shield', name: '木の盾', type: 'equipment', equipType: 'shield', baseValue: 15, baseDamageMultiplier: 1.5, image: '/art/items/shield.png' },
   potion: {
     id: 'potion', name: '回復薬', type: 'consumable', baseValue: 18, image: '/art/items/potion.png',
     battleEffect: {
@@ -137,7 +137,7 @@ export const ItemBlueprints = {
       ],
     },
   },
-  wooden_bow: { id: 'wooden_bow', name: '木の弓', type: 'equipment', equipType: 'bow', baseValue: 30, image: '/art/items/wooden_bow.png' },
+  wooden_bow: { id: 'wooden_bow', name: '木の弓', type: 'equipment', equipType: 'bow', baseValue: 30, multiShot: 1, image: '/art/items/wooden_bow.png' },
   herb_tea: {
     id: 'herb_tea', name: 'ハーブティー', type: 'consumable', baseValue: 12, image: '/art/items/herb_tea.png',
     battleEffect: {
@@ -169,7 +169,7 @@ export const ItemBlueprints = {
 
   // ===== Rank 2: 洞窟解放 (10種) =====
   fire_sword: { id: 'fire_sword', name: '炎の剣', type: 'equipment', equipType: 'sword', baseValue: 45, baseDamageMultiplier: 2.0, element: 'fire', image: '/art/items/fire_sword.png' },
-  ice_shield: { id: 'ice_shield', name: '氷の盾', type: 'equipment', equipType: 'shield', baseValue: 30, element: 'ice', image: '/art/items/ice_shield.png' },
+  ice_shield: { id: 'ice_shield', name: '氷の盾', type: 'equipment', equipType: 'shield', baseValue: 30, baseDamageMultiplier: 1.6, element: 'ice', image: '/art/items/ice_shield.png' },
   antidote: {
     id: 'antidote', name: '解毒薬', type: 'consumable', baseValue: 30, image: '/art/items/antidote.png',
     battleEffect: {
@@ -232,7 +232,7 @@ export const ItemBlueprints = {
       ],
     },
   },
-  wind_bow: { id: 'wind_bow', name: '風の弓', type: 'equipment', equipType: 'bow', baseValue: 60, element: 'wind', image: '/art/items/wind_bow.png' },
+  wind_bow: { id: 'wind_bow', name: '風の弓', type: 'equipment', equipType: 'bow', baseValue: 60, multiShot: 2, element: 'wind', image: '/art/items/wind_bow.png' },
   spirit_robe: { id: 'spirit_robe', name: '精霊のローブ', type: 'equipment', equipType: 'robe', baseValue: 110, image: '/art/items/spirit_robe.png' },
   strength_potion: {
     id: 'strength_potion', name: '力の薬', type: 'consumable', baseValue: 55, image: '/art/items/strength_potion.png',
@@ -301,7 +301,7 @@ export const ItemBlueprints = {
   },
   thunder_hammer: { id: 'thunder_hammer', name: '雷鳴のハンマー', type: 'equipment', equipType: 'spear', baseValue: 90, baseDamageMultiplier: 1.25, element: 'lightning', image: '/art/items/thunder_hammer.png' },
   cursed_ring: { id: 'cursed_ring', name: '呪いの指輪', type: 'accessory', baseValue: 230, image: '/art/items/cursed_ring.png' },
-  lava_shield: { id: 'lava_shield', name: '溶岩の盾', type: 'equipment', equipType: 'shield', baseValue: 45, element: 'fire', image: '/art/items/lava_shield.png' },
+  lava_shield: { id: 'lava_shield', name: '溶岩の盾', type: 'equipment', equipType: 'shield', baseValue: 45, baseDamageMultiplier: 1.7, element: 'fire', image: '/art/items/lava_shield.png' },
   fire_cloak: { id: 'fire_cloak', name: '焔纏いのマント', type: 'equipment', equipType: 'robe', baseValue: 175, image: '/art/items/fire_cloak.png' },
   enchant_scroll: {
     id: 'enchant_scroll', name: '付呪の巻物', type: 'consumable', baseValue: 140, image: '/art/items/enchant_scroll.png',
@@ -334,7 +334,7 @@ export const ItemBlueprints = {
   trident: { id: 'trident', name: '海神の三叉槍', type: 'equipment', equipType: 'spear', baseValue: 130, baseDamageMultiplier: 1.5, element: 'water', image: '/art/items/trident.png' },
   coral_armor: { id: 'coral_armor', name: '珊瑚の鎧', type: 'equipment', equipType: 'armor', baseValue: 280, image: '/art/items/coral_armor.png' },
   pearl_tiara: { id: 'pearl_tiara', name: '真珠のティアラ', type: 'accessory', baseValue: 360, image: '/art/items/pearl_tiara.png' },
-  tidal_bow: { id: 'tidal_bow', name: '潮流の弓', type: 'equipment', equipType: 'bow', baseValue: 125, element: 'water', image: '/art/items/tidal_bow.png' },
+  tidal_bow: { id: 'tidal_bow', name: '潮流の弓', type: 'equipment', equipType: 'bow', baseValue: 125, multiShot: 2, element: 'water', image: '/art/items/tidal_bow.png' },
   deep_elixir: {
     id: 'deep_elixir', name: '深海の霊薬', type: 'consumable', baseValue: 200, image: '/art/items/deep_elixir.png',
     battleEffect: {
@@ -349,7 +349,7 @@ export const ItemBlueprints = {
     },
   },
   mithril_sword: { id: 'mithril_sword', name: 'ミスリルの剣', type: 'equipment', equipType: 'sword', baseValue: 130, baseDamageMultiplier: 2.5, element: 'none', image: '/art/items/mithril_sword.png' },
-  mithril_shield: { id: 'mithril_shield', name: 'ミスリルの盾', type: 'equipment', equipType: 'shield', baseValue: 60, element: 'none', image: '/art/items/mithril_shield.png' },
+  mithril_shield: { id: 'mithril_shield', name: 'ミスリルの盾', type: 'equipment', equipType: 'shield', baseValue: 60, baseDamageMultiplier: 1.8, element: 'none', image: '/art/items/mithril_shield.png' },
   void_amulet: { id: 'void_amulet', name: '虚空のアミュレット', type: 'accessory', baseValue: 390, image: '/art/items/void_amulet.png' },
   frost_blade: { id: 'frost_blade', name: '凍てつく刃', type: 'equipment', equipType: 'sword', baseValue: 122, baseDamageMultiplier: 2.0, element: 'ice', image: '/art/items/frost_blade.png' },
   elder_staff: { id: 'elder_staff', name: '長老樹の杖', type: 'equipment', equipType: 'staff', baseValue: 120, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/elder_staff.png' },
@@ -399,7 +399,7 @@ export const ItemBlueprints = {
     },
   },
   mystic_amulet: { id: 'mystic_amulet', name: '神秘のアミュレット', type: 'accessory', baseValue: 580, image: '/art/items/mystic_amulet.png' },
-  dragon_bow: { id: 'dragon_bow', name: '竜骨の弓', type: 'equipment', equipType: 'bow', baseValue: 160, baseCritChance: 0.04, element: 'fire', image: '/art/items/dragon_bow.png' },
+  dragon_bow: { id: 'dragon_bow', name: '竜骨の弓', type: 'equipment', equipType: 'bow', baseValue: 160, multiShot: 3, baseCritChance: 0.04, element: 'fire', image: '/art/items/dragon_bow.png' },
   phoenix_robe: { id: 'phoenix_robe', name: '不死鳥のローブ', type: 'equipment', equipType: 'robe', baseValue: 410, image: '/art/items/phoenix_robe.png' },
   void_blade: { id: 'void_blade', name: '虚無の剣', type: 'equipment', equipType: 'sword', baseValue: 170, baseCritChance: 0.04, baseDamageMultiplier: 2.0, element: 'poison', image: '/art/items/void_blade.png' },
   dragon_potion: {
@@ -417,15 +417,15 @@ export const ItemBlueprints = {
   },
   thunder_spear: { id: 'thunder_spear', name: '雷光の槍', type: 'equipment', equipType: 'spear', baseValue: 165, baseDamageMultiplier: 1.75, element: 'lightning', image: '/art/items/thunder_spear.png' },
   cursed_crown: { id: 'cursed_crown', name: '呪王の冠', type: 'accessory', baseValue: 520, image: '/art/items/cursed_crown.png' },
-  scale_shield: { id: 'scale_shield', name: '竜鱗の大盾', type: 'equipment', equipType: 'shield', baseValue: 75, element: 'none', image: '/art/items/scale_shield.png' },
+  scale_shield: { id: 'scale_shield', name: '竜鱗の大盾', type: 'equipment', equipType: 'shield', baseValue: 75, baseDamageMultiplier: 1.8, element: 'none', image: '/art/items/scale_shield.png' },
 
   // ===== Rank 7: 天空解放 (12種) =====
   sky_sword: { id: 'sky_sword', name: '天空の剣', type: 'equipment', equipType: 'sword', baseValue: 220, baseDamageMultiplier: 2.0, element: 'lightning', image: '/art/items/sky_sword.png' },
   time_hourglass: { id: 'time_hourglass', name: '時の砂時計', type: 'accessory', baseValue: 780, image: '/art/items/time_hourglass.png' },
-  star_shield: { id: 'star_shield', name: '星盾', type: 'equipment', equipType: 'shield', baseValue: 100, element: 'none', image: '/art/items/star_shield.png' },
+  star_shield: { id: 'star_shield', name: '星盾', type: 'equipment', equipType: 'shield', baseValue: 100, baseDamageMultiplier: 2.0, element: 'none', image: '/art/items/star_shield.png' },
   divine_armor: { id: 'divine_armor', name: '神鉄の鎧', type: 'equipment', equipType: 'armor', baseValue: 580, image: '/art/items/divine_armor.png' },
   aether_staff: { id: 'aether_staff', name: 'エーテルの杖', type: 'equipment', equipType: 'staff', baseValue: 210, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/aether_staff.png' },
-  sky_bow: { id: 'sky_bow', name: '天翔ける弓', type: 'equipment', equipType: 'bow', baseValue: 205, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/sky_bow.png' },
+  sky_bow: { id: 'sky_bow', name: '天翔ける弓', type: 'equipment', equipType: 'bow', baseValue: 205, multiShot: 3, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/sky_bow.png' },
   rainbow_robe: { id: 'rainbow_robe', name: '虹のローブ', type: 'equipment', equipType: 'robe', baseValue: 530, image: '/art/items/rainbow_robe.png' },
   divine_elixir: {
     id: 'divine_elixir', name: '神酒', type: 'consumable', baseValue: 400, image: '/art/items/divine_elixir.png',
@@ -443,7 +443,7 @@ export const ItemBlueprints = {
   chaos_ring: { id: 'chaos_ring', name: '混沌の指輪', type: 'accessory', baseValue: 680, image: '/art/items/chaos_ring.png' },
   star_pendant: { id: 'star_pendant', name: '星のペンダント', type: 'accessory', baseValue: 720, image: '/art/items/star_pendant.png' },
   wind_lance: { id: 'wind_lance', name: '疾風の槍', type: 'equipment', equipType: 'spear', baseValue: 215, baseDamageMultiplier: 2.0, element: 'wind', image: '/art/items/wind_lance.png' },
-  phoenix_bow: { id: 'phoenix_bow', name: '不死鳥の弓', type: 'equipment', equipType: 'bow', baseValue: 215, baseCritChance: 0.05, element: 'fire', image: '/art/items/phoenix_bow.png' },
+  phoenix_bow: { id: 'phoenix_bow', name: '不死鳥の弓', type: 'equipment', equipType: 'bow', baseValue: 215, multiShot: 3, baseCritChance: 0.05, element: 'fire', image: '/art/items/phoenix_bow.png' },
 
   // ===== Rank 8: 最終レシピ (10種) =====
   legendary_blade: { id: 'legendary_blade', name: '伝説の刃', type: 'equipment', equipType: 'sword', baseValue: 275, baseCritChance: 0.05, baseDamageMultiplier: 2.5, element: 'none', image: '/art/items/legendary_blade.png' },
@@ -452,7 +452,7 @@ export const ItemBlueprints = {
   time_blade: { id: 'time_blade', name: '時渡りの剣', type: 'equipment', equipType: 'sword', baseValue: 265, baseDamageMultiplier: 2.5, element: 'none', image: '/art/items/time_blade.png' },
   primordial_crown: { id: 'primordial_crown', name: '始原の冠', type: 'accessory', baseValue: 1100, image: '/art/items/primordial_crown.png' },
   eternity_ring: { id: 'eternity_ring', name: '永遠の指輪', type: 'accessory', baseValue: 1050, image: '/art/items/eternity_ring.png' },
-  cosmos_bow: { id: 'cosmos_bow', name: '星界弓コスモス', type: 'equipment', equipType: 'bow', baseValue: 275, baseCritChance: 0.05, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/cosmos_bow.png' },
+  cosmos_bow: { id: 'cosmos_bow', name: '星界弓コスモス', type: 'equipment', equipType: 'bow', baseValue: 275, multiShot: 4, baseCritChance: 0.05, baseDamageMultiplier: 1.25, element: 'none', image: '/art/items/cosmos_bow.png' },
   panacea: {
     id: 'panacea', name: '万象の霊薬', type: 'consumable', baseValue: 600, image: '/art/items/panacea.png',
     battleEffect: {
@@ -471,7 +471,7 @@ export const ItemBlueprints = {
       ],
     },
   },
-  oblivion_shield: { id: 'oblivion_shield', name: '忘却の盾', type: 'equipment', equipType: 'shield', baseValue: 120, element: 'none', image: '/art/items/oblivion_shield.png' },
+  oblivion_shield: { id: 'oblivion_shield', name: '忘却の盾', type: 'equipment', equipType: 'shield', baseValue: 120, baseDamageMultiplier: 2.0, element: 'none', image: '/art/items/oblivion_shield.png' },
   astral_robe: { id: 'astral_robe', name: '星衣アストラル', type: 'equipment', equipType: 'robe', baseValue: 860, image: '/art/items/astral_robe.png' },
 
   // =====================================================================
@@ -623,12 +623,12 @@ export const Recipes = {
   oblivion_shield: { id: 'r_oblivion_shield', targetId: 'oblivion_shield', materials: ['chaos_crystal', 'divine_ore', 'void_shard'], unlocked: false },
   astral_robe: { id: 'r_astral_robe', targetId: 'astral_robe', materials: ['aether_essence', 'rainbow_scale', 'star_dust'], unlocked: false },
 
-  // --- ペット卵: 進行に応じて段階的に解放（targetId が pet_egg_* の場合は ItemSystem.craftItem 後に ownedPets へ登録） ---
-  pet_egg_slime:      { id: 'r_pet_egg_slime',      targetId: 'pet_egg_slime',      materials: ['slime_jelly', 'slime_jelly', 'crystal'],                  unlocked: true,  isPetRecipe: true },
+  // --- ペット卵: 進行に応じて段階的に解放。素材は単一エリアで集まるよう調整 ---
+  pet_egg_slime:      { id: 'r_pet_egg_slime',      targetId: 'pet_egg_slime',      materials: ['slime_jelly', 'slime_jelly', 'flower_petal'],             unlocked: true,  isPetRecipe: true },
   pet_egg_wolf:       { id: 'r_pet_egg_wolf',       targetId: 'pet_egg_wolf',       materials: ['bone', 'bone', '@cloth_type'],                            unlocked: false, isPetRecipe: true },
-  pet_egg_owl:        { id: 'r_pet_egg_owl',        targetId: 'pet_egg_owl',        materials: ['feather', 'crystal', '@essence_type'],                    unlocked: false, isPetRecipe: true },
-  pet_egg_imp:        { id: 'r_pet_egg_imp',        targetId: 'pet_egg_imp',        materials: ['dark_stone', 'slime_jelly', 'spirit_essence'],            unlocked: false, isPetRecipe: true },
-  pet_egg_phoenix:    { id: 'r_pet_egg_phoenix',    targetId: 'pet_egg_phoenix',    materials: ['feather', 'fire_stone', 'spirit_essence'],                unlocked: false, isPetRecipe: true },
+  pet_egg_owl:        { id: 'r_pet_egg_owl',        targetId: 'pet_egg_owl',        materials: ['spirit_essence', 'crystal', 'fairy_dust'],                unlocked: false, isPetRecipe: true },
+  pet_egg_imp:        { id: 'r_pet_egg_imp',        targetId: 'pet_egg_imp',        materials: ['dark_stone', 'crystal', 'bone'],                          unlocked: false, isPetRecipe: true },
+  pet_egg_phoenix:    { id: 'r_pet_egg_phoenix',    targetId: 'pet_egg_phoenix',    materials: ['feather', 'fire_stone', '@crystal_type'],                 unlocked: false, isPetRecipe: true },
   pet_egg_dragonling: { id: 'r_pet_egg_dragonling', targetId: 'pet_egg_dragonling', materials: ['dragon_scale', 'dragon_scale', 'fire_stone', 'crystal'],  unlocked: false, isPetRecipe: true },
 };
 // 特性マスタ — 名前と効果の説明

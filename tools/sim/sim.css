@@ -1,0 +1,210 @@
+:root {
+  --bg: #1f1510;
+  --surface: #281c14;
+  --surface-raised: #3a2818;
+  --text: #f0e0c8;
+  --text-dim: #c4a880;
+  --border: #5a4028;
+  --accent: #ffaa44;
+  --accent-strong: #d4a017;
+  --good: #4faa44;
+  --bad: #f44;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+h1 { margin: 0; font-size: 1.4rem; }
+h3 { margin: 0 0 0.6rem 0; font-size: 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+small { color: var(--text-dim); font-size: 0.8em; }
+
+.sim-header {
+  background: var(--surface);
+  padding: 0.8rem 1.2rem;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sim-tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+.sim-tab {
+  padding: 0.5rem 1rem;
+  background: var(--surface-raised);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+.sim-tab.active {
+  background: var(--accent);
+  color: #1a1410;
+  border-color: var(--accent-strong);
+  font-weight: bold;
+}
+
+.sim-content {
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.sim-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 900px) {
+  .sim-grid { grid-template-columns: 1fr; }
+}
+
+.sim-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sim-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+.sim-row > span:first-child {
+  flex: 0 0 110px;
+  color: var(--text-dim);
+}
+.sim-row select,
+.sim-row input[type="number"] {
+  background: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  font-family: inherit;
+}
+.sim-row select { flex: 1; min-width: 0; }
+.sim-row input[type="number"] { width: 80px; }
+.sim-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin: 0.3rem 0;
+}
+
+.sim-button {
+  background: var(--accent);
+  color: #1a1410;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+.sim-button:hover { background: var(--accent-strong); }
+.sim-button-mini {
+  background: var(--surface-raised);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.sim-stats {
+  width: 100%;
+  border-collapse: collapse;
+}
+.sim-stats th {
+  text-align: left;
+  background: var(--surface-raised);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+}
+.sim-stats td {
+  padding: 0.3rem 0.5rem;
+  border-bottom: 1px solid rgba(90, 64, 40, 0.3);
+  font-size: 0.85rem;
+}
+.sim-stats td:first-child { color: var(--text-dim); width: 40%; }
+
+.sim-rank {
+  width: 100%;
+  border-collapse: collapse;
+}
+.sim-rank tr:nth-child(even) { background: rgba(58, 40, 24, 0.4); }
+.sim-rank td {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+}
+.sim-rank td.rank {
+  width: 32px;
+  color: var(--accent);
+  font-weight: bold;
+  text-align: center;
+}
+.sim-rank thead th {
+  text-align: left;
+  padding: 0.3rem 0.5rem;
+  background: var(--surface-raised);
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+.sim-rank .bar {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  color: #1a1410;
+  font-weight: bold;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  min-width: 40px;
+  font-size: 0.8rem;
+}
+
+.bossrush-dist {
+  margin-top: 0.5rem;
+}
+.dist-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+  font-size: 0.8rem;
+}
+.dist-row > span:first-child { flex: 0 0 40px; color: var(--text-dim); }
+.dist-count { flex: 0 0 40px; text-align: right; color: var(--text); }
+.bar-container {
+  flex: 1;
+  height: 14px;
+  background: var(--surface-raised);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-container .bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+}
+
+canvas { display: block; margin-top: 0.5rem; border: 1px solid var(--border); border-radius: 4px; max-width: 100%; }

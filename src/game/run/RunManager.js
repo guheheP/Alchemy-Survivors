@@ -678,9 +678,9 @@ export class RunManager {
   /** ボスラッシュモード有効化（main._startRun から呼ばれる） */
   enableBossRush() {
     this.bossRush = new BossRushManager();
-    // BossRush 中は ★5 エリート湧き率を上げる（25%）
+    // BossRush 中は ★5 エリート湧き率を上げる（10%: 「特別感」と「処理負荷」のバランス）
     if (this.spawner && typeof this.spawner.setEliteChance === 'function') {
-      this.spawner.setEliteChance(0.25);
+      this.spawner.setEliteChance(0.10);
     }
     eventBus.emit('bossrush:start', {
       total: BOSS_RUSH_ORDER.length,
@@ -707,7 +707,7 @@ export class RunManager {
     try { this.bossSystem.destroy?.(); } catch (e) { /* ignore */ }
     const modifiers = DifficultyModifiers[this.difficulty] || null;
     this.spawner = new EnemySpawner(nextAreaId, modifiers);
-    if (this.bossRush) this.spawner.setEliteChance(0.25);
+    if (this.bossRush) this.spawner.setEliteChance(0.10);
     this.bossSystem = new BossSystem(nextAreaId, modifiers, this.difficulty);
 
     this.areaId = nextAreaId;

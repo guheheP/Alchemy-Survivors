@@ -75,7 +75,7 @@ export const GameConfig = {
     bow:    { baseRange: 180, baseCooldown: 0.65, arc: 0, pattern: 'projectile' },
     staff:  { baseRange: 130, baseCooldown: 0.85, arc: Math.PI * 2, pattern: 'orbit' },
     dagger: { baseRange: 60, baseCooldown: 0.30, arc: Math.PI / 3, pattern: 'orbit' },
-    shield: { baseRange: 90, baseCooldown: 1.5, arc: Math.PI * 2, pattern: 'pulse' },
+    shield: { baseRange: 90, baseCooldown: 2.0, arc: Math.PI * 2, pattern: 'pulse' },
   },
 
   // --- 武器スキル説明（UI表示用） ---

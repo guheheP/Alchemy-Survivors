@@ -3,6 +3,7 @@
  */
 
 import { WeaponStrategy } from './WeaponStrategy.js';
+import { ItemBlueprints } from '../../data/items.js';
 
 export class BowStrategy extends WeaponStrategy {
   constructor(player, weaponItem) {
@@ -10,6 +11,9 @@ export class BowStrategy extends WeaponStrategy {
     this.projectiles = []; // active projectiles
     this.projectileSpeed = 400;
     this.maxProjectiles = 50;
+    // BP の multiShot プロパティで弓ごとの基礎連射数を決定 (1〜4)
+    const bp = ItemBlueprints[weaponItem.blueprintId];
+    this.bpMultiShot = Math.max(1, bp?.multiShot || 1);
   }
 
   update(dt, enemies, collisionSystem) {
@@ -75,7 +79,8 @@ export class BowStrategy extends WeaponStrategy {
       ? Math.atan2(nearest.y - py, nearest.x - px)
       : this.player.facingAngle;
 
-    const count = 1 + this.player.passives.extraProjectile;
+    // 連射数 = BP固有 multiShot + extraProjectile パッシブ
+    const count = this.bpMultiShot + this.player.passives.extraProjectile;
     const spreadAngle = count > 1 ? 0.15 : 0; // slight spread for multiple arrows
 
     for (let n = 0; n < count; n++) {
