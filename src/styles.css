@@ -1698,7 +1698,14 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
 .equip-weapon-card.equipped { border-color: #4af; background: rgba(68,170,255,0.1); }
 .equip-card-icon { width: 28px; height: 28px; image-rendering: pixelated; flex-shrink: 0; }
 .equip-card-info { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 0.2rem; }
-.equip-card-name { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.equip-card-name {
+  font-size: 0.9rem;
+  /* 武器名は省略せず最大2行まで折返し表示（モバイル幅でも判別可能に） */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+  word-break: break-word;
+  line-height: 1.25;
+}
 .equip-card-quality { font-size: 0.75rem; color: #4af; flex-shrink: 0; }
 .equip-card-meta {
   display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem;
@@ -1826,7 +1833,7 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
   font-size: 0.85rem;
 }
 @media (hover: none) and (pointer: coarse) {
-  .preset-btn { min-height: 34px; padding: 5px 10px; }
+  .preset-btn { min-height: var(--touch-target); padding: 5px 10px; }
 }
 .prep-row-weapons { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.3rem 0; border-bottom: 1px solid #3a2818; }
 .prep-weapon-list { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.3rem; }
@@ -4014,7 +4021,7 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
   .area-list { grid-template-columns: repeat(2, 1fr); }
   .stats-grid { grid-template-columns: 1fr; }
   .ach-categories { gap: 0.2rem; }
-  .ach-cat-btn { padding: 0.35rem 0.5rem; font-size: 0.7rem; min-height: 32px; }
+  .ach-cat-btn { padding: 0.35rem 0.5rem; font-size: 0.7rem; min-height: var(--touch-target); }
   .tutorial-card { padding: 1.5rem; }
 
   .warehouse-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.4rem; }
@@ -4044,7 +4051,7 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
   .hud-passives { max-width: 60vw; }
   .hud-cons-slot { min-width: 100px; }
 
-  .equip-filter-btn, .wh-filter { padding: 0.5rem 0.7rem; min-height: 36px; }
+  .equip-filter-btn, .wh-filter { padding: 0.5rem 0.7rem; min-height: var(--touch-target); }
 
   .toast-container {
     bottom: 100px; right: 10px; left: 10px;
@@ -4528,7 +4535,7 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
   /* --- Equipment: 装備スロット削除ボタンのタップ領域 --- */
   .equip-unequip,
   .weapon-slot .slot-remove {
-    min-height: 32px;
+    min-height: var(--touch-target);
     padding: 0.35rem 0.7rem;
     font-size: 0.78rem;
     flex-shrink: 0;

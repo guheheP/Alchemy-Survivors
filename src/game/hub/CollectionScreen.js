@@ -48,10 +48,15 @@ export class CollectionScreen {
   }
 
   render() {
-    // 発見済みアイテム（インベントリに一度でも入ったことがあるBP）
-    const discoveredBps = new Set();
-    for (const item of this.inventory.items) {
-      discoveredBps.add(item.blueprintId);
+    // 発見済みアイテム — InventorySystem.discoveredBlueprintIds に永続化済み
+    // （売却・廃棄しても残るため図鑑から消えない）。
+    // 旧データや未初期化の場合は現在所持品から派生してフォールバック。
+    let discoveredBps = this.inventory.discoveredBlueprintIds;
+    if (!(discoveredBps instanceof Set)) {
+      discoveredBps = new Set();
+      for (const item of this.inventory.items) {
+        discoveredBps.add(item.blueprintId);
+      }
     }
 
     const totalBps = Object.keys(ItemBlueprints).length;

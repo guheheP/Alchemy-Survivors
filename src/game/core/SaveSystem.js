@@ -24,7 +24,7 @@ const LOCAL_BACKUP_RING_SIZE = 5;
 const CLOUD_USER_DATA_KEY = 'save';
 const CLOUD_USER_DATA_KEY_PREVIOUS = 'save_previous';
 const CLOUD_SAVE_DEBOUNCE_MS = 5000;
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 
 const DEFAULT_STATS = {
   totalRuns: 0,
@@ -150,6 +150,10 @@ export class SaveSystem {
       hardModeUnlocked: extraData.hardModeUnlocked || [],
       tutorialCompleted: extraData.tutorialCompleted || false,
       equipmentPresets: extraData.equipmentPresets || [],
+      // 図鑑「発見済み blueprintId」— 売却・廃棄しても残る
+      discoveredBlueprintIds: this.inventory?.discoveredBlueprintIds
+        ? [...this.inventory.discoveredBlueprintIds]
+        : [],
       // カジノ独立state（実験機能。CASINO_ENABLED=false時は null が書き込まれる）
       casino: extraData.casino || null,
     };
@@ -334,7 +338,9 @@ export class SaveSystem {
     const chosen = useCloud ? cloud : local;
     const discarded = useCloud ? local : cloud;
     try {
-      const backupKey = `${BACKUP_KEY_PREFIX}${new Date().toISOString().slice(0, 10)}`;
+      // 同日内の複数競合でも上書きされないよう、ISO 全体 + ランダム接尾辞を使用
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupKey = `${BACKUP_KEY_PREFIX}${ts}_${Math.random().toString(36).slice(2, 8)}`;
       localStorage.setItem(backupKey, JSON.stringify(discarded));
     } catch (e) { /* ignore quota */ }
     return {
@@ -458,6 +464,18 @@ export class SaveSystem {
       data.version = 5;
       data.casino = data.casino || null;
     }
+    if (data.version === 5) {
+      // v5→v6: 図鑑用 discoveredBlueprintIds 追加。
+      // 旧セーブからは「現在所持アイテムの blueprintId」を初期値として補完する。
+      data.version = 6;
+      if (!Array.isArray(data.discoveredBlueprintIds)) {
+        const seen = new Set();
+        for (const it of data.items || []) {
+          if (it?.blueprintId) seen.add(it.blueprintId);
+        }
+        data.discoveredBlueprintIds = [...seen];
+      }
+    }
     return data;
   }
 
@@ -471,6 +489,13 @@ export class SaveSystem {
     this.inventory.items.length = 0;
     this.inventory.gold = data.gold || 0;
     // maxCapacity は Progression.warehouseLevel から派生（getter）。data.maxCapacity は無視。
+
+    // 図鑑「発見済み blueprintId」を rebuildIndexes より先に復元しておく
+    // （rebuildIndexes 中の _addToIndexes で現在所持品も自動マージされる）
+    if (this.inventory.discoveredBlueprintIds) {
+      this.inventory.discoveredBlueprintIds.clear();
+      this.inventory.loadDiscoveredBlueprintIds(data.discoveredBlueprintIds || []);
+    }
 
     for (const itemData of data.items) {
       const item = createItemInstance(itemData.blueprintId, itemData.quality, itemData.traits);

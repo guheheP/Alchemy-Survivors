@@ -29,11 +29,26 @@ export class InventorySystem {
     this._byCategory = new Map();       // categoryId → Set<item>
     this._byType = new Map();           // type → Set<item>
 
+    /**
+     * 図鑑用「これまでに一度でも所持したことがある blueprintId」の集合。
+     * 売却・廃棄しても残るため、図鑑が現在所持品でリセットされない。
+     * @type {Set<string>}
+     */
+    this.discoveredBlueprintIds = new Set();
+
     // 初期アイテムの生成
     for (const def of GameConfig.initialItems) {
       const inst = createItemInstance(def.blueprintId, def.quality, def.traits);
       this.items.push(inst);
       this._addToIndexes(inst);
+    }
+  }
+
+  /** セーブからの復元用: 既存の discoveredBlueprintIds に追加マージする */
+  loadDiscoveredBlueprintIds(ids) {
+    if (!Array.isArray(ids)) return;
+    for (const id of ids) {
+      if (typeof id === 'string') this.discoveredBlueprintIds.add(id);
     }
   }
 
@@ -236,6 +251,9 @@ export class InventorySystem {
   _addToIndexes(item) {
     if (!item || !item.uid) return;
     this._byUid.set(item.uid, item);
+
+    // 図鑑用: 一度でも所持した blueprintId は永続的に発見済みとして記録
+    if (item.blueprintId) this.discoveredBlueprintIds.add(item.blueprintId);
 
     let set = this._byBlueprint.get(item.blueprintId);
     if (!set) { set = new Set(); this._byBlueprint.set(item.blueprintId, set); }

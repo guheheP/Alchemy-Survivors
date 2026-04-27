@@ -44,6 +44,10 @@ const RUN_TRACKS = {
   time_corridor: assetPath('/bgm/run_08.mp3'),
 };
 const RUN_TRACK_DEFAULT = assetPath('/bgm/run_01.mp3');
+
+// localStorage キー — alchemy_survivors_sound が現行、voxelshop_sound は旧プロジェクト名残（マイグレーション対応）
+const SOUND_SETTINGS_KEY = 'alchemy_survivors_sound';
+const SOUND_SETTINGS_KEY_LEGACY = 'voxelshop_sound';
 // ボス戦BGM — エリアID → battle_NN.mp3
 const BOSS_TRACKS_BY_AREA = {
   plains:        assetPath('/bgm/battle_01.mp3'),
@@ -107,8 +111,13 @@ class SoundManagerClass {
     this._maxSeNodes = 12;           // 同時SE上限
     this._activeBgmNodes = [];       // プロシージャルBGMノード追跡
 
-    // Load saved settings
-    const saved = localStorage.getItem('voxelshop_sound');
+    // Load saved settings (current key 優先、legacy 'voxelshop_sound' をフォールバックで読み込みマイグレーション)
+    let saved = localStorage.getItem(SOUND_SETTINGS_KEY);
+    let migratedFromLegacy = false;
+    if (!saved) {
+      saved = localStorage.getItem(SOUND_SETTINGS_KEY_LEGACY);
+      if (saved) migratedFromLegacy = true;
+    }
     if (saved) {
       try {
         const s = JSON.parse(saved);
@@ -117,6 +126,12 @@ class SoundManagerClass {
         if (s.bgmVolume !== undefined) this.bgmVolume = s.bgmVolume;
         if (s.seVolume !== undefined) this.seVolume = s.seVolume;
       } catch { /* */ }
+    }
+    if (migratedFromLegacy) {
+      try {
+        localStorage.setItem(SOUND_SETTINGS_KEY, saved);
+        localStorage.removeItem(SOUND_SETTINGS_KEY_LEGACY);
+      } catch { /* quota */ }
     }
   }
 
@@ -240,14 +255,7 @@ class SoundManagerClass {
 
   // ===== 音量制御 =====
 
-  _saveSettings() {
-    localStorage.setItem('voxelshop_sound', JSON.stringify({
-      muted: this.muted,
-      masterVolume: this.masterVolume,
-      bgmVolume: this.bgmVolume,
-      seVolume: this.seVolume,
-    }));
-  }
+  // _saveSettings は line ~510 で定義（重複削除済 — 旧バージョンは voxelshop_sound キーで try-catch なしだった）
 
   toggleMute() {
     this.muted = !this.muted;
@@ -509,7 +517,7 @@ class SoundManagerClass {
   /** 設定をlocalStorageに保存 */
   _saveSettings() {
     try {
-      localStorage.setItem('voxelshop_sound', JSON.stringify({
+      localStorage.setItem(SOUND_SETTINGS_KEY, JSON.stringify({
         muted: this.muted,
         masterVolume: this.masterVolume,
         bgmVolume: this.bgmVolume,

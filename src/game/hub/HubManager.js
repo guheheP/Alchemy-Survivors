@@ -114,11 +114,15 @@ export class HubManager {
 
   _renderContent() {
     const content = this.el.querySelector('#hub-content');
-    content.innerHTML = '';
 
-    if (this.screens[this.activeTab]?.destroy) {
-      this.screens[this.activeTab].destroy();
+    // 切替前に既存スクリーンを全て破棄（eventBus 購読の蓄積を防ぐ）
+    for (const [tabId, screen] of Object.entries(this.screens)) {
+      if (screen?.destroy) {
+        try { screen.destroy(); } catch (e) { console.error(`[HubManager] destroy failed for ${tabId}`, e); }
+      }
     }
+    this.screens = {};
+    content.innerHTML = '';
 
     switch (this.activeTab) {
       case 'craft': {
