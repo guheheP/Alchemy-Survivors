@@ -140,6 +140,75 @@ export const EntityRenderer = {
     ctx.restore();
   },
 
+  /**
+   * ペット描画 — 簡易キャラ + 浮遊アニメ + 攻撃クールダウンリング
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {{x:number,y:number,radius:number,def:object,facing:number,_actionTimer:number,params:object,level:number}} pet
+   * @param {number} elapsed - ラン経過時間（ボブアニメーション用）
+   */
+  drawPet(ctx, pet, elapsed = 0) {
+    if (!pet || !pet.def) return;
+    const x = pet.x;
+    const y = pet.y;
+    const radius = pet.radius || 8;
+    const color = pet.def.spriteColor || '#fff';
+    const icon = pet.def.icon || '🐾';
+
+    // 影
+    EntityRenderer.drawShadow(ctx, x, y, radius, 0.3);
+
+    // 浮遊（軽くY座標を上下）
+    const bob = Math.sin(elapsed * 4 + (pet.petId?.length || 0)) * 2;
+
+    // 弱グロー
+    EntityRenderer.drawGlow(ctx, x, y + bob, radius * 1.6, color, 0.35);
+
+    // 本体（円 + 絵文字アイコン）
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y + bob, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // 絵文字（簡易アバター）
+    ctx.font = `${Math.round(radius * 1.6)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(icon, x, y + bob);
+    ctx.restore();
+
+    // クールダウンリング（攻撃系のみ表示）
+    const cooldown = pet.params?.cooldown;
+    if (cooldown && pet._actionTimer > 0) {
+      const ratio = 1 - Math.min(1, pet._actionTimer / cooldown);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y + bob, radius + 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ratio);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Lv バッジ（小さい数字）
+    if (pet.level && pet.level > 1) {
+      ctx.save();
+      ctx.font = '8px sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 2;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.strokeText(`Lv${pet.level}`, x, y + bob - radius - 6);
+      ctx.fillText(`Lv${pet.level}`, x, y + bob - radius - 6);
+      ctx.restore();
+    }
+  },
+
   /** HPバー描画（エンティティの頭上） */
   drawHpBar(ctx, x, y, radius, hp, maxHp) {
     if (hp >= maxHp) return;

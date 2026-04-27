@@ -485,6 +485,17 @@ export const ItemBlueprints = {
   magic_cloth: { id: 'magic_cloth', name: '魔法織物', type: 'material', tier: 3, baseValue: 38, category: 'cloth_type', image: '/art/items/magic_cloth.png' },
   spirit_thread: { id: 'spirit_thread', name: '精霊糸', type: 'material', tier: 3, baseValue: 42, category: 'cloth_type', image: '/art/items/spirit_thread.png' },
   dragon_alloy: { id: 'dragon_alloy', name: '竜鉄', type: 'material', tier: 4, baseValue: 70, category: 'ore_type', image: '/art/items/dragon_alloy.png' },
+
+  // =====================================================================
+  //  ペット卵 — 完成品扱いの "consumable" 種別。craftItem 後、ItemSystem 側で
+  //  `petId` を持つ Blueprint なら ownedPets に登録、インベントリには保持しない
+  // =====================================================================
+  pet_egg_slime:      { id: 'pet_egg_slime',      name: 'スライムの卵',      type: 'pet_egg', tier: 1, baseValue: 30,  petId: 'slime',      image: null },
+  pet_egg_wolf:       { id: 'pet_egg_wolf',       name: '子狼の卵',          type: 'pet_egg', tier: 2, baseValue: 60,  petId: 'wolf',       image: null },
+  pet_egg_phoenix:    { id: 'pet_egg_phoenix',    name: 'フェニックスの卵',  type: 'pet_egg', tier: 4, baseValue: 200, petId: 'phoenix',    image: null },
+  pet_egg_owl:        { id: 'pet_egg_owl',        name: 'フクロウの卵',      type: 'pet_egg', tier: 3, baseValue: 120, petId: 'owl',        image: null },
+  pet_egg_imp:        { id: 'pet_egg_imp',        name: 'インプの卵',        type: 'pet_egg', tier: 3, baseValue: 130, petId: 'imp',        image: null },
+  pet_egg_dragonling: { id: 'pet_egg_dragonling', name: '子龍の卵',          type: 'pet_egg', tier: 5, baseValue: 400, petId: 'dragonling', image: null },
 };
 
 // ===================================================================
@@ -611,6 +622,14 @@ export const Recipes = {
   panacea: { id: 'r_panacea', targetId: 'panacea', materials: ['world_tree_sap', 'phoenix_ash', 'primordial_gem'], unlocked: false },
   oblivion_shield: { id: 'r_oblivion_shield', targetId: 'oblivion_shield', materials: ['chaos_crystal', 'divine_ore', 'void_shard'], unlocked: false },
   astral_robe: { id: 'r_astral_robe', targetId: 'astral_robe', materials: ['aether_essence', 'rainbow_scale', 'star_dust'], unlocked: false },
+
+  // --- ペット卵: 進行に応じて段階的に解放（targetId が pet_egg_* の場合は ItemSystem.craftItem 後に ownedPets へ登録） ---
+  pet_egg_slime:      { id: 'r_pet_egg_slime',      targetId: 'pet_egg_slime',      materials: ['slime_jelly', 'slime_jelly', 'crystal'],                  unlocked: true,  isPetRecipe: true },
+  pet_egg_wolf:       { id: 'r_pet_egg_wolf',       targetId: 'pet_egg_wolf',       materials: ['bone', 'bone', '@cloth_type'],                            unlocked: false, isPetRecipe: true },
+  pet_egg_owl:        { id: 'r_pet_egg_owl',        targetId: 'pet_egg_owl',        materials: ['feather', 'crystal', '@essence_type'],                    unlocked: false, isPetRecipe: true },
+  pet_egg_imp:        { id: 'r_pet_egg_imp',        targetId: 'pet_egg_imp',        materials: ['dark_stone', 'slime_jelly', 'spirit_essence'],            unlocked: false, isPetRecipe: true },
+  pet_egg_phoenix:    { id: 'r_pet_egg_phoenix',    targetId: 'pet_egg_phoenix',    materials: ['feather', 'fire_stone', 'spirit_essence'],                unlocked: false, isPetRecipe: true },
+  pet_egg_dragonling: { id: 'r_pet_egg_dragonling', targetId: 'pet_egg_dragonling', materials: ['dragon_scale', 'dragon_scale', 'fire_stone', 'crystal'],  unlocked: false, isPetRecipe: true },
 };
 // 特性マスタ — 名前と効果の説明
 // Epic は融合でのみ入手可能（エリアドロップなし）

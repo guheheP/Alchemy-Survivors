@@ -23,6 +23,8 @@ import { DifficultyModifiers } from '../data/hardmode.js';
 import { BossSystem } from './BossSystem.js';
 import { ComboSystem } from './ComboSystem.js';
 import { ConsumableSystem } from './ConsumableSystem.js';
+import { PetController } from './PetController.js';
+import { BossRushManager, BOSS_RUSH_ORDER, LOBBY_HP_RESTORE_RATIO } from './BossRushManager.js';
 import { DamageNumberSystem } from './DamageNumberSystem.js';
 import { ParticleSystem } from './render/ParticleSystem.js';
 import { SpriteCache } from './render/SpriteCache.js';
@@ -42,7 +44,7 @@ export class RunManager {
    * @param {object|null} equippedArmor - 装備中の防具
    * @param {object|null} equippedAccessory - 装備中のアクセサリ
    */
-  constructor(canvasEl, weaponSlots, areaId, equippedArmor = null, equippedAccessory = null, consumables = [], difficulty = 'normal') {
+  constructor(canvasEl, weaponSlots, areaId, equippedArmor = null, equippedAccessory = null, consumables = [], difficulty = 'normal', equippedPet = null) {
     this.areaId = areaId;
     this.area = AreaDefs[areaId];
     this.difficulty = difficulty;
@@ -79,6 +81,11 @@ export class RunManager {
       getPlayer: () => this.player,
     });
     this.consumables = consumables.length > 0 ? new ConsumableSystem(this.player, consumables) : null;
+    // ペット（装備時のみ生成、未装備なら null）
+    this.petController = equippedPet ? new PetController(this.player, equippedPet) : null;
+
+    // ボスラッシュ管理（enableBossRush() 呼び出しで有効化）
+    this.bossRush = null;
     this.damageNumbers = new DamageNumberSystem();
     this.materialCount = 0;
     this.highestDamage = 0;
@@ -513,6 +520,11 @@ export class RunManager {
     // 消耗品更新
     if (this.consumables) this.consumables.update(dt);
 
+    // ペット更新（プレイヤー追従 + behavior 処理）
+    if (this.petController) {
+      this.petController.update(dt, allEnemies, { player: this.player, camera: this.camera });
+    }
+
     // ダメージ数字更新
     this.damageNumbers.update(dt);
 
@@ -563,6 +575,7 @@ export class RunManager {
         playerSpritePath: PLAYER_SPRITE_PATH,
         playerSpriteFrameW: PLAYER_SPRITE_FRAME_W,
         playerSpriteFrameH: PLAYER_SPRITE_FRAME_H,
+        pet: this.petController?.getPet() || null,
       },
     );
     this._renderShockwaves();
@@ -639,13 +652,67 @@ export class RunManager {
   }
 
   _onPlayerDied() {
+    if (this.bossRush) {
+      this.bossRush.onPlayerDied();
+    }
     this._endRun('death');
   }
 
   _onBossDefeated() {
     // エリアボス撃破 = ステージクリア。ゲーム時間で1.5秒のディレイを入れて演出を見せる
     if (this.state === 'ended') return;
+    if (this.bossRush) {
+      // ボスラッシュ: 次ボスへ進む or 全クリア
+      const next = this.bossRush.onBossDefeated();
+      if (next.type === 'cleared') {
+        this._clearPending = 1.5;
+        return;
+      }
+      // ロビー突入 → 戦闘継続のため _clearPending は出さない
+      this._enterBossRushLobby(next.nextAreaId);
+      return;
+    }
     this._clearPending = 1.5;
+  }
+
+  /** ボスラッシュモード有効化（main._startRun から呼ばれる） */
+  enableBossRush() {
+    this.bossRush = new BossRushManager();
+    // BossRush 中は ★5 エリート湧き率を上げる（25%）
+    if (this.spawner && typeof this.spawner.setEliteChance === 'function') {
+      this.spawner.setEliteChance(0.25);
+    }
+    eventBus.emit('bossrush:start', {
+      total: BOSS_RUSH_ORDER.length,
+      currentAreaId: this.bossRush.getCurrentAreaId(),
+    });
+  }
+
+  /** ボス撃破後のロビー: HP一部回復 + 次エリアへスポナー/ボスシステムを再構築 */
+  _enterBossRushLobby(nextAreaId) {
+    const nextArea = AreaDefs[nextAreaId];
+    if (!nextArea) {
+      // 想定外: クリア扱いに倒す
+      this._clearPending = 1.5;
+      return;
+    }
+    // HP 一部回復 + 短い無敵
+    const heal = (this.player.effectiveMaxHp || this.player.maxHp) * LOBBY_HP_RESTORE_RATIO;
+    this.player.hp = Math.min(this.player.effectiveMaxHp || this.player.maxHp, this.player.hp + heal);
+    this.player.invincibleTimer = Math.max(this.player.invincibleTimer || 0, 2.0);
+    eventBus.emit('toast', { message: `🏆 撃破！次のエリア: ${nextArea.icon || ''} ${nextArea.name || nextAreaId}`, type: 'success' });
+
+    // 既存スポナー/ボスシステムを破棄して次エリア用に作り直し
+    try { this.spawner.destroy?.(); } catch (e) { /* ignore */ }
+    try { this.bossSystem.destroy?.(); } catch (e) { /* ignore */ }
+    const modifiers = DifficultyModifiers[this.difficulty] || null;
+    this.spawner = new EnemySpawner(nextAreaId, modifiers);
+    if (this.bossRush) this.spawner.setEliteChance(0.25);
+    this.bossSystem = new BossSystem(nextAreaId, modifiers, this.difficulty);
+
+    this.areaId = nextAreaId;
+    this.area = nextArea;
+    // 経過時間はリセットしない（合計記録のため）
   }
 
   _endRun(reason) {
@@ -666,6 +733,13 @@ export class RunManager {
       weaponTypesUsed: this.weaponTypesUsed,
       hardMode: this.hardMode || false,
       difficulty: this.difficulty,
+      petResult: this.petController ? this.petController.collectRunResult() : null,
+      bossRush: this.bossRush ? {
+        defeated: this.bossRush.defeatedCount,
+        total: BOSS_RUSH_ORDER.length,
+        rewards: this.bossRush.calculateRewards(),
+        endReason: this.bossRush.endReason,
+      } : null,
     });
   }
 
@@ -684,6 +758,7 @@ export class RunManager {
     if (this.comboSystem) this.comboSystem.destroy();
     if (this.weapon && typeof this.weapon.destroy === 'function') this.weapon.destroy();
     if (this.consumables) this.consumables.destroy();
+    if (this.petController) this.petController.destroy();
     this.damageNumbers.destroy();
     this.particles.clear();
     this.canvas.destroy();

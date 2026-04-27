@@ -29,6 +29,7 @@ import { DisplayNamePrompt, shouldPromptDisplayName } from './ui/DisplayNameProm
 import { initPwaRuntime, applyPwaUpdate } from './core/pwaRuntime.js';
 import { CASINO_ENABLED, CasinoManager } from './casino/index.js';
 import { SaveRecoveryModal } from './ui/SaveRecoveryModal.js';
+import { levelFromExp as petLevelFromExp } from './data/pets.js';
 
 class Game {
   constructor() {
@@ -45,6 +46,14 @@ class Game {
     this.savedConsumableUids = [];
     this.lastSelectedAreaId = null;
     this.presetsManager = new EquipmentPresetsManager([]);
+    /**
+     * 所持ペット: id → { exp:number, level:number }
+     * ペット未獲得時は空。卵を使う/レアドロップで追加される。
+     * @type {Map<string, {exp:number, level:number}>}
+     */
+    this.ownedPets = new Map();
+    /** 現在装備中のペットID（null なら未装備） */
+    this.equippedPetId = null;
     this.stats = {
       totalRuns: 0,
       totalKills: 0,
@@ -64,6 +73,12 @@ class Game {
       challengeClears: 0,
       nightmareClears: 0,
       firstPlayDate: null,
+      // ペット系統計
+      petsObtained: 0,
+      maxPetLevel: 0,
+      // ボスラッシュ統計
+      bossRushAttempts: 0,
+      bossRushBest: 0,
     };
 
     // 実績
@@ -81,6 +96,19 @@ class Game {
     eventBus.on('run:complete', (data) => this._onRunComplete(data));
     eventBus.on('result:continue', (data) => this._returnToHub(data));
     eventBus.on('equipment:changed', ({ weaponSlots, armor, accessory }) => { this.weaponSlots = [...weaponSlots]; this.equippedArmor = armor; this.equippedAccessory = accessory; });
+    eventBus.on('pet:equipped', ({ petId }) => {
+      this.equippedPetId = petId || null;
+      if (this.hubManager) this.hubManager.equippedPetId = this.equippedPetId;
+      try { this._autoSave(); } catch (e) { /* ignore */ }
+    });
+    eventBus.on('pet:obtained', () => {
+      if (this.hubManager) this.hubManager.ownedPets = this.ownedPets;
+      try { this._autoSave(); } catch (e) { /* ignore */ }
+    });
+    eventBus.on('pet:hatch', ({ petId }) => {
+      if (!petId) return;
+      this._addPet(petId);
+    });
     eventBus.on('consumables:selected', ({ uids }) => { this.savedConsumableUids = [...(uids || [])]; });
     eventBus.on('area:selected', ({ areaId }) => { this.lastSelectedAreaId = areaId || null; });
     eventBus.on('save:request', () => { try { this._autoSave(); } catch (e) { /* ignore */ } });
@@ -454,6 +482,12 @@ class Game {
         this.presetsManager = new EquipmentPresetsManager(saveData.equipmentPresets);
       }
       this.achievements = new AchievementSystem(this.stats, saveData.achievements || []);
+      // ペット復元
+      this.ownedPets = new Map();
+      for (const p of (saveData.ownedPets || [])) {
+        if (p?.id) this.ownedPets.set(p.id, { exp: p.exp || 0, level: p.level || 1 });
+      }
+      this.equippedPetId = saveData.equippedPetId || null;
       if (CASINO_ENABLED) {
         CasinoManager.getInstance().hydrate(saveData.casino);
       }
@@ -500,6 +534,8 @@ class Game {
     this.hubManager.savedConsumableUids = [...this.savedConsumableUids];
     this.hubManager.lastSelectedAreaId = this.lastSelectedAreaId;
     this.hubManager.presetsManager = this.presetsManager;
+    this.hubManager.ownedPets = this.ownedPets;
+    this.hubManager.equippedPetId = this.equippedPetId;
     this.hubManager.render();
 
     // 自動セーブ
@@ -516,7 +552,7 @@ class Game {
     }
   }
 
-  _startRun({ weaponSlots, areaId, consumables, difficulty, hardMode }) {
+  _startRun({ weaponSlots, areaId, consumables, difficulty, hardMode, bossRush }) {
     this.scene = 'run';
     // 出撃したステージを記憶（次回の出撃準備画面で初期選択）
     if (areaId) this.lastSelectedAreaId = areaId;
@@ -530,8 +566,14 @@ class Game {
     // 難易度の解決: 新APIの difficulty 文字列を優先、無ければ旧 hardMode boolean を変換
     const resolvedDifficulty = difficulty || (hardMode ? 'hard' : 'normal');
 
+    // 装備中のペット情報を抽出
+    const equippedPet = this._getEquippedPetSnapshot();
+
     // ランシステム初期化
-    this.runManager = new RunManager(this.canvas, weaponSlots, areaId, this.equippedArmor, this.equippedAccessory, consumables || [], resolvedDifficulty);
+    this.runManager = new RunManager(this.canvas, weaponSlots, areaId, this.equippedArmor, this.equippedAccessory, consumables || [], resolvedDifficulty, equippedPet);
+    if (bossRush && typeof this.runManager.enableBossRush === 'function') {
+      this.runManager.enableBossRush();
+    }
 
     // ランUI
     this.runHUD = new RunHUD(this.uiRoot);
@@ -571,6 +613,27 @@ class Game {
     if ((resultData.highestDamage || 0) > this.stats.highestDamageDealt) {
       this.stats.highestDamageDealt = resultData.highestDamage;
     }
+    // ペット経験値の永続化
+    this._applyPetRunResult(resultData.petResult);
+
+    // ボスラッシュ統計
+    if (resultData.bossRush) {
+      this.stats.bossRushAttempts = (this.stats.bossRushAttempts || 0) + 1;
+      const defeated = resultData.bossRush.defeated || 0;
+      if (defeated > (this.stats.bossRushBest || 0)) {
+        this.stats.bossRushBest = defeated;
+      }
+      // 完走 + ペットなしの専用実績トリガ
+      if (defeated >= 7 && !this.equippedPetId) {
+        if (this.achievements?.triggerEvent) this.achievements.triggerEvent('bossrush:cleared:noPet');
+      }
+      // 段階報酬の付与（伝説ペット卵）
+      for (const r of (resultData.bossRush.rewards || [])) {
+        if (r.gold) this.inventory?.addGold?.(r.gold);
+        if (r.petEggBlueprintId === 'pet_egg_dragonling') this._addPet('dragonling');
+      }
+    }
+
     if (resultData.reason === 'death') {
       this.stats.totalDeaths++;
     } else if (resultData.reason === 'timeout' || resultData.reason === 'clear') {
@@ -708,6 +771,44 @@ class Game {
     toast.querySelector('.pwa-update-close').addEventListener('click', close);
   }
 
+  // ===== Pet helpers =====
+
+  /** 装備中ペットを RunManager に渡せる形に整形（未装備や未所持なら null） */
+  _getEquippedPetSnapshot() {
+    if (!this.equippedPetId) return null;
+    const owned = this.ownedPets.get(this.equippedPetId);
+    if (!owned) return null;
+    return { id: this.equippedPetId, level: owned.level || 1 };
+  }
+
+  /** ラン終了時にペットの獲得経験値を ownedPets に反映 */
+  _applyPetRunResult(petResult) {
+    if (!petResult || !petResult.petId) return;
+    const entry = this.ownedPets.get(petResult.petId);
+    if (!entry) return;
+    entry.exp = (entry.exp || 0) + (petResult.gainedXp || 0);
+    const prevLevel = entry.level || 1;
+    const newLevel = petLevelFromExp(entry.exp);
+    entry.level = newLevel;
+    if (newLevel > prevLevel) {
+      eventBus.emit('toast', { message: `🎉 ペットがレベルアップ! Lv${prevLevel}→Lv${newLevel}`, type: 'success' });
+    }
+    if (newLevel > (this.stats.maxPetLevel || 0)) {
+      this.stats.maxPetLevel = newLevel;
+    }
+    try { this._autoSave(); } catch (e) { /* ignore */ }
+  }
+
+  /** 新たにペットを獲得（卵を使う等） */
+  _addPet(petId) {
+    if (!petId) return;
+    if (!this.ownedPets.has(petId)) {
+      this.ownedPets.set(petId, { exp: 0, level: 1 });
+      this.stats.petsObtained = this.ownedPets.size;
+      eventBus.emit('pet:obtained', { petId });
+    }
+  }
+
   _clearUI() {
     if (this.hubManager) { this.hubManager.destroy(); this.hubManager = null; }
     if (this.runHUD) { this.runHUD.destroy(); this.runHUD = null; }
@@ -728,6 +829,8 @@ class Game {
       stats: this.stats,
       achievements: this.achievements ? this.achievements.getUnlockedIds() : [],
       equipmentPresets: this.presetsManager.toJSON(),
+      ownedPets: Array.from(this.ownedPets.entries()).map(([id, v]) => ({ id, exp: v.exp || 0, level: v.level || 1 })),
+      equippedPetId: this.equippedPetId || null,
       casino: CASINO_ENABLED ? CasinoManager.getInstance().serialize() : null,
     });
   }

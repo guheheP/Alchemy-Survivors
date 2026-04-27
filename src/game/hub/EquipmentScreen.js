@@ -9,6 +9,7 @@ import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 import { getTraitCategory, createElementBadgeHTML } from '../ui/UIHelpers.js';
 import { fmt1, fmtPct1, fmtInt } from '../ui/NumberFormat.js';
+import { PetDefs } from '../data/pets.js';
 
 /** 特性のラン中効果を簡潔な日本語表記に変換 */
 function formatTraitRunEffect(def) {
@@ -66,6 +67,10 @@ export class EquipmentScreen {
     this.weaponSlots = [null, null, null, null];
     this.armorSlot = null;
     this.accessorySlot = null;
+    /** @type {Map<string, {exp:number, level:number}>} */
+    this.ownedPets = new Map();
+    /** @type {string|null} */
+    this.equippedPetId = null;
   }
 
   render() {
@@ -124,6 +129,8 @@ export class EquipmentScreen {
             ${this._renderDefenseSlot('armor', '防具', this.armorSlot)}
             ${this._renderDefenseSlot('accessory', 'アクセサリ', this.accessorySlot)}
           </div>
+          <h4>契約ペット</h4>
+          <div class="equip-slots">${this._renderPetSlot()}</div>
           <div class="equip-summary" id="equip-summary"></div>
         </div>
         <div class="equip-inventory">
@@ -405,6 +412,31 @@ export class EquipmentScreen {
     </div>`;
   }
 
+  _renderPetSlot() {
+    const equipped = this.equippedPetId ? this.ownedPets.get(this.equippedPetId) : null;
+    const def = this.equippedPetId ? PetDefs[this.equippedPetId] : null;
+    const ownedCount = this.ownedPets.size;
+    if (equipped && def) {
+      return `<div class="weapon-slot filled" data-type="pet">
+        <span class="slot-number">🐾</span>
+        <span class="slot-icon" style="font-size:1.4rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px;">${def.icon}</span>
+        <span class="slot-name">${def.name} <small style="opacity:.7">Lv${equipped.level || 1}</small></span>
+        <span class="slot-stats">${this._escapeAttr(def.description)}</span>
+        <button class="slot-remove" data-type="pet" title="解除">✕</button>
+      </div>`;
+    }
+    if (ownedCount === 0) {
+      return `<div class="weapon-slot empty" data-type="pet">
+        <span class="slot-number">🐾</span>
+        <span class="slot-empty-label">ペット未所持（錬金で卵を作ろう）</span>
+      </div>`;
+    }
+    return `<div class="weapon-slot empty" data-type="pet">
+      <span class="slot-number">🐾</span>
+      <span class="slot-empty-label">契約スロット — ${ownedCount}匹のペットから選択</span>
+    </div>`;
+  }
+
   _renderItemList(items, equippedUids) {
     if (items.length === 0) return '<p class="equip-no-weapons">該当アイテムなし</p>';
     return items.map(w => {
@@ -455,8 +487,69 @@ export class EquipmentScreen {
           this.armorSlot = null;
         } else if (type === 'accessory') {
           this.accessorySlot = null;
+        } else if (type === 'pet') {
+          this.equippedPetId = null;
+          eventBus.emit('pet:equipped', { petId: null });
+          this.render();
+          return;
         }
         this._emitChange();
+        this.render();
+      });
+    });
+
+    // Pet slot click -> picker
+    const petSlot = this.el.querySelector('.weapon-slot[data-type="pet"]');
+    if (petSlot && this.ownedPets.size > 0) {
+      petSlot.addEventListener('click', (e) => {
+        // 既装備時は本体クリックで再選択を許す（×ボタンは別ハンドラ）
+        if (e.target.classList.contains('slot-remove')) return;
+        this._openPetPicker();
+      });
+      petSlot.style.cursor = 'pointer';
+    }
+  }
+
+  _openPetPicker() {
+    if (this.ownedPets.size === 0) return;
+    const picker = document.createElement('div');
+    picker.className = 'item-picker-overlay';
+    const items = Array.from(this.ownedPets.entries()).map(([id, data]) => {
+      const def = PetDefs[id];
+      if (!def) return '';
+      const equipped = id === this.equippedPetId ? '<span class="picker-equipped">装備中</span>' : '';
+      return `<div class="picker-item" data-pet-id="${id}">
+        <span style="font-size:1.6rem; margin-right:.5rem;">${def.icon}</span>
+        <div style="display:flex; flex-direction:column; gap:0.1rem;">
+          <span class="picker-name">${def.name} <small style="opacity:.7">Lv${data.level || 1}</small></span>
+          <span style="font-size:0.75rem; opacity:0.85;">${this._escapeAttr(def.description)}</span>
+        </div>
+        ${equipped}
+      </div>`;
+    }).join('');
+    picker.innerHTML = `
+      <div class="item-picker">
+        <div class="picker-head">契約するペットを選択</div>
+        <div class="picker-list">${items}</div>
+        <button class="picker-cancel">キャンセル</button>
+      </div>
+    `;
+    document.body.appendChild(picker);
+
+    const close = () => {
+      if (onKey) window.removeEventListener('keydown', onKey);
+      picker.remove();
+    };
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
+    window.addEventListener('keydown', onKey);
+    picker.addEventListener('click', (e) => { if (e.target === picker) close(); });
+    picker.querySelector('.picker-cancel').addEventListener('click', close);
+    picker.querySelectorAll('.picker-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const petId = el.dataset.petId;
+        this.equippedPetId = petId;
+        eventBus.emit('pet:equipped', { petId });
+        close();
         this.render();
       });
     });

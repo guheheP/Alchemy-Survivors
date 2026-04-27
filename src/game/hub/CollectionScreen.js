@@ -10,6 +10,7 @@ import { eventBus } from '../core/EventBus.js';
 import { assetPath } from '../core/assetPath.js';
 import { fmt1, fmtPct1 } from '../ui/NumberFormat.js';
 import { ElementCombos } from '../data/elementCombos.js';
+import { PetDefs, expForLevel, MAX_PET_LEVEL } from '../data/pets.js';
 
 export class CollectionScreen {
   constructor(container, inventorySystem) {
@@ -18,6 +19,8 @@ export class CollectionScreen {
     this.el = document.createElement('div');
     this.el.className = 'collection-screen';
     this.activeTab = 'items';
+    /** ペット所持データ（HubManager 経由で注入） @type {Map<string,{exp:number,level:number}>} */
+    this.ownedPets = new Map();
     // 事前にアイテム → 産出エリア の逆引きインデックスを構築
     this._materialToAreas = this._buildMaterialAreaIndex();
   }
@@ -79,6 +82,7 @@ export class CollectionScreen {
           <button class="coll-tab ${this.activeTab === 'areas' ? 'active' : ''}" data-tab="areas">エリア</button>
           <button class="coll-tab ${this.activeTab === 'traits' ? 'active' : ''}" data-tab="traits">特性</button>
           <button class="coll-tab ${this.activeTab === 'elements' ? 'active' : ''}" data-tab="elements">属性</button>
+          <button class="coll-tab ${this.activeTab === 'pets' ? 'active' : ''}" data-tab="pets">ペット</button>
         </div>
         <div class="coll-content" id="coll-content"></div>
       </div>
@@ -117,7 +121,48 @@ export class CollectionScreen {
       case 'elements':
         this._renderElements(content);
         break;
+      case 'pets':
+        this._renderPets(content);
+        break;
     }
+  }
+
+  /** ペット図鑑タブ — 所持/未所持、Lv、効果、入手方法を表示 */
+  _renderPets(container) {
+    const owned = this.ownedPets instanceof Map ? this.ownedPets : new Map();
+    const allPets = Object.values(PetDefs);
+    const ownedCount = allPets.filter(p => owned.has(p.id)).length;
+
+    let html = `<div class="coll-pet-summary"><strong>${ownedCount}/${allPets.length}</strong> 種類のペットを所持しています。</div>`;
+    html += `<div class="coll-pet-grid">`;
+    for (const def of allPets) {
+      const data = owned.get(def.id);
+      const has = !!data;
+      const level = data?.level || 0;
+      const exp = data?.exp || 0;
+      const nextLvExp = expForLevel(Math.min(MAX_PET_LEVEL, level + 1));
+      const curLvExp = expForLevel(level || 1);
+      const expProgress = level >= MAX_PET_LEVEL ? 100
+        : Math.max(0, Math.min(100, Math.round((exp - curLvExp) / Math.max(1, nextLvExp - curLvExp) * 100)));
+
+      const rarityCls = `pet-rarity-${def.rarity}`;
+      html += `<div class="coll-pet-card ${has ? 'discovered' : 'undiscovered'} ${rarityCls}">
+        <div class="coll-pet-icon">${has ? def.icon : '❓'}</div>
+        <div class="coll-pet-info">
+          <span class="coll-pet-name">${has ? def.name : '???'}</span>
+          ${has ? `<span class="coll-pet-level">Lv${level}/${MAX_PET_LEVEL}</span>` : ''}
+          ${has ? `<span class="coll-pet-desc">${def.description}</span>` : `<span class="coll-pet-hint">未所持</span>`}
+          ${has && level < MAX_PET_LEVEL ? `<div class="coll-pet-expbar"><div style="width:${expProgress}%"></div></div>` : ''}
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+
+    if (ownedCount === 0) {
+      html += `<p class="coll-pet-tip">💡 錬金工房で「○○の卵」を調合するとペットを獲得できます。</p>`;
+    }
+
+    container.innerHTML = html;
   }
 
   _renderItems(container, discoveredBps) {

@@ -1172,10 +1172,16 @@ export class CraftingScreen {
         this.inventory.removeItem(mat.uid, true);
       }
 
-      // 完成品をインベントリに追加
-      this.inventory.addItem(item);
-
-      eventBus.emit('toast', { message: `✨ ${item.name} (Q${item.quality}) を調合しました！`, type: 'success' });
+      // ペット卵: インベントリには入れず、ownedPets へ直接登録（pet:hatch を発火）
+      const targetBp = ItemBlueprints[item.blueprintId];
+      if (targetBp?.type === 'pet_egg' && targetBp.petId) {
+        eventBus.emit('pet:hatch', { petId: targetBp.petId, eggBlueprintId: item.blueprintId, quality: item.quality });
+        eventBus.emit('toast', { message: `🥚 ${item.name} が孵化した！ ${targetBp.petId} を契約スロットから装備できます`, type: 'success' });
+      } else {
+        // 完成品をインベントリに追加
+        this.inventory.addItem(item);
+        eventBus.emit('toast', { message: `✨ ${item.name} (Q${item.quality}) を調合しました！`, type: 'success' });
+      }
 
       // 錬金陣の成功演出 (1.2秒間)
       const stage = this.el.querySelector('#craft-stage');

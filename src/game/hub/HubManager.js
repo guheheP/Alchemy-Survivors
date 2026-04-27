@@ -27,10 +27,14 @@ export class HubManager {
     this.activeTab = 'craft';
     this.screens = {};
 
-    // 4武器スロット + 防具 + アクセサリ
+    // 4武器スロット + 防具 + アクセサリ + ペット
     this.weaponSlots = [null, null, null, null];
     this.equippedArmor = null;
     this.equippedAccessory = null;
+    /** @type {Map<string,{exp:number,level:number}>} */
+    this.ownedPets = new Map();
+    /** @type {string|null} */
+    this.equippedPetId = null;
     // 消耗品スロット（UIDで保持、Gameから注入）
     this.savedConsumableUids = [];
     // 前回選択したステージ（Gameから注入）
@@ -143,6 +147,8 @@ export class HubManager {
         screen.armorSlot = this.equippedArmor;
         screen.accessorySlot = this.equippedAccessory;
         screen.presetsManager = this.presetsManager;
+        screen.ownedPets = this.ownedPets || new Map();
+        screen.equippedPetId = this.equippedPetId || null;
         screen.render();
         this.screens.equip = screen;
         break;
@@ -184,6 +190,7 @@ export class HubManager {
       }
       case 'collection': {
         const screen = new CollectionScreen(content, this.inventory);
+        screen.ownedPets = this.ownedPets || new Map();
         screen.render();
         this.screens.collection = screen;
         break;

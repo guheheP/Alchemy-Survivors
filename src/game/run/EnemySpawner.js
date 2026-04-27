@@ -28,9 +28,16 @@ export class EnemySpawner {
     this.spawnTimer = 0;
     this.elapsed = 0;
     this.modifiers = modifiers; // ハードモード修飾子
+    /** ★5 エリート出現確率 (0〜1)。BossRush で 0.25、通常時は 0.005 */
+    this.eliteChance = 0.005;
     // update 中の反復用スナップショットバッファ（GC削減のため再利用）
     // enemy.update 中の DoT/属性コンボで他の敵が連鎖 release されても安全に走査するために使う
     this._iterBuffer = [];
+  }
+
+  /** 外部から ★5 エリート湧き確率を上書き（BossRush 用） */
+  setEliteChance(chance) {
+    this.eliteChance = Math.max(0, Math.min(1, chance));
   }
 
   /** 現在のウェーブ設定を取得 */
@@ -148,6 +155,18 @@ export class EnemySpawner {
       enemy.hp = enemy.maxHp;
       enemy.damage = Math.floor(enemy.damage * this.modifiers.enemyDamageMultiplier);
       enemy.speed = Math.floor(enemy.speed * this.modifiers.enemySpeedMultiplier);
+    }
+
+    // ★5 エリート化（BossRush 中は eliteChance が高めに設定される）
+    enemy.eliteTier = 0;
+    if (Math.random() < this.eliteChance) {
+      enemy.eliteTier = 5;
+      enemy.maxHp = Math.floor(enemy.maxHp * 5);
+      enemy.hp = enemy.maxHp;
+      enemy.damage = Math.floor(enemy.damage * 2.5);
+      enemy.speed = enemy.speed * 1.2;
+      enemy.expValue = (enemy.expValue || 1) * 3;
+      enemy.radius = (enemy.radius || 10) * 1.3;
     }
   }
 

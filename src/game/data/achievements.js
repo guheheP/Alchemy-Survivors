@@ -200,6 +200,73 @@ export const AchievementDefs = {
     category: 'exploration',
     condition: { type: 'stat', stat: 'totalPlayTime', value: 36000 },
   },
+
+  // === ペット ===
+  first_pet: {
+    name: '初めての相棒',
+    desc: '初めてペットを獲得した',
+    icon: '🐾',
+    category: 'pet',
+    condition: { type: 'stat', stat: 'petsObtained', value: 1 },
+  },
+  pet_collector_3: {
+    name: 'ペットコレクター',
+    desc: '3種類のペットを獲得した',
+    icon: '🦴',
+    category: 'pet',
+    condition: { type: 'stat', stat: 'petsObtained', value: 3 },
+  },
+  pet_collector_all: {
+    name: '使い魔の主',
+    desc: '全6種類のペットを獲得した',
+    icon: '🐲',
+    category: 'pet',
+    condition: { type: 'stat', stat: 'petsObtained', value: 6 },
+  },
+  pet_max_level: {
+    name: '完璧な絆',
+    desc: 'ペットを最大Lv30まで育てた',
+    icon: '✨',
+    category: 'pet',
+    condition: { type: 'stat', stat: 'maxPetLevel', value: 30 },
+  },
+
+  // === ボスラッシュ ===
+  bossrush_first: {
+    name: 'ラッシュ挑戦者',
+    desc: 'ボスラッシュに初めて挑戦した',
+    icon: '🔥',
+    category: 'bossrush',
+    condition: { type: 'stat', stat: 'bossRushAttempts', value: 1 },
+  },
+  bossrush_3: {
+    name: '半ばの戦士',
+    desc: 'ボスラッシュで3体撃破した',
+    icon: '⚔️',
+    category: 'bossrush',
+    condition: { type: 'stat', stat: 'bossRushBest', value: 3 },
+  },
+  bossrush_5: {
+    name: '熟達の挑戦者',
+    desc: 'ボスラッシュで5体撃破した',
+    icon: '🛡',
+    category: 'bossrush',
+    condition: { type: 'stat', stat: 'bossRushBest', value: 5 },
+  },
+  bossrush_clear: {
+    name: '七首の征服者',
+    desc: 'ボスラッシュを完走した（7体撃破）',
+    icon: '🏆',
+    category: 'bossrush',
+    condition: { type: 'stat', stat: 'bossRushBest', value: 7 },
+  },
+  bossrush_no_pet: {
+    name: '孤高の英雄',
+    desc: 'ペットなしでボスラッシュを完走した',
+    icon: '🏵',
+    category: 'bossrush',
+    condition: { type: 'event', event: 'bossrush:cleared:noPet' },
+  },
 };
 
 export const AchievementCategories = {
@@ -209,4 +276,6 @@ export const AchievementCategories = {
   craft: 'クラフト',
   hard: 'ハードモード',
   exploration: '探索',
+  pet: 'ペット',
+  bossrush: 'ボスラッシュ',
 };

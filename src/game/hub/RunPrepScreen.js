@@ -9,6 +9,7 @@ import { Progression } from '../data/progression.js';
 import { eventBus } from '../core/EventBus.js';
 import { DifficultyMeta, DIFFICULTY_ORDER } from '../data/hardmode.js';
 import { resolveTieredEffects } from '../run/ConsumableSystem.js';
+import { BOSS_RUSH_ORDER } from '../run/BossRushManager.js';
 
 export class RunPrepScreen {
   constructor(container, getWeaponSlots, getArmor, getAccessory, inventory, initialConsumableUids = [], initialAreaId = null) {
@@ -131,6 +132,7 @@ export class RunPrepScreen {
           ${equippedWeapons.length === 0 ? '<p class="prep-warning">武器を1つ以上装備してください</p>' : ''}
           ${overCapacity ? `<p class="prep-warning">⚠️ 倉庫が上限を超えています (${invItemCount}/${invMax})。倉庫画面でアイテムを整理してください。</p>` : ''}
           <button class="prep-start-btn" ${canStart ? '' : 'disabled'}>出撃！</button>
+          ${this._renderBossRushSection(canStart)}
         </div>
       </div>
     `;
@@ -197,7 +199,62 @@ export class RunPrepScreen {
       });
     }
 
+    // ボスラッシュ出撃ボタン
+    const brBtn = this.el.querySelector('.prep-bossrush-btn');
+    if (brBtn && !brBtn.disabled) {
+      brBtn.addEventListener('click', () => {
+        const safeDifficulty = this._isDifficultyAvailable(this.difficulty) ? this.difficulty : 'normal';
+        eventBus.emit('run:start', {
+          weaponSlots: weaponSlots.filter(w => w !== null),
+          areaId: BOSS_RUSH_ORDER[0],
+          consumables: [...this.selectedConsumables],
+          difficulty: safeDifficulty,
+          hardMode: safeDifficulty !== 'normal',
+          bossRush: true,
+        });
+      });
+    }
+
     return this.el;
+  }
+
+  /** ボスラッシュ解放: 全7エリアのボスを撃破済み */
+  _isBossRushUnlocked() {
+    const defeated = new Set(Progression.getDefeatedBosses?.() || []);
+    for (const areaId of BOSS_RUSH_ORDER) {
+      const area = AreaDefs[areaId];
+      if (!area?.boss?.id) return false;
+      if (!defeated.has(area.boss.id)) return false;
+    }
+    return true;
+  }
+
+  /** RunPrep の出撃ボタン下に表示するボスラッシュ用セクション */
+  _renderBossRushSection(canStart) {
+    const unlocked = this._isBossRushUnlocked();
+    if (!unlocked) {
+      const defeated = new Set(Progression.getDefeatedBosses?.() || []);
+      const remaining = BOSS_RUSH_ORDER.filter(a => {
+        const area = AreaDefs[a];
+        return area?.boss?.id && !defeated.has(area.boss.id);
+      }).length;
+      return `<div class="bossrush-locked">
+        <p style="margin-top:0.8rem; color:var(--color-text-dim); font-size:0.85rem;">
+          🏆 ボスラッシュ: 全7ボス撃破で解放 (残り <strong>${remaining}</strong>)
+        </p>
+      </div>`;
+    }
+    return `<div class="bossrush-section" style="margin-top:0.8rem;">
+      <button class="prep-bossrush-btn" ${canStart ? '' : 'disabled'} style="
+        width: 100%; padding: 0.6rem; font-family: inherit; font-size: 0.95rem;
+        background: linear-gradient(135deg, #b8410f, #d4a017);
+        color: #fff; border: 2px solid #8b0000; border-radius: 6px;
+        cursor: pointer; font-weight: bold;
+      ">🏆 ボスラッシュ — 7体連続戦に挑む</button>
+      <p style="margin-top:0.4rem; color:var(--color-text-dim); font-size:0.75rem;">
+        7体連戦・HP/装備持ち越し・ボス間30秒ロビー。完走で伝説ペット卵獲得！
+      </p>
+    </div>`;
   }
 
   _showConsumablePicker(slotIdx) {

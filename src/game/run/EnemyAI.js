@@ -58,6 +58,8 @@ export class Enemy extends Entity {
     // 最後に受けた武器由来のヒットダメージ (ComboSystem が 'hitDamage' 基準で参照)。
     // DoT tick や感染拡散では更新されないため、武器攻撃力ベースのコンボ威力を維持する用途。
     this._lastHitDamage = 0;
+    /** ★N エリート段階 (0=通常、5=★5) */
+    this.eliteTier = 0;
   }
 
   reset() {
@@ -74,6 +76,7 @@ export class Enemy extends Entity {
     this.critFlashTimer = 0;
     this._debuffTimer = 0;
     this._baseSpeed = 0;
+    this.eliteTier = 0;
     this._burnTimer = 0;
     this._burnDps = 0;
     this._burnAccum = 0;

@@ -197,6 +197,11 @@ export class RunCanvas {
         EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 2.2, '#ffdc6a', critAlpha);
       }
 
+      // ★N エリートオーラ（最優先で描画して見分けやすく）
+      if (enemy.eliteTier > 0) {
+        const epulse = 0.55 + Math.sin(elapsed * 5) * 0.2;
+        EntityRenderer.drawGlow(ctx, sx, sy, enemy.radius * 2.2, '#ffd24a', epulse);
+      }
       // behavior別の背景オーラ
       if (enemy.armorHits > 0) {
         // armored: 青銀の装甲オーラ + 残り回数表示
@@ -412,6 +417,23 @@ export class RunCanvas {
     }
 
     ctx.globalAlpha = 1;
+
+    // === 7.5. ペット ===
+    const pet = ctxExtras.pet;
+    if (pet && pet.active) {
+      const psx = pet.lerpX(alpha) - camera.x;
+      const psy = pet.lerpY(alpha) - camera.y;
+      // viewport カリング
+      if (psx > -40 && psx < w + 40 && psy > -40 && psy < h + 40) {
+        // EntityRenderer.drawPet は (x,y) を pet オブジェクトから取るので一時的に上書き
+        const origX = pet.x, origY = pet.y;
+        pet.x = psx;
+        pet.y = psy;
+        EntityRenderer.drawPet(ctx, pet, elapsed);
+        pet.x = origX;
+        pet.y = origY;
+      }
+    }
 
     // === 8. 武器エフェクト ===
     weaponSystem.render(ctx, camera, alpha);

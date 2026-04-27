@@ -24,7 +24,7 @@ const LOCAL_BACKUP_RING_SIZE = 5;
 const CLOUD_USER_DATA_KEY = 'save';
 const CLOUD_USER_DATA_KEY_PREVIOUS = 'save_previous';
 const CLOUD_SAVE_DEBOUNCE_MS = 5000;
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 
 const DEFAULT_STATS = {
   totalRuns: 0,
@@ -154,6 +154,9 @@ export class SaveSystem {
       discoveredBlueprintIds: this.inventory?.discoveredBlueprintIds
         ? [...this.inventory.discoveredBlueprintIds]
         : [],
+      // ペット所持データ + 装備中
+      ownedPets: extraData.ownedPets || [],
+      equippedPetId: extraData.equippedPetId || null,
       // カジノ独立state（実験機能。CASINO_ENABLED=false時は null が書き込まれる）
       casino: extraData.casino || null,
     };
@@ -475,6 +478,12 @@ export class SaveSystem {
         }
         data.discoveredBlueprintIds = [...seen];
       }
+    }
+    if (data.version === 6) {
+      // v6→v7: ペット所持・装備フィールド追加（旧セーブでは未所持として開始）
+      data.version = 7;
+      if (!Array.isArray(data.ownedPets)) data.ownedPets = [];
+      if (typeof data.equippedPetId === 'undefined') data.equippedPetId = null;
     }
     return data;
   }
