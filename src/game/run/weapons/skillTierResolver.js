@@ -184,5 +184,78 @@ export function getNextTierThreshold(blueprintId, item) {
   return null;
 }
 
+/**
+ * UI 表示用の進行情報まとめ。
+ * @returns {{ rank:number, thresholds:number[], unlockedTier:number, totalTiers:number, nextThreshold:(number|null), hasTiers:boolean }}
+ */
+export function getTierProgressInfo(blueprintId, item) {
+  const def = WeaponSkillDefs[blueprintId];
+  const rank = getWeaponRank(blueprintId);
+  const thresholds = getTierThresholds(rank);
+  const unlockedTier = resolveSkillTier(blueprintId, item);
+  const nextThreshold = getNextTierThreshold(blueprintId, item);
+  return {
+    rank,
+    thresholds,
+    unlockedTier,
+    totalTiers: thresholds.length,
+    nextThreshold,
+    hasTiers: !!def && Array.isArray(def.tiers) && def.tiers.length > 0,
+  };
+}
+
+// params キー → 人間可読ラベルへの変換テーブル
+const PARAM_LABEL_FNS = {
+  radius:         v => `範囲+${v}`,
+  dmgMult:        v => `威力+${Math.round(v * 100)}%`,
+  waves:          v => `波数+${v}`,
+  knockback:      v => `吹き飛ばし+${v}`,
+  duration:       v => `持続+${v}秒`,
+  bladeCount:     v => `刃数+${v}`,
+  spins:          v => `回転+${v}`,
+  lineCount:      v => `本数+${v}`,
+  lineRange:      v => `射程+${v}`,
+  width:          v => `幅+${v}`,
+  arrowCount:     v => `矢+${v}`,
+  range:          v => `射程+${v}`,
+  arcWidth:       v => `扇角+${(v).toFixed(1)}`,
+  hitCount:       v => `回数+${v}`,
+  bounces:        v => `跳ね+${v}`,
+  bounceRange:    v => `跳ね距離+${v}`,
+  invincDuration: v => `無敵+${v}秒`,
+  slowAmount:     v => `減速${v}`,
+  poisonDps:      v => `毒DPS+${v}`,
+  poisonDuration: v => `毒継続+${v}秒`,
+  dmgPerSec:      v => `毎秒DPS+${v}`,
+  rays:           v => `光線+${v}`,
+  blades:         v => `刃+${v}`,
+  regenPerSec:    v => `回復+${(v * 100).toFixed(1)}%/秒`,
+};
+
+const FLAG_LABELS = {
+  aftershock: '追従発動 (60%威力)',
+};
+
+/** tier の params / flags をカンマ区切りの人間可読テキストに変換。 */
+export function describeTier(tier) {
+  if (!tier) return '';
+  const parts = [];
+  if (tier.params) {
+    for (const [k, v] of Object.entries(tier.params)) {
+      const fn = PARAM_LABEL_FNS[k];
+      if (fn) parts.push(fn(v));
+    }
+  }
+  if (tier.flags) {
+    for (const [k, v] of Object.entries(tier.flags)) {
+      if (v && FLAG_LABELS[k]) parts.push(FLAG_LABELS[k]);
+    }
+  }
+  if (Array.isArray(tier.requireTraits) && tier.requireTraits.length > 0) {
+    parts.push(`要特性: ${tier.requireTraits.join('/')}`);
+  }
+  return parts.join(', ');
+}
+
 // 内部ユーティリティのテスト用エクスポート
 export const _internal = { hasAllTraits, mergeField, clonePlainObject };

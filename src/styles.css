@@ -5776,3 +5776,87 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
   }
 }
 
+/* ===== 詳細モーダル: 強化スキル (品質段階アンロック) セクション ===== */
+.weapon-skill-section { margin-top: 0.8rem; }
+.weapon-skill-section .detail-section-title {
+  color: #d4b062;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+.weapon-skill-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+.weapon-skill-name { font-weight: 700; font-size: 0.95rem; }
+.weapon-skill-cooldown {
+  font-size: 0.75rem; color: #c4a880;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+.weapon-skill-desc {
+  font-size: 0.8rem; color: #c4a880;
+  margin-bottom: 0.5rem; line-height: 1.4;
+}
+.weapon-skill-progress {
+  display: flex; flex-direction: column; gap: 0.2rem;
+  margin-bottom: 0.5rem;
+}
+.weapon-skill-progress-bar {
+  width: 100%; height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.weapon-skill-progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+.weapon-skill-progress-hint {
+  font-size: 0.72rem; color: #a89070;
+  text-align: right;
+}
+.weapon-skill-tiers {
+  display: flex; flex-direction: column; gap: 0.25rem;
+}
+.tier-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.5rem; align-items: center;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 2px solid transparent;
+}
+.tier-row.tier-unlocked {
+  background: rgba(212, 176, 98, 0.08);
+  border-left-color: #d4b062;
+  color: #f4e3b8;
+}
+.tier-row.tier-locked {
+  color: #807060;
+  opacity: 0.7;
+}
+.tier-badge {
+  font-weight: 700;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.tier-row.tier-unlocked .tier-badge { color: #d4b062; }
+.tier-row.tier-locked .tier-badge { color: #6a5a48; }
+.tier-threshold {
+  font-size: 0.72rem;
+  color: #a89070;
+  white-space: nowrap;
+}
+.tier-effects {
+  font-size: 0.78rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.35;
+}

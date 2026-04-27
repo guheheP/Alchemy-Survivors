@@ -7,6 +7,8 @@ import { AdventurerDefs, UnlockableAdventurers } from '../data/adventurers.js';
 import { assetPath } from '../core/assetPath.js';
 import { eventBus } from '../core/EventBus.js';
 import { fmt1, fmtPct1 } from './NumberFormat.js';
+import { WeaponSkillDefs } from '../data/weaponSkills.js';
+import { getTierProgressInfo, describeTier } from '../run/weapons/skillTierResolver.js';
 
 // ===== 品質ティア定義（Q0-100は通常、Q101+はエンドゲーム解放時のみ） =====
 const QualityTiers = [
@@ -322,6 +324,63 @@ function buildTraitEffectsHTML(traitName) {
 }
 
 /**
+ * 武器の強化スキルセクション HTML を生成。
+ * 武器以外（消耗品/防具/アクセサリ）や WeaponSkillDefs に未登録の武器は空文字を返す。
+ */
+function renderWeaponSkillTiersHTML(item) {
+  const def = WeaponSkillDefs[item?.blueprintId];
+  if (!def) return '';
+  const info = getTierProgressInfo(item.blueprintId, item);
+  if (!info.hasTiers) return '';
+
+  const cooldownLabel = `CT ${def.cooldown}秒`;
+  const headerHtml = `
+    <div class="weapon-skill-header">
+      <span class="weapon-skill-name" style="color:${def.color || '#ffd'}">⚡ ${def.name}</span>
+      <span class="weapon-skill-cooldown">${cooldownLabel}</span>
+    </div>
+    <div class="weapon-skill-desc">${def.description}</div>
+  `;
+
+  const tiers = def.tiers || [];
+  // 各 tier 行: 番号、閾値、効果テキスト、ロック状態
+  const rowsHtml = tiers.map((tier, idx) => {
+    const tierNum = idx + 1;
+    const unlocked = info.unlockedTier >= tierNum;
+    const cls = unlocked ? 'tier-row tier-unlocked' : 'tier-row tier-locked';
+    const label = `T${tierNum}`;
+    const minQ = tier.minQuality || 0;
+    const desc = describeTier(tier) || '—';
+    return `
+      <div class="${cls}">
+        <span class="tier-badge">${unlocked ? '✓' : '🔒'} ${label}</span>
+        <span class="tier-threshold">Q${minQ}〜</span>
+        <span class="tier-effects">${desc}</span>
+      </div>
+    `;
+  }).join('');
+
+  // 進捗バー: 現在 quality を最大 tier 閾値に対する位置で
+  const maxThreshold = info.thresholds[info.thresholds.length - 1] || 1;
+  const progressPct = Math.min(100, ((item.quality || 0) / maxThreshold) * 100);
+  const nextHint = info.nextThreshold !== null
+    ? `次の解放まで Q${info.nextThreshold - (item.quality || 0)} (Q${info.nextThreshold} 必要)`
+    : '✦ 全強化解放済み';
+
+  return `
+    <div class="detail-section weapon-skill-section">
+      <div class="detail-section-title">── 強化スキル (${info.unlockedTier}/${info.totalTiers}) ──</div>
+      ${headerHtml}
+      <div class="weapon-skill-progress">
+        <div class="weapon-skill-progress-bar"><div class="weapon-skill-progress-fill" style="width:${progressPct}%; background:${def.color || '#fa6'}"></div></div>
+        <div class="weapon-skill-progress-hint">${nextHint}</div>
+      </div>
+      <div class="weapon-skill-tiers">${rowsHtml}</div>
+    </div>
+  `;
+}
+
+/**
  * アイテムの詳細モーダルを表示する（インベントリタブ等からクリックで呼ぶ）
  */
 export function openItemDetailModal(item) {
@@ -395,6 +454,7 @@ export function openItemDetailModal(item) {
         ${traitsDetailHtml}
       </div>
       ${battleSectionHtml}
+      ${renderWeaponSkillTiersHTML(item)}
     </div>
   `;
 

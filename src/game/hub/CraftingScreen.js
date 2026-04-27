@@ -11,6 +11,7 @@ import { assetPath } from '../core/assetPath.js';
 import { createElementBadgeHTML } from '../ui/UIHelpers.js';
 import { fmt1, fmtPct1, fmtInt } from '../ui/NumberFormat.js';
 import { resolveTieredEffects } from '../run/ConsumableSystem.js';
+import { resolveSkillTier } from '../run/weapons/skillTierResolver.js';
 
 export class CraftingScreen {
   constructor(container, inventorySystem, options = {}) {
@@ -1178,9 +1179,28 @@ export class CraftingScreen {
         eventBus.emit('pet:hatch', { petId: targetBp.petId, eggBlueprintId: item.blueprintId, quality: item.quality });
         eventBus.emit('toast', { message: `🥚 ${item.name} が孵化した！ ${targetBp.petId} を契約スロットから装備できます`, type: 'success' });
       } else {
+        // 武器の強化スキル tier アンロック検出 (addItem の前に既存アイテムと比較)
+        let unlockedTierMessage = null;
+        const skillDef = WeaponSkillDefs[item.blueprintId];
+        if (skillDef) {
+          const newTier = resolveSkillTier(item.blueprintId, item);
+          let prevMaxTier = 0;
+          for (const ex of this.inventory.items) {
+            if (ex.blueprintId !== item.blueprintId) continue;
+            const t = resolveSkillTier(ex.blueprintId, ex);
+            if (t > prevMaxTier) prevMaxTier = t;
+          }
+          if (newTier > prevMaxTier && newTier > 0) {
+            unlockedTierMessage = `✦ 強化T${newTier} 解放！「${skillDef.name}」がパワーアップ`;
+          }
+        }
         // 完成品をインベントリに追加
         this.inventory.addItem(item);
         eventBus.emit('toast', { message: `✨ ${item.name} (Q${item.quality}) を調合しました！`, type: 'success' });
+        if (unlockedTierMessage) {
+          // クラフト完了トーストの後に重ねて表示
+          setTimeout(() => eventBus.emit('toast', { message: unlockedTierMessage, type: 'success' }), 900);
+        }
       }
 
       // 錬金陣の成功演出 (1.2秒間)
