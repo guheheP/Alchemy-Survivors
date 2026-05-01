@@ -15,6 +15,7 @@ import { LeaderboardScreen } from './LeaderboardScreen.js';
 import { SettingsScreen } from './SettingsScreen.js';
 import { eventBus } from '../core/EventBus.js';
 import { CASINO_ENABLED, isCasinoVisible, CasinoManager } from '../casino/index.js';
+import { spawnAtelierMotes } from '../ui/UIHelpers.js';
 
 export class HubManager {
   constructor(container, inventorySystem, stats = null, achievementSystem = null) {
@@ -83,11 +84,17 @@ export class HubManager {
     `).join('');
 
     this.el.innerHTML = `
-      <div class="hub-header">
-        <h2>拠点</h2>
-        <div class="hub-info">
-          <span id="hub-gold" class="hub-info-item" data-tooltip="所持ゴールド">💰 ${this.inventory.gold}G</span>
-          <span id="hub-item-count" class="hub-info-item" data-tooltip="倉庫の使用/最大">📦 ${this.inventory.items.length} / ${this.inventory.maxCapacity}</span>
+      <div class="atelier-motes" id="hub-motes" aria-hidden="true"></div>
+      <div class="hub-header atelier-hub-header">
+        <div class="atelier-signboard hub-signboard">
+          <div class="atelier-eyebrow">— ATELIER · ALCHEMY SURVIVORS ·</div>
+          <h2 class="atelier-title">
+            <span class="atelier-alch-glyph" aria-hidden="true"></span>拠 点<span class="atelier-alch-glyph" aria-hidden="true"></span>
+          </h2>
+        </div>
+        <div class="hub-info atelier-hub-info">
+          <span id="hub-gold" class="hub-info-item atelier-brass-badge" data-tooltip="所持ゴールド"><span class="atelier-ico">💰</span>${this.inventory.gold}G</span>
+          <span id="hub-item-count" class="hub-info-item atelier-brass-badge" data-tooltip="倉庫の使用/最大"><span class="atelier-ico">📦</span>${this.inventory.items.length} / ${this.inventory.maxCapacity}</span>
         </div>
       </div>
       <div class="hub-tabs" role="tablist" aria-label="拠点メニュー">
@@ -96,6 +103,8 @@ export class HubManager {
       <div class="hub-content" id="hub-content" role="tabpanel"></div>
     `;
     this.container.appendChild(this.el);
+
+    spawnAtelierMotes(this.el.querySelector('#hub-motes'), 22);
 
     this.el.querySelectorAll('.hub-tab').forEach(tab => {
       tab.addEventListener('click', () => {
@@ -224,13 +233,41 @@ export class HubManager {
         break;
       }
     }
+
+    // Phase D: wrap non-craft/non-casino screens in an atelier parchment frame
+    this._applyAtelierHostWrap(content);
+  }
+
+  /**
+   * Wrap the rendered screen's root element in an `.atl-screen-host` frame
+   * with four corner ornaments. Idempotent. Skips tabs that provide their own
+   * parchment layout (craft) or have a non-standard mount path (casino).
+   * @param {HTMLElement} content - the hub-content element
+   */
+  _applyAtelierHostWrap(content) {
+    if (this.activeTab === 'craft') return;  // Has own 3-panel parchment
+    if (this.activeTab === 'casino') return; // Casino mounts via mountLobby
+    const root = content.firstElementChild;
+    if (!root) return;
+    if (root.classList.contains('atl-screen-host')) return; // Already wrapped
+    if (root.classList.contains('atl-craft-screen')) return; // Defensive
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'atl-screen-host';
+    wrapper.innerHTML =
+      '<span class="atelier-corner tl"></span>' +
+      '<span class="atelier-corner tr"></span>' +
+      '<span class="atelier-corner bl"></span>' +
+      '<span class="atelier-corner br"></span>';
+    content.replaceChild(wrapper, root);
+    wrapper.appendChild(root);
   }
 
   _updateHeader() {
     const countEl = this.el.querySelector('#hub-item-count');
-    if (countEl) countEl.textContent = `📦 ${this.inventory.items.length} / ${this.inventory.maxCapacity}`;
+    if (countEl) countEl.innerHTML = `<span class="atelier-ico">📦</span>${this.inventory.items.length} / ${this.inventory.maxCapacity}`;
     const goldEl = this.el.querySelector('#hub-gold');
-    if (goldEl) goldEl.textContent = `💰 ${this.inventory.gold}G`;
+    if (goldEl) goldEl.innerHTML = `<span class="atelier-ico">💰</span>${this.inventory.gold}G`;
   }
 
   refresh() {

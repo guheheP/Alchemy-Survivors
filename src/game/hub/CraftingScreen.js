@@ -1,5 +1,13 @@
 /**
- * CraftingScreen — 簡易クラフトUI（パズルなし）
+ * CraftingScreen — アトリエ風UI (Phase C)
+ *
+ * 3カラム羊皮紙レイアウト:
+ *   左 : レシピ書 (Grimoire)
+ *   中 : 調合ステージ (Synthesis) — 錬金陣 + フラスコ + 円周配置スロット
+ *   右 : 仕様 (Specifications) — 品質バー + 特性 + プレビュー
+ *
+ * 計算系ヘルパー (_canCraft, _computePreviewResult, _renderConsumablePreview,
+ * _compareWithEquipped, etc.) は旧版から完全保持。表示系のみアトリエ準拠に再構築。
  */
 
 import { ItemBlueprints, Recipes, TraitDefs, TraitFusionTable, MaterialCategories } from '../data/items.js';
@@ -19,74 +27,148 @@ export class CraftingScreen {
     this.inventory = inventorySystem;
     this.getEquipment = options.getEquipment || (() => ({ weaponSlots: [], armor: null, accessory: null }));
     this.el = document.createElement('div');
-    this.el.className = 'craft-screen';
+    this.el.className = 'craft-screen atl-craft-screen';
     this.selectedRecipeId = null;
     this.assignedMaterials = []; // index corresponds to recipe.materials slot
     this.selectedTraits = [];
     this.typeFilter = 'all';
     this.craftableOnly = false;
     this.searchText = '';
+    this._resizeHandler = null;
   }
 
   render() {
     this.el.innerHTML = `
-      <div class="craft-layout">
-        <div class="craft-recipes">
-          <h3>レシピ一覧 <span class="recipe-count" id="recipe-count"></span></h3>
-          <div class="craft-search">
-            <input type="text" class="recipe-search-input" id="recipe-search" placeholder="🔍 レシピ名で検索" />
+      <div class="atl-craft-layout">
+        <!-- LEFT: Recipe Grimoire -->
+        <div class="atelier-parchment atl-craft-recipes">
+          <span class="atelier-corner tl"></span><span class="atelier-corner tr"></span>
+          <span class="atelier-corner bl"></span><span class="atelier-corner br"></span>
+          <div class="atelier-panel-head">
+            <div class="atelier-panel-title">
+              <span class="atelier-deco">❖</span>レシピ書<span class="atelier-en">Grimoire</span>
+            </div>
+            <span class="atelier-panel-meta" id="recipe-count">— / —</span>
           </div>
-          <div class="craft-filter">
-            <button class="filter-btn active" data-filter="all">全て</button>
-            <button class="filter-btn" data-filter="equipment">装備</button>
-            <button class="filter-btn" data-filter="consumable">消耗品</button>
-            <button class="filter-btn" data-filter="accessory">アクセサリ</button>
-            <button class="filter-btn" data-filter="material">素材</button>
+          <div class="atl-craft-recipe-body">
+            <div class="atl-recipe-search">
+              <input type="text" id="recipe-search" placeholder="レシピを検索..." />
+            </div>
+            <div class="atl-filter-row">
+              <button class="atelier-chip active" data-filter="all">全て</button>
+              <button class="atelier-chip" data-filter="equipment">装備</button>
+              <button class="atelier-chip" data-filter="consumable">薬品</button>
+              <button class="atelier-chip" data-filter="accessory">飾</button>
+              <button class="atelier-chip" data-filter="material">素材</button>
+            </div>
+            <div class="atl-recipe-toggles">
+              <label><input type="checkbox" id="craftable-only" /><span>作成可能のみ</span></label>
+            </div>
+            <div class="atl-recipe-list atelier-scrollarea" id="recipe-list"></div>
           </div>
-          <div class="craft-filter-toggles">
-            <label class="craftable-toggle">
-              <input type="checkbox" id="craftable-only" />
-              <span>作成可能のみ</span>
-            </label>
-          </div>
-          <div class="recipe-list" id="recipe-list"></div>
         </div>
-        <div class="craft-workspace">
-          <div class="craft-detail" id="craft-detail">
-            <p class="craft-placeholder">← レシピを選択してください</p>
+
+        <!-- CENTER: Synthesis Workspace -->
+        <div class="atelier-parchment atl-craft-workspace">
+          <span class="atelier-corner tl"></span><span class="atelier-corner tr"></span>
+          <span class="atelier-corner bl"></span><span class="atelier-corner br"></span>
+          <div class="atelier-panel-head">
+            <div class="atelier-panel-title">
+              <span class="atelier-deco">✦</span>調合<span class="atelier-en">Synthesis</span>
+            </div>
+            <span class="atelier-panel-meta" id="ws-meta">Empty Cauldron</span>
+          </div>
+          <div class="atl-workspace-body">
+            <div class="atl-target-card is-empty" id="atl-target-card">
+              <div class="atl-seal" id="atl-target-seal">✦</div>
+              <div class="atl-target-info">
+                <div class="atl-target-tag">SYNTHESIS TARGET — 調合目標</div>
+                <div class="atl-target-name" id="atl-target-name">レシピを選択してください</div>
+                <div class="atl-target-desc" id="atl-target-desc">左の書から作りたい品を選び、素材を装填せよ。</div>
+              </div>
+              <div class="atl-target-q" id="atl-target-q">Q —</div>
+            </div>
+            <div class="atl-cauldron-wrap" id="atl-cauldron">
+              <div class="atl-alch-circle-bg"></div>
+              <div class="atl-cauldron-glow"></div>
+              <div class="atl-flask">${this._buildFlaskSvg()}</div>
+              <svg class="atl-slot-link" id="atl-slot-links" preserveAspectRatio="none"></svg>
+              <div class="atl-slots-ring" id="atl-slots-ring"></div>
+            </div>
+            <button class="atelier-brass-btn atl-craft-execute" id="atl-craft-execute" disabled>
+              <span class="atelier-deco">❖</span>調 合 す る<span class="atelier-deco">❖</span>
+            </button>
+            <div id="atl-craft-warning-host"></div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Specifications -->
+        <div class="atelier-parchment atl-craft-detail">
+          <span class="atelier-corner tl"></span><span class="atelier-corner tr"></span>
+          <span class="atelier-corner bl"></span><span class="atelier-corner br"></span>
+          <div class="atelier-panel-head">
+            <div class="atelier-panel-title">
+              <span class="atelier-deco">◈</span>仕様<span class="atelier-en">Specifications</span>
+            </div>
+            <span class="atelier-panel-meta" id="atl-detail-meta">— · —</span>
+          </div>
+          <div class="atl-detail-body atelier-scrollarea" id="atl-detail-body">
+            <div class="atl-detail-empty">
+              ◇<br>レシピを選ぶと<br>ここに仕様が描かれます<br>◇
+            </div>
           </div>
         </div>
       </div>
     `;
     this.container.appendChild(this.el);
 
-    // タイプフィルタ
-    this.el.querySelectorAll('.filter-btn').forEach(btn => {
+    // Filter chips
+    this.el.querySelectorAll('.atl-filter-row .atelier-chip').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.el.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.el.querySelectorAll('.atl-filter-row .atelier-chip').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this.typeFilter = btn.dataset.filter;
         this._renderRecipeList();
       });
     });
 
-    // 作成可能のみトグル
+    // Craftable-only toggle
     const craftableToggle = this.el.querySelector('#craftable-only');
     craftableToggle.addEventListener('change', (e) => {
       this.craftableOnly = e.target.checked;
       this._renderRecipeList();
     });
 
-    // 検索
+    // Search
     const searchInput = this.el.querySelector('#recipe-search');
     searchInput.addEventListener('input', (e) => {
       this.searchText = e.target.value.trim().toLowerCase();
       this._renderRecipeList();
     });
 
+    // Craft button
+    const craftBtn = this.el.querySelector('#atl-craft-execute');
+    craftBtn.addEventListener('click', () => this._executeCraft());
+
+    // Recompute slot positions on resize (positions are pixel-based)
+    this._resizeHandler = () => this._layoutSlots();
+    window.addEventListener('resize', this._resizeHandler);
+
     this._renderRecipeList();
     return this.el;
   }
+
+  destroy() {
+    if (this._resizeHandler) {
+      window.removeEventListener('resize', this._resizeHandler);
+      this._resizeHandler = null;
+    }
+    this.el.remove();
+  }
+
+  // ============================================================
+  // Recipe list (left panel)
+  // ============================================================
 
   _renderRecipeList() {
     const listEl = this.el.querySelector('#recipe-list');
@@ -106,13 +188,21 @@ export class CraftingScreen {
       const craftable = this._hasEnoughMaterials(recipe);
       if (this.craftableOnly && !craftable) continue;
 
+      const elemCls = bp.element ? `elem-${bp.element}` : '';
       const card = document.createElement('div');
-      card.className = 'recipe-card' + (id === this.selectedRecipeId ? ' selected' : '') + (craftable ? '' : ' unavailable');
+      card.className = 'atl-recipe-item' + (id === this.selectedRecipeId ? ' active' : '') + (craftable ? '' : ' unavailable');
+      const iconHtml = bp.image
+        ? `<img src="${assetPath(bp.image)}" onerror="this.style.display='none'" alt="">`
+        : `<span>${bp.element === 'none' ? '✦' : '◆'}</span>`;
       card.innerHTML = `
-        <img src="${bp.image ? assetPath(bp.image) : ''}" class="recipe-icon" onerror="this.style.display='none'" alt="">
-        <div class="recipe-info">
-          <span class="recipe-name">${bp.name}</span>
-          <span class="recipe-mats">${createElementBadgeHTML(bp.element)}${recipe.materials.length}素材${craftable ? '' : ' <span class="recipe-lacking">不足</span>'}</span>
+        <div class="atl-recipe-icon ${elemCls}">${iconHtml}</div>
+        <div class="atl-recipe-info">
+          <div class="atl-recipe-name">${bp.name}</div>
+          <div class="atl-recipe-sub">
+            ${createElementBadgeHTML(bp.element)}
+            ${recipe.materials.length} 素材
+            ${craftable ? '' : '<span class="atl-recipe-lacking">不足</span>'}
+          </div>
         </div>
       `;
       card.addEventListener('click', () => this._selectRecipe(id));
@@ -122,7 +212,7 @@ export class CraftingScreen {
 
     if (countEl) countEl.textContent = `${shown} / ${total}`;
     if (shown === 0) {
-      listEl.innerHTML = '<p class="recipe-empty">該当するレシピがありません</p>';
+      listEl.innerHTML = '<div class="atl-recipe-empty">該当するレシピがありません</div>';
     }
   }
 
@@ -149,22 +239,21 @@ export class CraftingScreen {
     this.selectedRecipeId = recipeId;
     this.assignedMaterials = [];
     this.selectedTraits = [];
-
-    // 最高品質の素材で自動充填
     this._autoFillBestMaterials();
 
-    // 選択状態の更新（再描画ではなくクラス付け替え）
-    this.el.querySelectorAll('.recipe-card').forEach(c => c.classList.remove('selected'));
-    const cards = this.el.querySelectorAll('.recipe-card');
+    // Update active card highlight
+    this.el.querySelectorAll('.atl-recipe-item').forEach(c => c.classList.remove('active'));
+    const cards = this.el.querySelectorAll('.atl-recipe-item');
     cards.forEach(card => {
-      const name = card.querySelector('.recipe-name')?.textContent;
+      const name = card.querySelector('.atl-recipe-name')?.textContent;
       const bp = ItemBlueprints[Recipes[recipeId]?.targetId];
-      if (bp && name === bp.name) card.classList.add('selected');
+      if (bp && name === bp.name) card.classList.add('active');
     });
 
-    this._renderWorkspace();
-
-    // モバイル: レシピリストの下に workspace が現れるので末尾まで自動スクロール
+    this._renderTargetCard();
+    this._renderCauldron();
+    this._renderDetail();
+    this._updateCraftButton();
     this._scrollWorkspaceToBottomMobile();
   }
 
@@ -203,15 +292,14 @@ export class CraftingScreen {
     });
   }
 
-  /** モバイル時に .craft-workspace の末尾までスクロール (デスクトップは無効) */
+  /** モバイル時に .atl-craft-workspace の末尾までスクロール (デスクトップは無効) */
   _scrollWorkspaceToBottomMobile() {
-    if (!(window.matchMedia && window.matchMedia('(max-width: 768px)').matches)) return;
+    if (!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches)) return;
     requestAnimationFrame(() => {
-      const workspace = this.el.querySelector('.craft-workspace');
+      const workspace = this.el.querySelector('.atl-craft-workspace');
       if (workspace && typeof workspace.scrollIntoView === 'function') {
         workspace.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
-      // フォールバック: 内側スクロールコンテナ (.hub-content) を末尾へ
       const hubContent = document.querySelector('.hub-content');
       if (hubContent) {
         hubContent.scrollTo({ top: hubContent.scrollHeight, behavior: 'smooth' });
@@ -219,323 +307,399 @@ export class CraftingScreen {
     });
   }
 
-  _renderWorkspace() {
-    const detail = this.el.querySelector('#craft-detail');
+  // ============================================================
+  // Target card (top of center panel)
+  // ============================================================
+
+  _renderTargetCard() {
     const recipe = Recipes[this.selectedRecipeId];
+    const card = this.el.querySelector('#atl-target-card');
+    const seal = this.el.querySelector('#atl-target-seal');
+    const nameEl = this.el.querySelector('#atl-target-name');
+    const descEl = this.el.querySelector('#atl-target-desc');
+    const qEl = this.el.querySelector('#atl-target-q');
+    const metaEl = this.el.querySelector('#ws-meta');
+    const detailMeta = this.el.querySelector('#atl-detail-meta');
+
+    if (!recipe) {
+      card.classList.add('is-empty');
+      seal.innerHTML = '✦';
+      nameEl.textContent = 'レシピを選択してください';
+      descEl.textContent = '左の書から作りたい品を選び、素材を装填せよ。';
+      qEl.textContent = 'Q —';
+      metaEl.textContent = 'Empty Cauldron';
+      if (detailMeta) detailMeta.textContent = '— · —';
+      return;
+    }
+
+    const bp = ItemBlueprints[recipe.targetId];
+    card.classList.remove('is-empty');
+    seal.innerHTML = bp.image
+      ? `<img src="${assetPath(bp.image)}" onerror="this.style.display='none'" alt="">`
+      : '✦';
+    nameEl.textContent = bp.name;
+    const typeLabel = bp.type === 'equipment' ? '装備'
+      : bp.type === 'consumable' ? '消耗品'
+      : bp.type === 'accessory' ? 'アクセサリ'
+      : bp.type === 'material' ? '素材' : bp.type;
+    descEl.textContent = bp.description || `${typeLabel}を錬成する。`;
+
+    const preview = this._canCraft() ? this._computePreviewResult() : null;
+    qEl.textContent = preview ? `Q ${preview.finalQ}` : 'Q —';
+    metaEl.textContent = `${recipe.materials.length} 素材`;
+    if (detailMeta) detailMeta.textContent = bp.name;
+  }
+
+  // ============================================================
+  // Cauldron (alchemy circle + flask + slots ring)
+  // ============================================================
+
+  _renderCauldron() {
+    const recipe = Recipes[this.selectedRecipeId];
+    const ringEl = this.el.querySelector('#atl-slots-ring');
+    if (!ringEl) return;
+
+    if (!recipe) {
+      ringEl.innerHTML = '';
+      this._drawSlotLinks([]);
+      this._updateLiquidFill(0);
+      return;
+    }
+
+    const n = recipe.materials.length;
+    ringEl.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const slot = recipe.materials[i];
+      const assigned = this.assignedMaterials[i];
+      const isCategory = isCategorySlot(slot);
+      const slotLabel = isCategory
+        ? (MaterialCategories[getCategoryId(slot)]?.name || slot)
+        : (ItemBlueprints[slot]?.name || slot);
+
+      const assignedBp = assigned ? ItemBlueprints[assigned.blueprintId] : null;
+      const assignedImg = assignedBp?.image ? assetPath(assignedBp.image) : null;
+      const categoryIcon = isCategory ? (MaterialCategories[getCategoryId(slot)]?.icon || '❖') : '';
+      const specificBp = !isCategory ? ItemBlueprints[slot] : null;
+      const specificImg = specificBp?.image ? assetPath(specificBp.image) : null;
+
+      const rarityTop = assigned ? this._topRarity(assigned) : null;
+      const rarityCls = rarityTop ? ` rar-${rarityTop}` : '';
+      const filledCls = assigned ? ' is-filled' : ' is-empty';
+
+      const iconHtml = assignedImg
+        ? `<img src="${assignedImg}" onerror="this.style.display='none'" alt="">`
+        : specificImg
+          ? `<img class="atl-slot-icon-ghost" src="${specificImg}" onerror="this.style.display='none'" alt="">`
+          : `<span>${categoryIcon || '◆'}</span>`;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `atl-slot${filledCls}${rarityCls}`;
+      btn.dataset.slot = String(i);
+      btn.title = assigned ? 'クリックで変更' : `${slotLabel} を選択`;
+      btn.innerHTML = `
+        <div class="atl-slot-disc">
+          <div class="atl-slot-icon">${iconHtml}</div>
+          ${assigned ? `<span class="atl-slot-q">Q${assigned.quality}</span>` : ''}
+        </div>
+        <span class="atl-slot-tag">${assigned ? assigned.name : slotLabel}</span>
+        ${assigned ? `<span class="atl-slot-clear" data-slot="${i}" role="button" aria-label="${assigned.name}を外す" title="クリアする">✕</span>` : ''}
+      `;
+      btn.addEventListener('click', (e) => {
+        if (e.target.closest('.atl-slot-clear')) return;
+        this._openMaterialPicker(i);
+      });
+      ringEl.appendChild(btn);
+    }
+
+    // Wire clear (✕) handlers
+    ringEl.querySelectorAll('.atl-slot-clear').forEach(b => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(b.dataset.slot, 10);
+        this.assignedMaterials[idx] = null;
+        this._renderCauldron();
+        this._renderTargetCard();
+        this._renderDetail();
+        this._updateCraftButton();
+      });
+    });
+
+    requestAnimationFrame(() => this._layoutSlots());
+    const filledCount = this.assignedMaterials.filter(Boolean).length;
+    this._updateLiquidFill(filledCount / Math.max(1, n));
+  }
+
+  _topRarity(item) {
+    const order = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
+    let best = 'common';
+    for (const t of (item.traits || [])) {
+      const r = TraitDefs[t]?.rarity;
+      if (r && order[r] > order[best]) best = r;
+    }
+    return best;
+  }
+
+  /** Position slots around the flask in pixels (parent-size based). */
+  _layoutSlots() {
+    const wrap = this.el.querySelector('#atl-cauldron');
+    const ring = this.el.querySelector('#atl-slots-ring');
+    if (!wrap || !ring) return;
+    const slots = ring.querySelectorAll('.atl-slot');
+    if (slots.length === 0) {
+      this._drawSlotLinks([]);
+      return;
+    }
+    const rect = wrap.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+    if (w === 0 || h === 0) return; // not yet visible
+    const cx = w / 2, cy = h / 2;
+    const radius = Math.min(w, h) * 0.42;
+    const n = slots.length;
+    const startDeg = -90; // top
+    const positions = [];
+    slots.forEach((slot, i) => {
+      const ang = (startDeg + (360 / n) * i) * Math.PI / 180;
+      const x = Math.cos(ang) * radius;
+      const y = Math.sin(ang) * radius;
+      slot.style.setProperty('--x', `${x}px`);
+      slot.style.setProperty('--y', `${y}px`);
+      positions.push({ x: cx + x, y: cy + y });
+    });
+    this._drawSlotLinks(positions);
+  }
+
+  /** Draw dashed lines from each slot to the flask center. */
+  _drawSlotLinks(positions) {
+    const svg = this.el.querySelector('#atl-slot-links');
+    if (!svg) return;
+    if (positions.length === 0) {
+      svg.innerHTML = '';
+      svg.removeAttribute('viewBox');
+      return;
+    }
+    const wrap = this.el.querySelector('#atl-cauldron');
+    if (!wrap) return;
+    const r = wrap.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    svg.setAttribute('viewBox', `0 0 ${r.width} ${r.height}`);
+    const cx = r.width / 2, cy = r.height / 2;
+    let html = '';
+    for (const p of positions) {
+      html += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="rgba(138,94,29,0.35)" stroke-width="1" stroke-dasharray="3 4" />`;
+    }
+    svg.innerHTML = html;
+  }
+
+  /** Update the flask liquid fill (ratio 0..1). */
+  _updateLiquidFill(ratio) {
+    const liquid = this.el.querySelector('#atl-liquid-fill');
+    const surface = this.el.querySelector('#atl-liquid-surface');
+    if (!liquid) return;
+    const minY = 100, maxY = 50;
+    const r = Math.max(0, Math.min(1, ratio));
+    const y = minY - (minY - maxY) * r;
+    const h = minY - y;
+    liquid.setAttribute('y', String(y));
+    liquid.setAttribute('height', String(h));
+    if (surface) {
+      surface.setAttribute('cy', String(y));
+      surface.setAttribute('rx', r > 0 ? String(13 - r * 4) : '0');
+    }
+  }
+
+  _buildFlaskSvg() {
+    return `
+      <svg viewBox="0 0 100 120">
+        <defs>
+          <linearGradient id="atlFlaskBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fff5d8" stop-opacity="0.6"/>
+            <stop offset="1" stop-color="#d4a14a" stop-opacity="0.25"/>
+          </linearGradient>
+          <linearGradient id="atlLiquid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f4cf6c"/>
+            <stop offset="1" stop-color="#b6822e"/>
+          </linearGradient>
+          <clipPath id="atlBodyClip">
+            <path d="M 38 28 L 38 50 Q 16 78 28 100 Q 50 116 72 100 Q 84 78 62 50 L 62 28 Z"/>
+          </clipPath>
+        </defs>
+        <g opacity="0.8">
+          <circle cx="50" cy="20" r="0" fill="#fff5d8" opacity="0.5">
+            <animate attributeName="r" values="0;6;0" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="22;-4;-10" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.5;0" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="44" cy="20" r="0" fill="#fff5d8" opacity="0.4">
+            <animate attributeName="r" values="0;5;0" dur="3.5s" begin="0.6s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="22;-2;-12" dur="3.5s" begin="0.6s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.4;0" dur="3.5s" begin="0.6s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="56" cy="20" r="0" fill="#fff5d8" opacity="0.4">
+            <animate attributeName="r" values="0;4;0" dur="2.7s" begin="1.2s" repeatCount="indefinite"/>
+            <animate attributeName="cy" values="22;-3;-10" dur="2.7s" begin="1.2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0;0.4;0" dur="2.7s" begin="1.2s" repeatCount="indefinite"/>
+          </circle>
+        </g>
+        <path d="M 38 28 L 38 50 Q 16 78 28 100 Q 50 116 72 100 Q 84 78 62 50 L 62 28"
+              fill="url(#atlFlaskBody)" stroke="#5e3e10" stroke-width="1.6"/>
+        <g clip-path="url(#atlBodyClip)">
+          <rect class="atl-liquid-fill" id="atl-liquid-fill" x="0" y="100" width="100" height="0" fill="url(#atlLiquid)"/>
+          <ellipse class="atl-liquid-fill" id="atl-liquid-surface" cx="50" cy="100" rx="0" ry="2" fill="#fff5d8" opacity="0.7"/>
+        </g>
+        <ellipse cx="50" cy="28" rx="13" ry="2.5" fill="none" stroke="#5e3e10" stroke-width="1.4"/>
+        <ellipse cx="50" cy="28" rx="13" ry="2.5" fill="#3a2515" opacity="0.4"/>
+        <path d="M 42 56 Q 32 76 38 96" stroke="#fff5d8" stroke-width="1.4" fill="none" opacity="0.45" stroke-linecap="round"/>
+      </svg>
+    `;
+  }
+
+  _updateCraftButton() {
+    const btn = this.el.querySelector('#atl-craft-execute');
+    if (btn) btn.disabled = !this._canCraft();
+    const warningHost = this.el.querySelector('#atl-craft-warning-host');
+    if (warningHost) warningHost.innerHTML = this._renderCapacityWarning();
+  }
+
+  // ============================================================
+  // Detail body (right panel)
+  // ============================================================
+
+  _renderDetail() {
+    const body = this.el.querySelector('#atl-detail-body');
+    if (!body) return;
+    const recipe = Recipes[this.selectedRecipeId];
+    if (!recipe) {
+      body.innerHTML = `<div class="atl-detail-empty">◇<br>レシピを選ぶと<br>ここに仕様が描かれます<br>◇</div>`;
+      return;
+    }
     const bp = ItemBlueprints[recipe.targetId];
 
-    // 素材スロット初期化（自動充填で既に埋まっているはず）
-    if (this.assignedMaterials.length !== recipe.materials.length) {
-      this.assignedMaterials = new Array(recipe.materials.length).fill(null);
-    }
+    // Quality bar
+    const preview = this._canCraft() ? this._computePreviewResult() : null;
+    const cap = getCurrentQualityCap();
+    const finalQ = preview?.finalQ ?? 0;
+    const pct = Math.max(0, Math.min(100, (finalQ / cap) * 100));
 
-    // 消耗品の効果説明
-    let effectHtml = '';
-    if (bp.battleEffect) {
-      effectHtml = `<div class="craft-effect-info">${this._describeBattleEffect(bp.battleEffect)}</div>`;
-    }
-
-    // プレビュー結果（中央表示用の予測品質）
-    const previewResult = this._canCraft() ? this._computePreviewResult() : null;
-    const centerQ = previewResult?.finalQ;
-    const n = recipe.materials.length;
-
-    detail.innerHTML = `
-      <h3 class="craft-heading">${bp.name}</h3>
-      ${effectHtml}
-      <div class="craft-grid">
-      <div class="craft-grid-left">
-      <div class="craft-slots craft-circle-stage" style="--n: ${n};" id="craft-stage">
-        <div class="craft-circle-center result-card" aria-hidden="true">
-          <div class="result-card-icon-wrap">
-            ${bp.image ? `<img class="result-card-icon" src="${assetPath(bp.image)}" alt="" onerror="this.style.display='none'">` : '<span class="result-card-fallback">✦</span>'}
-          </div>
-          <div class="result-card-body">
-            <div class="result-card-name">${bp.name}</div>
-            ${centerQ != null
-              ? `<div class="result-card-quality">◆ Q${centerQ}</div>`
-              : '<div class="result-card-quality placeholder">◆ Q?</div>'
-            }
-          </div>
+    let html = `
+      <div class="atl-q-card">
+        <div class="atl-q-row">
+          <div class="atl-q-label">品 質 <span class="atelier-en">Quality</span></div>
+          <div class="atelier-q-value">${finalQ}<span class="atelier-q-max"> / ${cap}</span></div>
         </div>
-        ${recipe.materials.map((slot, i) => {
-          const assigned = this.assignedMaterials[i];
-          const isCategory = isCategorySlot(slot);
-          const slotLabel = isCategory
-            ? (MaterialCategories[getCategoryId(slot)]?.name || slot)
-            : (ItemBlueprints[slot]?.name || slot);
-          // アイコン解決: 割当済みなら素材画像、未割当でカテゴリスロットならemoji、特定素材指定なら素材画像
-          const assignedBp = assigned ? ItemBlueprints[assigned.blueprintId] : null;
-          const assignedImg = assignedBp?.image ? assetPath(assignedBp.image) : null;
-          const categoryIcon = isCategory ? (MaterialCategories[getCategoryId(slot)]?.icon || '❖') : '';
-          const specificBp = !isCategory ? ItemBlueprints[slot] : null;
-          const specificImg = specificBp?.image ? assetPath(specificBp.image) : null;
-          const rarityTop = assigned
-            ? (() => {
-                const order = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
-                let best = 'common';
-                for (const t of (assigned.traits || [])) {
-                  const r = TraitDefs[t]?.rarity;
-                  if (r && order[r] > order[best]) best = r;
-                }
-                return best;
-              })()
-            : null;
-          const iconHtml = assignedImg
-            ? `<img class="slot-icon" src="${assignedImg}" alt="" onerror="this.style.display='none'">`
-            : specificImg
-              ? `<img class="slot-icon slot-icon-ghost" src="${specificImg}" alt="" onerror="this.style.display='none'">`
-              : `<span class="slot-icon slot-icon-emoji">${categoryIcon}</span>`;
-          // n=2 は左右に、n>=3 は先頭を真上に配置して放射状に
-          const offsetDeg = n === 2 ? -90 : 0;
-          const angleDeg = (360 / n) * i + offsetDeg;
-          const filledCls = assigned ? ' is-filled' : ' is-empty';
-          const rarityCls = rarityTop ? ` slot-rarity-${rarityTop}` : '';
-          return `<button class="craft-slot slot-select${filledCls}${rarityCls}" data-slot="${i}"
-                          style="--i: ${i}; --n: ${n}; --angle: ${angleDeg}deg;"
-                          title="${assigned ? 'クリックで変更' : slotLabel + 'を選択'}">
-            <div class="slot-icon-wrap">
-              ${iconHtml}
-              ${assigned ? `<span class="slot-clear" data-slot="${i}" role="button" title="クリアする">✕</span>` : ''}
-            </div>
-            <div class="slot-body">
-              ${assigned
-                ? `<span class="slot-name">${assigned.name}</span>
-                   <span class="slot-q">Q${assigned.quality}</span>`
-                : `<span class="slot-label">${slotLabel}</span>
-                   <span class="slot-hint">未装填</span>`
-              }
-            </div>
-          </button>`;
-        }).join('')}
+        <div class="atelier-q-bar">
+          <div class="atelier-q-bar-fill" style="width: ${pct}%;"></div>
+        </div>
       </div>
-      </div><!-- /.craft-grid-left -->
-      <div class="craft-grid-right">
-        <div class="craft-traits" id="craft-traits"></div>
-        <div class="craft-preview" id="craft-preview"></div>
-      </div>
-      </div><!-- /.craft-grid -->
-      ${this._renderCapacityWarning()}
-      <button class="craft-btn" id="craft-execute" ${this._canCraft() ? '' : 'disabled'}>
-        調合する
-      </button>
     `;
 
-    // 素材選択ボタン (未選択スロット / 選択済スロットの本体どちらも再選択可)
-    detail.querySelectorAll('.slot-select').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        // クリア (✕) クリックは伝播させて別ハンドラで処理
-        if (e.target.closest('.slot-clear')) return;
-        this._openMaterialPicker(parseInt(btn.dataset.slot));
-      });
-    });
+    if (bp.battleEffect) {
+      html += `<div class="atl-craft-effect-info">${this._describeBattleEffect(bp.battleEffect)}</div>`;
+    }
 
-    // 素材クリア (✕) — 親の .slot-select への伝播を止める
-    detail.querySelectorAll('.slot-clear').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.assignedMaterials[parseInt(btn.dataset.slot)] = null;
-        this._renderWorkspace();
-      });
-    });
+    html += `<div class="atl-trait-section" id="atl-trait-section"></div>`;
+    html += `<div class="atl-preview-host" id="atl-preview-host"></div>`;
 
-    // 調合ボタン
-    detail.querySelector('#craft-execute').addEventListener('click', () => this._executeCraft());
+    body.innerHTML = html;
 
-    // 特性表示
     this._renderTraits();
     this._renderPreview();
   }
 
-  _openMaterialPicker(slotIndex) {
-    const recipe = Recipes[this.selectedRecipeId];
-    const slot = recipe.materials[slotIndex];
-    // 現在のスロットに入っている素材は「使用中」から除外（入れ替えを許可）
-    const usedUids = new Set(
-      this.assignedMaterials
-        .filter((m, idx) => m && idx !== slotIndex)
-        .map(m => m.uid)
-    );
-
-    // 対象素材を絞り込み + 品質降順ソート + 特性レアリティ降順
-    const rarityScore = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
-    const traitScore = (item) => {
-      if (!item.traits || item.traits.length === 0) return 0;
-      let max = 0;
-      for (const t of item.traits) {
-        const r = TraitDefs[t]?.rarity;
-        if (r && rarityScore[r] > max) max = rarityScore[r];
-      }
-      return max;
-    };
-    const candidates = this.inventory.getItemsByType('material')
-      .filter(item => {
-        if (usedUids.has(item.uid)) return false;
-        return materialMatchesSlot(item.blueprintId, slot);
-      })
-      .sort((a, b) => (b.quality - a.quality) || (traitScore(b) - traitScore(a)));
-
-    // 簡易ピッカーモーダル
-    const picker = document.createElement('div');
-    picker.className = 'material-picker-overlay';
-    picker.setAttribute('role', 'dialog');
-    picker.setAttribute('aria-modal', 'true');
-    picker.setAttribute('aria-label', '素材を選択');
-    picker.innerHTML = `
-      <div class="material-picker">
-        <h4>素材を選択（品質順）</h4>
-        <div class="picker-list">
-          ${candidates.length === 0 ? '<p class="picker-empty">対応する素材がありません</p>' :
-            candidates.map(item => {
-              const traitBadges = (item.traits || []).map(t => {
-                const r = TraitDefs[t]?.rarity || 'common';
-                return `<span class="picker-trait-badge rarity-${r}" title="${t}">${t}</span>`;
-              }).join('');
-              return `
-                <div class="picker-item" data-uid="${item.uid}">
-                  <span class="picker-name">${item.name}</span>
-                  <span class="picker-quality">Q${item.quality}</span>
-                  ${traitBadges ? `<span class="picker-traits">${traitBadges}</span>` : ''}
-                </div>
-              `;
-            }).join('')}
-        </div>
-        <button class="picker-cancel">キャンセル</button>
-      </div>
-    `;
-    // 親の filter(anim-fade-in) が包含ブロックを作り position:fixed が効かないため body 直下へ
-    document.body.appendChild(picker);
-
-    const closePicker = () => {
-      if (onKeyDown) window.removeEventListener('keydown', onKeyDown);
-      picker.remove();
-    };
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') { e.preventDefault(); closePicker(); }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    // バックドロップクリックで閉じる
-    picker.addEventListener('click', (e) => {
-      if (e.target === picker) closePicker();
-    });
-    picker.querySelector('.picker-cancel').addEventListener('click', closePicker);
-    picker.querySelectorAll('.picker-item').forEach(el => {
-      el.addEventListener('click', () => {
-        const uid = el.dataset.uid;
-        const item = this.inventory.getItemByUid(uid);
-        if (item) {
-          this.assignedMaterials[slotIndex] = item;
-          closePicker();
-          this._renderWorkspace();
-          // 全スロットが埋まったらモバイルで末尾(調合ボタン)までスクロール
-          const allFilled = this.assignedMaterials.length > 0
-            && this.assignedMaterials.every(m => m != null);
-          if (allFilled) this._scrollWorkspaceToBottomMobile();
-        }
-      });
-    });
-  }
-
   _renderTraits() {
-    const traitsEl = this.el.querySelector('#craft-traits');
+    const traitsEl = this.el.querySelector('#atl-trait-section');
     if (!traitsEl) return;
 
-    // 素材から利用可能な特性を収集
+    // Collect traits from assigned materials
     const traitSet = new Set();
     for (const mat of this.assignedMaterials) {
-      if (mat && mat.traits) {
-        mat.traits.forEach(t => traitSet.add(t));
-      }
+      if (mat && mat.traits) mat.traits.forEach(t => traitSet.add(t));
     }
+    if (traitSet.size === 0) { traitsEl.innerHTML = ''; return; }
 
-    if (traitSet.size === 0) {
-      traitsEl.innerHTML = '';
-      return;
-    }
-
-    // 素材入れ替えで消えた特性を除去し、空き枠があればレアリティ順に自動補充
+    // Drop traits that disappeared, auto-fill empty slots by rarity
     const rarityOrder = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
     this.selectedTraits = this.selectedTraits.filter(t => traitSet.has(t));
-    if (this.selectedTraits.length < GameConfig.maxTraitSlots) {
+    const max = GameConfig.maxTraitSlots;
+    if (this.selectedTraits.length < max) {
       const prioritized = [...traitSet]
         .filter(t => !this.selectedTraits.includes(t))
-        .sort((a, b) => {
-          const ra = rarityOrder[TraitDefs[a]?.rarity] ?? 5;
-          const rb = rarityOrder[TraitDefs[b]?.rarity] ?? 5;
-          return ra - rb;
-        });
+        .sort((a, b) => (rarityOrder[TraitDefs[a]?.rarity] ?? 5) - (rarityOrder[TraitDefs[b]?.rarity] ?? 5));
       for (const t of prioritized) {
-        if (this.selectedTraits.length >= GameConfig.maxTraitSlots) break;
+        if (this.selectedTraits.length >= max) break;
         this.selectedTraits.push(t);
       }
     }
 
     const fusionMap = this._computeFusionMap();
+    const items = [...traitSet]
+      .sort((a, b) => (rarityOrder[TraitDefs[a]?.rarity] ?? 5) - (rarityOrder[TraitDefs[b]?.rarity] ?? 5))
+      .map(t => {
+        const def = TraitDefs[t];
+        const selected = this.selectedTraits.includes(t);
+        const runFx = this._getTraitRunEffects(def);
+        const fusedTo = fusionMap[t];
+        const fusedDef = fusedTo ? TraitDefs[fusedTo] : null;
+        const rar = def?.rarity || 'common';
+        return `<div class="atl-trait-item-wrap">
+          <button class="atl-trait-toggle rar-${rar} ${selected ? 'selected' : ''} ${fusedTo ? 'will-fuse' : ''}"
+                  data-trait="${t}" ${(this.selectedTraits.length >= max && !selected) ? 'disabled' : ''}>
+            <span class="atl-trait-pip"></span>
+            <span class="atl-trait-name">${t}</span>
+            ${fusedTo ? `<span class="atl-trait-fuse-arrow rarity-${fusedDef?.rarity || 'common'}">→${fusedTo}</span>` : ''}
+          </button>
+          <div class="atl-trait-tooltip">
+            <span class="atl-trait-tt-name rarity-${rar}">${t}</span>
+            <span class="atl-trait-tt-rarity">${rar}</span>
+            <p class="atl-trait-tt-desc">${def?.description || ''}</p>
+            ${runFx ? `<p class="atl-trait-tt-run">${runFx}</p>` : ''}
+            ${fusedTo && fusedDef ? `<p class="atl-trait-tt-fuse">✨ 融合: <span class="rarity-${fusedDef.rarity}">${fusedTo}</span> — ${fusedDef.description || ''}</p>` : ''}
+          </div>
+        </div>`;
+      }).join('');
 
     traitsEl.innerHTML = `
-      <h4>引き継ぎ特性（${GameConfig.maxTraitSlots}枠まで）</h4>
-      <div class="trait-list">
-        ${[...traitSet].map(t => {
-          const def = TraitDefs[t];
-          const selected = this.selectedTraits.includes(t);
-          const runFx = this._getTraitRunEffects(def);
-          const fusedTo = fusionMap[t];
-          const fusedDef = fusedTo ? TraitDefs[fusedTo] : null;
-          return `<div class="trait-item-wrap">
-            <button class="trait-toggle ${selected ? 'selected' : ''} ${fusedTo ? 'will-fuse' : ''} rarity-${def?.rarity || 'common'}"
-                    data-trait="${t}" ${this.selectedTraits.length >= GameConfig.maxTraitSlots && !selected ? 'disabled' : ''}>
-              <span class="trait-name">${t}</span>
-              ${fusedTo ? `<span class="trait-fuse-arrow" title="融合で${fusedTo}へ昇格">✨→<span class="rarity-${fusedDef?.rarity || 'common'}">${fusedTo}</span></span>` : ''}
-            </button>
-            <div class="trait-tooltip">
-              <span class="trait-tt-name rarity-${def?.rarity || 'common'}">${t}</span>
-              <span class="trait-tt-rarity">${def?.rarity || ''}</span>
-              <p class="trait-tt-desc">${def?.description || ''}</p>
-              ${runFx ? `<p class="trait-tt-run">${runFx}</p>` : ''}
-              ${fusedTo && fusedDef ? `<p class="trait-tt-fuse">✨ 融合: <span class="rarity-${fusedDef.rarity}">${fusedTo}</span> — ${fusedDef.description || ''}</p>` : ''}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
+      <div class="atl-trait-section-head">引き継ぎ特性<span class="atl-trait-counter">(${this.selectedTraits.length}/${max} 枠)</span></div>
+      <div class="atl-trait-list">${items}</div>
     `;
 
-    traitsEl.querySelectorAll('.trait-toggle').forEach(btn => {
+    traitsEl.querySelectorAll('.atl-trait-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (btn.disabled) return;
         const trait = btn.dataset.trait;
         const idx = this.selectedTraits.indexOf(trait);
         if (idx >= 0) {
           this.selectedTraits.splice(idx, 1);
-        } else if (this.selectedTraits.length < GameConfig.maxTraitSlots) {
+        } else if (this.selectedTraits.length < max) {
           this.selectedTraits.push(trait);
         }
-        this._renderWorkspace();
+        this._renderDetail();
+        this._renderTargetCard();
       });
     });
   }
 
   _renderPreview() {
-    const preview = this.el.querySelector('#craft-preview');
-    if (!preview || !this._canCraft()) {
-      if (preview) preview.innerHTML = '';
-      return;
-    }
+    const host = this.el.querySelector('#atl-preview-host');
+    if (!host) return;
+    if (!this._canCraft()) { host.innerHTML = ''; return; }
 
     const recipe = Recipes[this.selectedRecipeId];
     const bp = ItemBlueprints[recipe.targetId];
     const pr = this._computePreviewResult();
-    if (!pr) { preview.innerHTML = ''; return; }
+    if (!pr) { host.innerHTML = ''; return; }
     const { finalQ, fusionMap, finalTraits, capped } = pr;
 
     let html = `<h4>完成品プレビュー</h4>`;
     html += `<div class="preview-stats">`;
-    html += `<div class="preview-row"><span>予測品質:</span><span class="preview-val">Q${finalQ}${capped ? ' <span class="preview-cap-badge">上限</span>' : ''}</span></div>`;
+    if (capped) {
+      html += `<div class="preview-row"><span>品質上限:</span><span class="preview-val">Q${finalQ} <span class="preview-cap-badge">上限</span></span></div>`;
+    }
 
     if (bp.type === 'equipment' && bp.equipType === 'shield') {
-      // 盾は武器スロット・防具スロットどちらにも装備可能なので両方のステータスを表示
       html += this._renderShieldDualPreview(bp, finalQ, recipe.targetId);
     } else if (bp.type === 'equipment' && this._isWeaponType(bp.equipType)) {
       const wc = GameConfig.weapon;
-      // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
       const dmgMult = bp.baseDamageMultiplier || 1.0;
       let dmg = (bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor) * dmgMult;
       if (bp.element === 'none') dmg *= 1.25;
@@ -572,7 +736,7 @@ export class CraftingScreen {
       html += this._renderConsumablePreview(bp, finalQ, finalTraits);
     }
 
-    // 特性融合プレビュー
+    // Trait fusion preview
     const fusionEntries = Object.entries(fusionMap);
     if (fusionEntries.length > 0) {
       html += `<div class="preview-fusion-section"><h5>✨ 特性融合</h5>`;
@@ -591,7 +755,7 @@ export class CraftingScreen {
       html += `</div>`;
     }
 
-    // 完成品の最終特性（融合適用後）
+    // Final traits (after fusion)
     if (finalTraits.length > 0) {
       html += `<div class="preview-traits-section"><h5>完成品の特性 (${finalTraits.length}/${GameConfig.maxTraitSlots})</h5>`;
       for (const t of finalTraits) {
@@ -621,8 +785,113 @@ export class CraftingScreen {
     }
 
     html += `</div>`;
-    preview.innerHTML = html;
+    host.innerHTML = html;
   }
+
+  // ============================================================
+  // Material picker modal
+  // ============================================================
+
+  _openMaterialPicker(slotIndex) {
+    const recipe = Recipes[this.selectedRecipeId];
+    const slot = recipe.materials[slotIndex];
+    const usedUids = new Set(
+      this.assignedMaterials
+        .filter((m, idx) => m && idx !== slotIndex)
+        .map(m => m.uid)
+    );
+
+    const rarityScore = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
+    const traitScore = (item) => {
+      if (!item.traits || item.traits.length === 0) return 0;
+      let max = 0;
+      for (const t of item.traits) {
+        const r = TraitDefs[t]?.rarity;
+        if (r && rarityScore[r] > max) max = rarityScore[r];
+      }
+      return max;
+    };
+    const candidates = this.inventory.getItemsByType('material')
+      .filter(item => !usedUids.has(item.uid) && materialMatchesSlot(item.blueprintId, slot))
+      .sort((a, b) => (b.quality - a.quality) || (traitScore(b) - traitScore(a)));
+
+    const slotLabel = isCategorySlot(slot)
+      ? (MaterialCategories[getCategoryId(slot)]?.name || slot)
+      : (ItemBlueprints[slot]?.name || slot);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'atl-craft-picker-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '素材を選択');
+    overlay.innerHTML = `
+      <div class="atelier-parchment atl-craft-picker">
+        <span class="atelier-corner tl"></span><span class="atelier-corner tr"></span>
+        <span class="atelier-corner bl"></span><span class="atelier-corner br"></span>
+        <button class="atl-craft-picker-close" aria-label="閉じる">✕</button>
+        <div class="atelier-panel-head">
+          <div class="atelier-panel-title">
+            <span class="atelier-deco">◇</span>素材を選択<span class="atelier-en">Select Material</span>
+          </div>
+          <span class="atelier-panel-meta">${slotLabel}</span>
+        </div>
+        <div class="atl-craft-picker-list atelier-scrollarea">
+          ${candidates.length === 0 ? '<div class="atl-craft-picker-empty">対応する素材がありません</div>' :
+            candidates.map(item => {
+              const bp = ItemBlueprints[item.blueprintId];
+              const elemCls = bp?.element ? `elem-${bp.element}` : '';
+              const iconHtml = bp?.image
+                ? `<img src="${assetPath(bp.image)}" onerror="this.style.display='none'" alt="">`
+                : '◆';
+              const traitBadges = (item.traits || []).map(t => {
+                const r = TraitDefs[t]?.rarity || 'common';
+                return `<span class="atl-craft-picker-trait rarity-${r}">${t}</span>`;
+              }).join('');
+              return `
+                <div class="atl-craft-picker-item" data-uid="${item.uid}">
+                  <div class="atl-craft-picker-icon ${elemCls}">${iconHtml}</div>
+                  <div class="atl-craft-picker-info">
+                    <div class="atl-craft-picker-name">${item.name}</div>
+                    ${traitBadges ? `<div class="atl-craft-picker-traits">${traitBadges}</div>` : ''}
+                  </div>
+                  <span class="atl-craft-picker-q-pill">Q${item.quality}</span>
+                </div>
+              `;
+            }).join('')}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = () => {
+      window.removeEventListener('keydown', onKey);
+      overlay.remove();
+    };
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } };
+    window.addEventListener('keydown', onKey);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    overlay.querySelector('.atl-craft-picker-close').addEventListener('click', close);
+    overlay.querySelectorAll('.atl-craft-picker-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const uid = el.dataset.uid;
+        const item = this.inventory.getItemByUid(uid);
+        if (item) {
+          this.assignedMaterials[slotIndex] = item;
+          close();
+          this._renderCauldron();
+          this._renderTargetCard();
+          this._renderDetail();
+          this._updateCraftButton();
+          const allFilled = this.assignedMaterials.length > 0 && this.assignedMaterials.every(m => m != null);
+          if (allFilled) this._scrollWorkspaceToBottomMobile();
+        }
+      });
+    });
+  }
+
+  // ============================================================
+  // Preserved calculation helpers (unchanged from prior version)
+  // ============================================================
 
   _isWeaponType(equipType) {
     return ['sword', 'spear', 'bow', 'staff', 'dagger'].includes(equipType);
@@ -663,7 +932,6 @@ export class CraftingScreen {
     const recipe = Recipes[this.selectedRecipeId];
     if (!recipe) return null;
 
-    // 素材の最高品質を採用 (craftItem と同ロジック)
     const qualities = this.assignedMaterials.filter(m => m).map(m => m.quality || 0);
     const maxQ = qualities.length > 0 ? Math.max(...qualities) : 0;
 
@@ -754,7 +1022,6 @@ export class CraftingScreen {
     let html = '';
     html += `<div class="preview-row"><span>対象:</span><span class="preview-val">${target}</span></div>`;
 
-    // tier 形式: 品質閾値による段階効果
     if (Array.isArray(fx.tiers)) {
       html += this._renderTieredConsumablePreview(fx, finalQ, mods, statNames);
       const cdMult = Math.max(0.1, 1 + mods.consumableCooldownMult);
@@ -826,7 +1093,6 @@ export class CraftingScreen {
       html += `<div class="preview-row"><span>🌿 効果後再生:</span><span class="preview-val">+${fmt1(regenAmount)}HP/秒 (${regenDuration}秒)</span></div>`;
     }
 
-    // 装備中の同名消耗品と比較（簡易）
     const cmp = this._compareConsumable(bp);
     if (cmp) html += `<div class="preview-compare">${cmp}</div>`;
 
@@ -840,7 +1106,6 @@ export class CraftingScreen {
   _renderTieredConsumablePreview(fx, finalQ, mods, statNames) {
     const q = finalQ || 0;
     let html = '';
-    // tier リスト
     html += `<div class="preview-row preview-section"><span>📊 品質段階効果:</span></div>`;
     html += `<div class="tier-list">`;
     for (const tier of fx.tiers) {
@@ -852,7 +1117,6 @@ export class CraftingScreen {
       html += `<div class="tier-row ${cls}"><span class="tier-q">${icon} Q${minQ}</span><span class="tier-effect">${label}</span></div>`;
     }
     html += `</div>`;
-    // 合成結果
     const resolved = resolveTieredEffects(fx, q);
     if (resolved) {
       const lines = this._formatResolvedEffect(resolved, mods, statNames);
@@ -942,15 +1206,12 @@ export class CraftingScreen {
     return lines;
   }
 
-  /**
-   * 盾プレビュー — 武器スロット装備時と防具スロット装備時の両方のステータスを表示
-   */
+  /** 盾プレビュー — 武器スロット装備時と防具スロット装備時の両方のステータスを表示 */
   _renderShieldDualPreview(bp, finalQ, targetId) {
     let html = '';
 
     // ── 武器として装備した場合 ──
     const wc = GameConfig.weapon;
-    // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
     const dmgMult = bp.baseDamageMultiplier || 1.0;
     let dmg = (bp.baseValue / wc.damageBaseDivisor + finalQ / wc.damageQualityDivisor) * dmgMult;
     if (bp.element === 'none') dmg *= 1.25;
@@ -986,9 +1247,7 @@ export class CraftingScreen {
     return html;
   }
 
-  /**
-   * 効果倍率バッジ — 値が0なら非表示。invert=true はクールダウン等「負が良い」系。
-   */
+  /** 効果倍率バッジ — 値が0なら非表示。invert=true はクールダウン等「負が良い」系。 */
   _effectBadge(mult, invert) {
     if (!mult || Math.abs(mult) < 0.001) return '';
     const pct = Math.round(mult * 100);
@@ -999,10 +1258,7 @@ export class CraftingScreen {
     return ` <span class="preview-diff ${cls}">${arrow}${sign}${pct}%</span>`;
   }
 
-  /**
-   * 同 equipType の装備中武器と数値比較。
-   * @returns {{dmg:string, spd:string, range:string, label:string}} 各値に付与する差分表記と一行サマリ
-   */
+  /** 同 equipType の装備中武器と数値比較。 */
   _compareWithEquipped(newBp, newStats) {
     const empty = { dmg: '', spd: '', range: '', label: '' };
     const eq = this.getEquipment();
@@ -1016,7 +1272,6 @@ export class CraftingScreen {
 
     const bp = ItemBlueprints[equipped.blueprintId];
     const wc = GameConfig.weapon;
-    // 実挙動と整合: baseDamageMultiplier と 無属性(+25%) を反映
     const curDmgMult = bp.baseDamageMultiplier || 1.0;
     let curDmg = (bp.baseValue / wc.damageBaseDivisor + equipped.quality / wc.damageQualityDivisor) * curDmgMult;
     if (bp.element === 'none') curDmg *= 1.25;
@@ -1076,7 +1331,6 @@ export class CraftingScreen {
     const sign = d > 0 ? '+' : '';
     const cls = d > 0 ? 'up' : 'down';
     const arrow = d > 0 ? '▲' : '▼';
-    // digits は閾値計算用としてのみ利用し、表示は全て最大1桁で統一
     const display = digits <= 0 ? fmtInt(d) : fmt1(d);
     return ` <span class="preview-diff ${cls}">${arrow}${sign}${display}${unit}</span>`;
   }
@@ -1132,27 +1386,27 @@ export class CraftingScreen {
     const materialsReady = this.assignedMaterials.length === recipe.materials.length &&
            this.assignedMaterials.every(m => m !== null);
     if (!materialsReady) return false;
-    // 倉庫上限チェック: 素材N個消費→完成品1個追加なので差分 = 1 - N
-    // N>=1 のレシピでは基本問題ないが、`isFull` 時は保険で拒否
     const consumed = this.assignedMaterials.length;
     const projectedCount = this.inventory.items.length - consumed + 1;
     if (projectedCount > this.inventory.maxCapacity) return false;
     return true;
   }
 
-  /** 調合実行時点での倉庫容量警告 (UI) */
   _renderCapacityWarning() {
     const consumed = this.assignedMaterials.length;
     const projectedCount = this.inventory.items.length - consumed + 1;
     if (projectedCount > this.inventory.maxCapacity) {
-      return `<p class="craft-warning">⚠️ 倉庫が上限を超えています (${this.inventory.items.length}/${this.inventory.maxCapacity})。倉庫画面でアイテムを整理してください。</p>`;
+      return `<div class="atl-craft-warning">⚠️ 倉庫が上限を超えています (${this.inventory.items.length}/${this.inventory.maxCapacity})。倉庫画面で整理してください。</div>`;
     }
     return '';
   }
 
+  // ============================================================
+  // Craft execution + success animation
+  // ============================================================
+
   _executeCraft() {
     if (!this._canCraft()) {
-      // 倉庫満杯が原因なら明示的に通知
       const consumed = this.assignedMaterials.length;
       const projectedCount = this.inventory.items.length - consumed + 1;
       if (projectedCount > this.inventory.maxCapacity) {
@@ -1164,22 +1418,21 @@ export class CraftingScreen {
     try {
       const item = craftItem(this.selectedRecipeId, this.assignedMaterials, this.selectedTraits, 0);
 
-      // 装備中の素材UIDを先に解除通知（亡霊UID防止）
+      // Detach equipped material UIDs first (prevent ghost UID references)
       const consumedUids = this.assignedMaterials.map(m => m.uid);
       eventBus.emit('inventory:uidsRemoved', { uids: consumedUids });
 
-      // 素材をインベントリから消費
+      // Consume materials
       for (const mat of this.assignedMaterials) {
         this.inventory.removeItem(mat.uid, true);
       }
 
-      // ペット卵: インベントリには入れず、ownedPets へ直接登録（pet:hatch を発火）
       const targetBp = ItemBlueprints[item.blueprintId];
       if (targetBp?.type === 'pet_egg' && targetBp.petId) {
         eventBus.emit('pet:hatch', { petId: targetBp.petId, eggBlueprintId: item.blueprintId, quality: item.quality });
         eventBus.emit('toast', { message: `🥚 ${item.name} が孵化した！ ${targetBp.petId} を契約スロットから装備できます`, type: 'success' });
       } else {
-        // 武器の強化スキル tier アンロック検出 (addItem の前に既存アイテムと比較)
+        // Detect weapon skill tier unlock before adding to inventory
         let unlockedTierMessage = null;
         const skillDef = WeaponSkillDefs[item.blueprintId];
         if (skillDef) {
@@ -1194,38 +1447,64 @@ export class CraftingScreen {
             unlockedTierMessage = `✦ 強化T${newTier} 解放！「${skillDef.name}」がパワーアップ`;
           }
         }
-        // 完成品をインベントリに追加
         this.inventory.addItem(item);
-        eventBus.emit('toast', { message: `✨ ${item.name} (Q${item.quality}) を調合しました！`, type: 'success' });
         if (unlockedTierMessage) {
-          // クラフト完了トーストの後に重ねて表示
-          setTimeout(() => eventBus.emit('toast', { message: unlockedTierMessage, type: 'success' }), 900);
+          setTimeout(() => eventBus.emit('toast', { message: unlockedTierMessage, type: 'success' }), 1400);
         }
       }
 
-      // 錬金陣の成功演出 (1.2秒間)
-      const stage = this.el.querySelector('#craft-stage');
-      if (stage) {
-        stage.classList.add('craft-success');
-        setTimeout(() => {
-          // リセット & 再描画。クラスは再描画時に消える
-          this.assignedMaterials = [];
-          this.selectedTraits = [];
-          this._renderWorkspace();
-          this._renderRecipeList();
-        }, 900);
-      } else {
+      // Atelier success animation: spin alchemy circle, show result toast + spark burst
+      const cauldron = this.el.querySelector('#atl-cauldron');
+      if (cauldron) cauldron.classList.add('is-crafting');
+      this._showResultToast(item);
+      this._spawnSparkBurst();
+
+      setTimeout(() => {
+        if (cauldron) cauldron.classList.remove('is-crafting');
         this.assignedMaterials = [];
         this.selectedTraits = [];
-        this._renderWorkspace();
+        this._renderCauldron();
+        this._renderTargetCard();
+        this._renderDetail();
+        this._updateCraftButton();
         this._renderRecipeList();
-      }
+      }, 1600);
     } catch (err) {
       eventBus.emit('toast', { message: `調合失敗: ${err.message}`, type: 'error' });
     }
   }
 
-  destroy() {
-    this.el.remove();
+  _showResultToast(item) {
+    const toast = document.createElement('div');
+    toast.className = 'atl-craft-result-toast show';
+    toast.innerHTML = `
+      <div class="atl-craft-result-card">
+        <div class="atl-craft-result-ribbon">— ✦ SYNTHESIS COMPLETE ✦ —</div>
+        <div class="atl-craft-result-name">${item.name}</div>
+        <div class="atl-craft-result-q">Q ${item.quality}</div>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2600);
+  }
+
+  _spawnSparkBurst() {
+    const burst = document.createElement('div');
+    burst.className = 'atl-craft-spark-burst';
+    const count = 24;
+    for (let i = 0; i < count; i++) {
+      const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+      const dist = 120 + Math.random() * 140;
+      const dx = Math.cos(ang) * dist;
+      const dy = Math.sin(ang) * dist;
+      const spark = document.createElement('div');
+      spark.className = 'atl-craft-spark';
+      spark.style.setProperty('--dx', `${dx}px`);
+      spark.style.setProperty('--dy', `${dy}px`);
+      spark.style.animationDelay = `${Math.random() * 0.2}s`;
+      burst.appendChild(spark);
+    }
+    document.body.appendChild(burst);
+    setTimeout(() => burst.remove(), 2000);
   }
 }

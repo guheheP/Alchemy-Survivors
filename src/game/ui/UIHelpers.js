@@ -582,3 +582,42 @@ export function createDisplayedItemCardHTML(item) {
     </div>
   `;
 }
+
+// ===== Atelier Foundation (Phase A) =====
+// Spawn floating light particles ("motes") inside a container that has the
+// `.atelier-motes` class (or any positioned element). Pure DOM helper —
+// motes are CSS-animated by `@keyframes atl-mote-rise` in styles.css.
+//
+// Usage:
+//   <div class="atelier-motes" id="hub-motes"></div>
+//   spawnAtelierMotes(document.getElementById('hub-motes'), 18);
+//
+// Re-spawning is safe: existing motes are cleared first so the function can
+// be called on every screen mount without leaking DOM nodes.
+//
+// `prefers-reduced-motion: reduce` is respected via the @media block in
+// styles.css (motes are still added but the rise animation is disabled).
+
+/**
+ * @param {HTMLElement | null | undefined} container
+ * @param {number} [count=18]
+ * @returns {void}
+ */
+export function spawnAtelierMotes(container, count = 18) {
+  if (!container) return;
+  // Clear existing motes so repeated mounts don't accumulate DOM nodes.
+  const existing = container.querySelectorAll('.atelier-mote');
+  for (const node of existing) node.remove();
+
+  for (let i = 0; i < count; i++) {
+    const mote = document.createElement('div');
+    mote.className = 'atelier-mote';
+    mote.style.left = `${Math.random() * 100}%`;
+    mote.style.animationDuration = `${10 + Math.random() * 14}s`;
+    // Negative delay so motes start mid-flight on first paint.
+    mote.style.animationDelay = `${-Math.random() * 24}s`;
+    const scale = 0.7 + Math.random() * 0.7;
+    mote.style.transform = `scale(${scale})`;
+    container.appendChild(mote);
+  }
+}

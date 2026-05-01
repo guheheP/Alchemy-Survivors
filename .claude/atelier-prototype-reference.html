@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>錬金工房 — Atelier Crafting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --brass-50:  #fbeec5;
+  --brass-100: #f4dca0;
+  --brass-200: #e9c075;
+  --brass-300: #d4a14a;
+  --brass-400: #b6822e;
+  --brass-500: #8a5e1d;
+  --brass-600: #5e3e10;
+
+  --parch-100: #fbeecc;
+  --parch-200: #f3dfa8;
+  --parch-300: #e6c984;
+  --parch-400: #c9a45f;
+
+  --ink-900: #2a1a0e;
+  --ink-700: #4a2f1a;
+  --ink-500: #6e4a2c;
+  --ink-300: #9a7649;
+
+  --wood-900: #1a0e08;
+  --wood-800: #281810;
+  --wood-700: #3a2516;
+  --wood-600: #4d321f;
+
+  --rar-common:    #c9a97a;
+  --rar-uncommon:  #8aac5e;
+  --rar-rare:      #6abacb;
+  --rar-epic:      #c39bea;
+  --rar-legendary: #f4cf6c;
+
+  --crimson: #b94a3a;
+  --leaf:    #6c8b46;
+  --azure:   #4a8db0;
+
+  --serif-jp: 'Noto Serif JP', serif;
+  --sans-jp:  'Noto Sans JP', sans-serif;
+  --display:  'Cinzel', 'Cormorant Garamond', serif;
+  --display-it: 'Cormorant Garamond', serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--sans-jp);
+  color:var(--ink-700);
+  background:#1a0e08;
+  overflow:hidden;
+}
+
+/* ============= 工房の壁 (背景) ============= */
+.workshop {
+  position:fixed; inset:0;
+  background:
+    /* 蝋燭の光 */
+    radial-gradient(ellipse 60% 40% at 50% 18%, rgba(255,210,150,0.35), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 70%, rgba(255,180,90,0.18), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 88% 70%, rgba(255,180,90,0.18), transparent 60%),
+    /* 木壁 */
+    linear-gradient(180deg, #3a2515 0%, #281810 50%, #1a0e08 100%);
+  overflow:hidden;
+}
+.workshop::before {
+  /* 木目 */
+  content:""; position:absolute; inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><filter id='w'><feTurbulence baseFrequency='0.012 0.7' numOctaves='3' seed='5'/><feColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.025 0 0 0 0 0.012 0 0 0 0.6 0'/></filter><rect width='400' height='200' filter='url(%23w)'/></svg>");
+  mix-blend-mode:multiply; opacity:0.85; pointer-events:none;
+}
+.workshop::after {
+  /* 微粒子（埃） */
+  content:""; position:absolute; inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='800'><filter id='n'><feTurbulence baseFrequency='3' numOctaves='1' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.85 0 0 0 0 0.55 0 0 0 0.06 0'/></filter><rect width='800' height='800' filter='url(%23n)'/></svg>");
+  pointer-events:none; opacity:0.5;
+}
+
+/* 飛ぶ光の粒 */
+.motes { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+.mote {
+  position:absolute; width:6px; height:6px; border-radius:50%;
+  background: radial-gradient(circle, #fff7d8 0%, #f4cf6c 40%, transparent 70%);
+  filter: blur(1px);
+  opacity:0;
+  animation: mote-rise linear infinite;
+}
+@keyframes mote-rise {
+  0%   { transform: translateY(110vh) translateX(0) scale(0.6); opacity:0; }
+  10%  { opacity:0.8; }
+  50%  { transform: translateY(50vh) translateX(20px) scale(1); }
+  90%  { opacity:0.6; }
+  100% { transform: translateY(-10vh) translateX(-15px) scale(0.4); opacity:0; }
+}
+
+/* ============= 全体レイアウト ============= */
+.app {
+  position:relative;
+  width:100%; height:100%;
+  display:flex; flex-direction:column;
+  z-index:1;
+}
+
+/* ============= 上部ヘッダー（看板風） ============= */
+.signboard {
+  position:relative;
+  margin: 18px auto 8px;
+  padding: 10px 90px 14px;
+  max-width: min(96vw, 1500px);
+  text-align:center;
+  color: var(--brass-100);
+}
+.signboard::before, .signboard::after {
+  content:""; position:absolute; top:50%;
+  width: 110px; height:18px; transform: translateY(-50%);
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 18' fill='none' stroke='%23d4a14a' stroke-width='1.2' stroke-linecap='round'><path d='M2 9 H100' opacity='0.8'/><path d='M30 5 Q40 9 30 13'/><path d='M55 3 Q65 9 55 15' opacity='0.7'/><path d='M80 5 Q70 9 80 13' opacity='0.6'/><circle cx='105' cy='9' r='2' fill='%23f4cf6c' stroke='none'/></svg>") center / contain no-repeat;
+}
+.signboard::before { left: 0; transform: translateY(-50%) scaleX(-1); }
+.signboard::after  { right: 0; }
+.signboard .eyebrow {
+  font-family:var(--display); font-weight:700;
+  letter-spacing: 0.42em;
+  font-size: 11px;
+  color: var(--brass-200);
+  opacity:0.8;
+}
+.signboard h1 {
+  font-family:var(--serif-jp);
+  font-weight:900;
+  font-size: 28px;
+  letter-spacing: 0.32em;
+  color: var(--brass-100);
+  text-shadow: 0 0 18px rgba(244,207,108,0.35), 0 1px 0 rgba(0,0,0,0.6);
+  margin-top: 2px;
+}
+.signboard h1 .alch-circle {
+  display:inline-block; width:22px; height:22px;
+  vertical-align: -4px; margin: 0 14px;
+  opacity:0.85;
+  animation: spin 60s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 上部のステータスバッジ */
+.topbar {
+  display:flex; justify-content:space-between; align-items:center;
+  max-width: min(96vw, 1500px);
+  margin: 0 auto;
+  padding: 0 8px;
+}
+.atelier-name {
+  font-family:var(--display-it);
+  font-style: italic; font-weight:600;
+  color: var(--brass-200);
+  letter-spacing: 0.12em;
+  font-size: 14px;
+}
+.badges { display:flex; gap:10px; }
+.badge {
+  display:inline-flex; align-items:center; gap:8px;
+  padding: 6px 16px;
+  background:
+    linear-gradient(180deg, #f3dfa8 0%, #d4a14a 60%, #8a5e1d 100%);
+  color: #2a1a0e;
+  font-family: var(--serif-jp); font-weight:700; font-size:13px;
+  letter-spacing: 0.04em;
+  border: 1px solid #5e3e10;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,180,0.7),
+    inset 0 -2px 4px rgba(94,62,16,0.5),
+    0 2px 5px rgba(0,0,0,0.6),
+    0 0 0 2px rgba(94,62,16,0.4);
+  text-shadow: 0 1px 0 rgba(255,240,180,0.5);
+}
+.badge .ico { font-size:14px; line-height:1; }
+
+/* ============= メインの板 (羊皮紙) ============= */
+.main {
+  flex:1; min-height:0;
+  margin: 6px auto 14px;
+  padding: 14px;
+  width: min(96vw, 1500px);
+}
+
+.spread {
+  position:relative;
+  height:100%;
+  display:grid;
+  grid-template-columns: 360px 1fr 380px;
+  gap: 14px;
+}
+
+/* 共通: 羊皮紙パネル */
+.parchment {
+  position:relative;
+  background:
+    radial-gradient(ellipse at 30% 0%, #fbeecc 0%, #f3dfa8 55%, #e6c984 100%);
+  color: var(--ink-900);
+  border: 1px solid #b6822e;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 2px rgba(94,62,16,0.18),
+    inset 0 0 60px rgba(122,82,32,0.18),
+    inset 0 30px 40px rgba(255,245,210,0.55),
+    0 16px 36px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(255,235,180,0.05);
+}
+.parchment::before {
+  /* 紙テクスチャ */
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0 0.07 0 0 0 0.10 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply; opacity:0.6;
+}
+.parchment::after {
+  /* 焼け跡（縁） */
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(122,72,28,0.35), transparent 60%),
+    radial-gradient(ellipse at 0% 50%, rgba(122,72,28,0.18), transparent 50%),
+    radial-gradient(ellipse at 100% 50%, rgba(122,72,28,0.18), transparent 50%);
+}
+
+/* コーナー唐草装飾 */
+.corner {
+  position:absolute; width:48px; height:48px; pointer-events:none; z-index:2;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%238a5e1d' stroke-width='1.4' stroke-linecap='round'><path d='M3 18 Q3 3 18 3' stroke-width='1.6'/><path d='M3 10 Q10 10 14 4' opacity='0.7'/><path d='M8 3 Q14 9 16 16' opacity='0.6'/><path d='M11 18 Q19 11 24 8' opacity='0.45'/><circle cx='5' cy='5' r='1.6' fill='%23b6822e' stroke='none'/><circle cx='18' cy='3' r='1.2' fill='%23b6822e' stroke='none'/><circle cx='3' cy='18' r='1.2' fill='%23b6822e' stroke='none'/><path d='M22 6 Q26 4 30 6' opacity='0.4'/></svg>") center / contain no-repeat;
+  filter: drop-shadow(0 0 3px rgba(244,207,108,0.45));
+}
+.corner.tl { top: 4px; left: 4px; }
+.corner.tr { top: 4px; right: 4px; transform: scaleX(-1); }
+.corner.bl { bottom: 4px; left: 4px; transform: scaleY(-1); }
+.corner.br { bottom: 4px; right: 4px; transform: scale(-1,-1); }
+
+/* パネル見出し帯 */
+.panel-head {
+  position:relative;
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding: 14px 22px 10px;
+  border-bottom: 1px solid rgba(94,62,16,0.35);
+  margin: 0 12px;
+}
+.panel-head::after {
+  content:""; position:absolute; left:50%; bottom:-4px; transform: translateX(-50%);
+  width: 12px; height: 8px;
+  background: radial-gradient(circle, #b6822e 0%, #8a5e1d 50%, transparent 75%);
+}
+.panel-title {
+  font-family: var(--serif-jp); font-weight:700;
+  font-size: 16px; letter-spacing: 0.18em;
+  color: var(--ink-900);
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title .deco {
+  color: var(--brass-400); font-size:13px;
+}
+.panel-title .en {
+  font-family: var(--display-it); font-style:italic; font-weight:600;
+  font-size: 12px; color: var(--ink-500);
+  letter-spacing: 0.1em;
+  margin-left: 6px;
+}
+.panel-meta { font-size:11px; color:var(--ink-500); font-family:var(--display-it); font-style:italic; letter-spacing:0.1em; }
+
+/* ============= LEFT: レシピ一覧（書物） ============= */
+.recipe-panel { display:flex; flex-direction:column; min-height:0; }
+.recipe-body {
+  flex:1; min-height:0;
+  display:flex; flex-direction:column;
+  padding: 8px 14px 14px;
+  position:relative;
+}
+
+.recipe-search {
+  position:relative;
+  margin: 6px 6px 8px;
+}
+.recipe-search input {
+  width:100%;
+  padding: 9px 10px 9px 32px;
+  background: rgba(255,245,210,0.5);
+  border: 1px solid rgba(94,62,16,0.4);
+  border-radius: 4px;
+  font-family: var(--serif-jp); font-size: 13px;
+  color: var(--ink-900);
+  box-shadow: inset 0 1px 3px rgba(94,62,16,0.2);
+}
+.recipe-search input:focus { outline:none; border-color: var(--brass-400); }
+.recipe-search input::placeholder { color: var(--ink-300); font-style: italic; }
+.recipe-search::before {
+  content:"🔍"; position:absolute; left:10px; top:50%; transform: translateY(-50%);
+  font-size: 13px; opacity:0.55;
+}
+
+.filter-row { display:flex; gap:4px; margin: 0 6px 8px; flex-wrap:wrap; }
+.chip {
+  padding: 5px 10px;
+  font-family: var(--serif-jp); font-size: 11px; font-weight:500;
+  letter-spacing: 0.05em;
+  background: rgba(255,245,210,0.4);
+  border: 1px solid rgba(94,62,16,0.35);
+  border-radius: 3px;
+  color: var(--ink-500);
+  cursor:pointer;
+  transition: all 0.18s;
+}
+.chip:hover { color: var(--ink-900); border-color: var(--brass-400); }
+.chip.active {
+  background: linear-gradient(180deg, var(--brass-200), var(--brass-300));
+  color: var(--ink-900); border-color: var(--brass-500);
+  box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 1px 2px rgba(94,62,16,0.4);
+}
+
+.recipe-list {
+  flex:1; min-height:0;
+  overflow-y: auto;
+  padding: 2px 6px 2px 4px;
+  margin: 0 0 0 2px;
+  position:relative;
+}
+.recipe-list::-webkit-scrollbar{ width:8px; }
+.recipe-list::-webkit-scrollbar-track{ background: rgba(94,62,16,0.1); border-radius:4px;}
+.recipe-list::-webkit-scrollbar-thumb{
+  background: linear-gradient(180deg, var(--brass-300), var(--brass-500));
+  border-radius:4px; border:1px solid var(--brass-600);
+}
+
+.recipe-item {
+  display:flex; align-items:center; gap:10px;
+  padding: 8px 10px; margin-bottom: 5px;
+  background: linear-gradient(180deg, rgba(255,245,210,0.5), rgba(243,223,168,0.3));
+  border: 1px solid rgba(94,62,16,0.25);
+  border-left: 3px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.18s;
+  position:relative;
+}
+.recipe-item:hover {
+  border-color: rgba(94,62,16,0.5);
+  background: linear-gradient(180deg, rgba(255,245,210,0.7), rgba(243,223,168,0.5));
+  transform: translateX(2px);
+}
+.recipe-item.locked { opacity: 0.45; cursor: default; }
+.recipe-item.locked:hover { transform:none; }
+.recipe-item.unavailable { opacity: 0.6; }
+
+.recipe-item.active {
+  border-left: 3px solid var(--brass-400);
+  background:
+    linear-gradient(90deg, rgba(244,207,108,0.4) 0%, rgba(255,245,210,0.7) 30%);
+  box-shadow:
+    inset 0 0 0 1px rgba(244,207,108,0.4),
+    0 2px 6px rgba(94,62,16,0.25);
+}
+.recipe-item.active::after {
+  /* 栞 */
+  content:""; position:absolute; right:-2px; top:-3px;
+  width: 16px; height: 28px;
+  background: linear-gradient(180deg, #c14a3a 0%, #8d2a1c 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  box-shadow: 1px 0 2px rgba(0,0,0,0.4);
+}
+
+.recipe-icon {
+  width: 32px; height: 32px;
+  display:grid; place-items:center;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 65%, #8a5e1d 100%);
+  border: 1.5px solid var(--brass-500);
+  border-radius: 50%;
+  font-size: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+.recipe-icon.elem-fire { background: radial-gradient(circle at 30% 25%, #ffd9a8, #c75727 65%, #5b1d09 100%); }
+.recipe-icon.elem-water { background: radial-gradient(circle at 30% 25%, #c8e8f4, #4a8db0 65%, #1d3a52 100%); }
+.recipe-icon.elem-leaf { background: radial-gradient(circle at 30% 25%, #d4e8a8, #6c8b46 65%, #2a3a1c 100%); }
+.recipe-icon.elem-thunder { background: radial-gradient(circle at 30% 25%, #efe2b0, #a98a3a 65%, #5e4514 100%); }
+.recipe-icon.elem-shadow { background: radial-gradient(circle at 30% 25%, #d4c0e0, #6e4a90 65%, #2a1a3e 100%); }
+.recipe-icon.elem-earth { background: radial-gradient(circle at 30% 25%, #d8c4a0, #8a6a40 65%, #3e2a18 100%); }
+
+.recipe-info { flex:1; min-width:0; }
+.recipe-name {
+  font-family: var(--serif-jp); font-weight:700;
+  font-size: 13px;
+  color: var(--ink-900);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  letter-spacing: 0.04em;
+}
+.recipe-sub {
+  display:flex; align-items:center; gap:6px;
+  font-size: 10px; color: var(--ink-500);
+  font-family: var(--display-it); font-style:italic; letter-spacing:0.06em;
+}
+.elem-pip {
+  display:inline-block; width:8px; height:8px; border-radius:50%;
+  border: 1px solid rgba(0,0,0,0.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.elem-pip.fire { background:#c75727; }
+.elem-pip.water { background:#4a8db0; }
+.elem-pip.leaf { background:#6c8b46; }
+.elem-pip.thunder { background:#a98a3a; }
+.elem-pip.shadow { background:#6e4a90; }
+.elem-pip.earth { background:#8a6a40; }
+
+.recipe-q {
+  font-family: var(--display); font-weight:700;
+  font-size: 11px; color: var(--brass-500);
+  letter-spacing: 0.05em;
+  padding: 1px 7px;
+  border: 1px solid var(--brass-400);
+  border-radius: 99px;
+  background: rgba(255,245,210,0.5);
+  flex-shrink:0;
+}
+.recipe-lock { font-size: 14px; opacity: 0.5; }
+
+/* ============= CENTER: 調合ステージ ============= */
+.workspace {
+  display:flex; flex-direction:column;
+  min-height:0;
+  padding: 0;
+}
+.workspace-body {
+  flex:1; min-height:0;
+  position:relative;
+  padding: 10px 18px 14px;
+  overflow:hidden;
+}
+
+.target-card {
+  display:flex; align-items:center; gap:14px;
+  padding: 10px 16px;
+  margin: 4px 4px 12px;
+  background:
+    linear-gradient(180deg, rgba(255,245,210,0.8) 0%, rgba(243,223,168,0.55) 100%);
+  border: 1px solid rgba(94,62,16,0.35);
+  border-radius: 6px;
+  position:relative;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.target-card .seal {
+  width:46px; height:46px;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 60%, #5e3e10 100%);
+  border: 2px solid var(--brass-500);
+  border-radius: 50%;
+  display:grid; place-items:center;
+  font-size: 22px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 0 0 3px rgba(255,245,210,0.4),
+    0 0 0 4px rgba(94,62,16,0.3),
+    0 2px 6px rgba(0,0,0,0.4);
+  flex-shrink:0;
+}
+.target-info { flex:1; min-width:0; }
+.target-tag {
+  font-family: var(--display-it); font-style:italic; font-weight:600;
+  font-size: 10px; letter-spacing: 0.18em; text-transform:uppercase;
+  color: var(--ink-500);
+}
+.target-name {
+  font-family: var(--serif-jp); font-weight:700;
+  font-size: 22px; letter-spacing: 0.06em;
+  color: var(--ink-900);
+}
+.target-desc { font-size: 11.5px; color: var(--ink-500); margin-top: 2px; line-height:1.4; }
+.target-q {
+  font-family: var(--display); font-weight:900;
+  font-size: 13px;
+  padding: 4px 14px;
+  background: linear-gradient(180deg, var(--brass-100), var(--brass-300) 60%, var(--brass-500));
+  color: var(--ink-900);
+  border: 1px solid var(--brass-600);
+  border-radius: 99px;
+  letter-spacing: 0.06em;
+  box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 2px 4px rgba(0,0,0,0.3);
+  text-shadow: 0 1px 0 rgba(255,240,180,0.5);
+}
+
+/* ===== 錬金陣 ===== */
+.cauldron-wrap {
+  position:relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 540px;
+  aspect-ratio: 1 / 0.85;
+  display:grid; place-items:center;
+}
+.alch-circle-bg {
+  position:absolute; inset: 4% 8% 6%; pointer-events:none;
+  opacity: 0.55;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' fill='none' stroke='%238a5e1d' stroke-linecap='round' stroke-linejoin='round'><g><circle cx='200' cy='200' r='196' stroke-width='1'/><circle cx='200' cy='200' r='176' stroke-width='0.8' stroke-dasharray='2 4' opacity='0.7'/><circle cx='200' cy='200' r='140' stroke-width='1.2'/><circle cx='200' cy='200' r='100' stroke-width='0.8' stroke-dasharray='4 6'/><circle cx='200' cy='200' r='66' stroke-width='1'/><polygon points='200,60 260,260 120,140 280,140 140,260' stroke-width='1' opacity='0.85'/><g stroke-width='0.8' opacity='0.6'><line x1='200' y1='4' x2='200' y2='28'/><line x1='200' y1='372' x2='200' y2='396'/><line x1='4' y1='200' x2='28' y2='200'/><line x1='372' y1='200' x2='396' y2='200'/></g><g fill='%238a5e1d' stroke='none' opacity='0.85'><circle cx='200' cy='24' r='3'/><circle cx='200' cy='376' r='3'/><circle cx='24' cy='200' r='3'/><circle cx='376' cy='200' r='3'/></g><g font-family='serif' font-size='14' fill='%238a5e1d' stroke='none' opacity='0.9'><text x='196' y='44'>☉</text><text x='196' y='366'>☾</text><text x='32' y='205'>♄</text><text x='362' y='205'>♃</text></g></g></svg>") center / contain no-repeat;
+  animation: spin 90s linear infinite reverse;
+}
+.cauldron-wrap.crafting .alch-circle-bg {
+  animation: spin-fast 6s linear infinite;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 12px rgba(244,207,108,0.6));
+}
+@keyframes spin-fast { to { transform: rotate(360deg); } }
+
+.cauldron-glow {
+  position:absolute; inset:18% 22%;
+  background: radial-gradient(circle, rgba(244,207,108,0.35) 0%, transparent 70%);
+  pointer-events:none;
+  filter: blur(8px);
+  opacity: 0.5;
+  transition: opacity 0.6s;
+}
+.cauldron-wrap.crafting .cauldron-glow { opacity: 1; animation: pulse-glow 1.5s ease-in-out infinite; }
+@keyframes pulse-glow {
+  0%,100% { opacity: 0.7; transform: scale(1); }
+  50%     { opacity: 1; transform: scale(1.15); }
+}
+
+/* 中央のフラスコ */
+.flask {
+  position:absolute;
+  width: 28%;
+  aspect-ratio: 1 / 1.2;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index:2;
+  filter: drop-shadow(0 6px 12px rgba(94,62,16,0.5));
+}
+.flask svg { width:100%; height:100%; overflow:visible; }
+.flask .liquid-fill { transition: y 0.6s ease, height 0.6s ease; }
+
+/* スロット - 円周配置 */
+.slots-ring { position:absolute; inset:0; }
+.slot {
+  position:absolute;
+  width: 88px; height: 88px;
+  left: calc(50% + var(--x, 0px) - 44px);
+  top:  calc(50% + var(--y, 0px) - 44px);
+  cursor: pointer;
+  transition: filter 0.2s, left 0.4s ease, top 0.4s ease;
+}
+.slot:focus-visible { outline: none; }
+.slot:hover { filter: brightness(1.08); }
+
+.slot-disc {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #f3dfa8 50%, #d4a14a 100%);
+  border: 2px solid var(--brass-500);
+  box-shadow:
+    inset 0 0 0 4px rgba(255,245,210,0.7),
+    inset 0 0 12px rgba(94,62,16,0.25),
+    0 0 0 2px rgba(94,62,16,0.3),
+    0 4px 10px rgba(0,0,0,0.5);
+  display:grid; place-items:center;
+  position:relative;
+  overflow:hidden;
+}
+.slot-disc::before {
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(244,207,108,0.4) 25%, transparent 50%);
+  opacity:0; transition: opacity 0.3s;
+  animation: slot-shimmer 4s linear infinite;
+}
+@keyframes slot-shimmer { to { transform: rotate(360deg); } }
+.slot.filled .slot-disc::before { opacity: 0.6; }
+
+.slot-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+}
+.slot.empty .slot-icon { font-size: 22px; opacity: 0.4; color: var(--ink-500); }
+
+.slot-tag {
+  position:absolute; left:50%; top: calc(100% + 6px);
+  transform: translateX(-50%);
+  white-space:nowrap;
+  font-family: var(--serif-jp);
+  font-size: 11px; font-weight:700;
+  color: var(--ink-900);
+  background: rgba(255,245,210,0.85);
+  padding: 2px 9px;
+  border: 1px solid rgba(94,62,16,0.4);
+  border-radius: 99px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.slot-q {
+  position:absolute; right: -4px; top: -4px;
+  font-family: var(--display); font-size: 10px; font-weight:900;
+  background: linear-gradient(180deg, var(--brass-100), var(--brass-400));
+  color: var(--ink-900);
+  border: 1px solid var(--brass-600);
+  border-radius: 99px;
+  padding: 1px 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+
+/* スロットの希少度光輪 */
+.slot.rar-rare .slot-disc { border-color: var(--rar-rare); box-shadow: inset 0 0 0 4px rgba(255,245,210,0.7), 0 0 14px rgba(106,186,203,0.6), 0 4px 10px rgba(0,0,0,0.5); }
+.slot.rar-epic .slot-disc { border-color: var(--rar-epic); box-shadow: inset 0 0 0 4px rgba(255,245,210,0.7), 0 0 14px rgba(195,155,234,0.6), 0 4px 10px rgba(0,0,0,0.5); }
+.slot.rar-legendary .slot-disc { border-color: var(--rar-legendary); box-shadow: inset 0 0 0 4px rgba(255,245,210,0.7), 0 0 18px rgba(244,207,108,0.85), 0 4px 10px rgba(0,0,0,0.5); }
+
+/* スロットを結ぶ線 */
+.slot-link {
+  position:absolute; inset:0; pointer-events:none;
+  z-index: 0;
+}
+
+/* CRAFT ボタン */
+.craft-btn {
+  display:block;
+  margin: 14px auto 4px;
+  padding: 14px 56px;
+  font-family: var(--display); font-weight:900;
+  font-size: 17px; letter-spacing: 0.32em;
+  color: #2a1a0e;
+  background: linear-gradient(180deg, #fbeec5 0%, #d4a14a 50%, #8a5e1d 100%);
+  border: 2px solid #5e3e10;
+  border-radius: 8px;
+  cursor: pointer;
+  position:relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,180,0.8),
+    inset 0 -3px 6px rgba(94,62,16,0.5),
+    0 4px 0 #5e3e10,
+    0 6px 18px rgba(0,0,0,0.55);
+  transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+  text-shadow: 0 1px 0 rgba(255,240,180,0.5);
+}
+.craft-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,180,0.9),
+    inset 0 -3px 6px rgba(94,62,16,0.5),
+    0 4px 0 #5e3e10,
+    0 8px 22px rgba(0,0,0,0.6),
+    0 0 22px rgba(244,207,108,0.7);
+}
+.craft-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,240,180,0.8),
+    inset 0 -3px 6px rgba(94,62,16,0.5),
+    0 1px 0 #5e3e10,
+    0 2px 8px rgba(0,0,0,0.55);
+}
+.craft-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.craft-btn .deco { color: var(--ink-700); margin: 0 14px; font-size: 13px; }
+
+/* ============= RIGHT: 詳細パネル ============= */
+.detail-panel { display:flex; flex-direction:column; min-height:0; }
+.detail-body {
+  flex:1; min-height:0;
+  overflow-y:auto;
+  padding: 8px 18px 18px;
+}
+.detail-body::-webkit-scrollbar{ width:8px; }
+.detail-body::-webkit-scrollbar-track{ background: rgba(94,62,16,0.1); border-radius:4px;}
+.detail-body::-webkit-scrollbar-thumb{
+  background: linear-gradient(180deg, var(--brass-300), var(--brass-500));
+  border-radius:4px;
+}
+
+/* セクション小見出し */
+.sec-head {
+  display:flex; align-items:center; gap:8px;
+  margin: 16px 0 8px;
+  font-family: var(--serif-jp); font-weight:700;
+  font-size: 12.5px; letter-spacing: 0.16em;
+  color: var(--ink-900);
+}
+.sec-head::before, .sec-head::after {
+  content:""; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(94,62,16,0.5), transparent);
+  flex: 1;
+}
+.sec-head .deco { color: var(--brass-500); font-size:11px; }
+
+/* 品質バー（ファンシー） */
+.q-card {
+  margin: 4px 4px 8px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(255,245,210,0.7), rgba(243,223,168,0.4));
+  border: 1px solid rgba(94,62,16,0.3);
+  border-radius: 6px;
+  position:relative;
+}
+.q-row { display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 8px; }
+.q-label { font-family: var(--serif-jp); font-weight:700; font-size: 13px; color: var(--ink-900); letter-spacing: 0.08em; }
+.q-label .en { font-family: var(--display-it); font-style:italic; font-size: 10px; color: var(--ink-500); margin-left: 4px; letter-spacing:0.1em; }
+.q-value {
+  font-family: var(--display); font-weight:900;
+  font-size: 22px; line-height:1;
+  background: linear-gradient(180deg, #f4cf6c 0%, #b6822e 70%, #5e3e10 100%);
+  -webkit-background-clip: text; background-clip:text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1px 0 rgba(255,240,180,0.3);
+}
+.q-value .max { font-size: 12px; color: var(--ink-500); -webkit-text-fill-color: var(--ink-500); margin-left: 2px; }
+
+.q-bar {
+  position:relative;
+  height: 14px;
+  background: linear-gradient(180deg, #c9a45f 0%, #8a5e1d 100%);
+  border: 1px solid var(--brass-600);
+  border-radius: 99px;
+  overflow:hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+.q-bar-fill {
+  position:absolute; left:0; top:0; bottom:0;
+  background:
+    linear-gradient(180deg, #fbeec5 0%, #f4cf6c 35%, #d4a14a 70%, #8a5e1d 100%);
+  border-right: 1px solid rgba(255,240,180,0.6);
+  border-radius: 99px;
+  width: 0;
+  transition: width 0.7s cubic-bezier(.22,1,.36,1);
+  box-shadow: 0 0 12px rgba(244,207,108,0.7), inset 0 1px 0 rgba(255,255,255,0.5);
+  overflow:hidden;
+}
+.q-bar-fill::before {
+  content:""; position:absolute; inset:0;
+  background:
+    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+  animation: shimmer 2.4s linear infinite;
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.q-bar-cap {
+  position:absolute; right:8%; top: -4px; bottom: -4px;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--ink-900), transparent);
+  opacity:0.5;
+}
+.q-bar-cap::after {
+  content:"上限"; position:absolute; top: -16px; right: -10px;
+  font-family: var(--serif-jp); font-size:9px; color: var(--ink-700);
+  white-space:nowrap;
+}
+.q-tier {
+  display:flex; gap:5px; margin-top: 8px;
+  font-family: var(--display-it); font-style:italic; font-size: 10px;
+  color: var(--ink-500);
+}
+.q-tier .tier { padding: 1px 7px; border:1px solid rgba(94,62,16,0.3); border-radius:99px; opacity:0.4; }
+.q-tier .tier.unlocked { opacity: 1; background: rgba(244,207,108,0.3); border-color: var(--brass-400); color: var(--ink-900); font-weight:700; }
+.q-tier .tier.current {
+  background: linear-gradient(180deg, var(--brass-200), var(--brass-300));
+  color: var(--ink-900); font-weight:700;
+  border-color: var(--brass-500);
+  box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 0 10px rgba(244,207,108,0.6);
+}
+
+/* ステータス行 */
+.stat-row {
+  display:flex; align-items:center; gap:10px;
+  padding: 7px 12px;
+  border-bottom: 1px dashed rgba(94,62,16,0.25);
+  font-size: 12.5px;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-label { color: var(--ink-500); flex: 0 0 90px; font-family: var(--serif-jp); letter-spacing: 0.06em; font-size: 12px; }
+.stat-bar {
+  flex:1; height: 8px;
+  background: rgba(94,62,16,0.2);
+  border: 1px solid rgba(94,62,16,0.35);
+  border-radius: 99px;
+  overflow:hidden;
+  position:relative;
+}
+.stat-bar-fill {
+  position:absolute; left:0; top:0; bottom:0;
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(.22,1,.36,1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.stat-bar-fill.atk { background: linear-gradient(90deg, #c75727, #ec8a3c); }
+.stat-bar-fill.spd { background: linear-gradient(90deg, #4a8db0, #80c1d8); }
+.stat-bar-fill.range { background: linear-gradient(90deg, #6c8b46, #aacb6e); }
+.stat-bar-fill.def { background: linear-gradient(90deg, #6e4a90, #b094d4); }
+.stat-value {
+  flex: 0 0 auto;
+  font-family: var(--display); font-weight:700;
+  font-size: 12px; color: var(--ink-900);
+  min-width: 56px; text-align: right;
+}
+.stat-delta {
+  font-family: var(--display); font-size: 10px; font-weight:700;
+  padding: 0 5px; border-radius: 3px;
+  margin-left: 4px;
+}
+.stat-delta.up { color: #2e5e1f; background: rgba(140,200,90,0.25); }
+.stat-delta.down { color: #7a2a1a; background: rgba(200,90,60,0.2); }
+
+/* 特性 */
+.traits {
+  display:flex; flex-wrap:wrap; gap: 6px;
+  padding: 4px 4px;
+}
+.trait {
+  display:inline-flex; align-items:center; gap:4px;
+  padding: 5px 10px;
+  background: rgba(255,245,210,0.6);
+  border: 1px solid rgba(94,62,16,0.4);
+  border-radius: 99px;
+  font-family: var(--serif-jp); font-size: 11px; font-weight:700;
+  color: var(--ink-900);
+  cursor: pointer;
+  transition: all 0.18s;
+  position:relative;
+}
+.trait:hover { transform: translateY(-1px); border-color: var(--brass-500); }
+.trait.selected {
+  background: linear-gradient(180deg, var(--brass-100), var(--brass-300));
+  border-color: var(--brass-600);
+  box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 2px 4px rgba(94,62,16,0.3);
+}
+.trait .pip {
+  width: 6px; height: 6px; border-radius:50%;
+  border: 1px solid rgba(0,0,0,0.3);
+}
+.trait.rar-common .pip { background: var(--rar-common); }
+.trait.rar-uncommon .pip { background: var(--rar-uncommon); }
+.trait.rar-rare .pip { background: var(--rar-rare); }
+.trait.rar-epic .pip { background: var(--rar-epic); }
+.trait.rar-legendary .pip { background: var(--rar-legendary); box-shadow: 0 0 6px var(--rar-legendary); }
+
+.trait.rar-rare.selected { box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 0 10px rgba(106,186,203,0.5); }
+.trait.rar-epic.selected { box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 0 10px rgba(195,155,234,0.5); }
+.trait.rar-legendary.selected { box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 0 14px rgba(244,207,108,0.85); animation: leg-pulse 2s ease-in-out infinite; }
+@keyframes leg-pulse {
+  0%,100% { box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 0 14px rgba(244,207,108,0.85); }
+  50% { box-shadow: inset 0 1px 0 rgba(255,240,180,0.6), 0 0 22px rgba(244,207,108,1); }
+}
+
+.trait.fuse-arrow::after {
+  content: "✨"; font-size: 9px; margin-left: 2px;
+}
+
+/* 融合 */
+.fusion-box {
+  margin: 8px 4px;
+  padding: 10px 12px;
+  background:
+    linear-gradient(135deg, rgba(195,155,234,0.18) 0%, rgba(244,207,108,0.22) 100%);
+  border: 1px solid rgba(94,62,16,0.4);
+  border-left: 3px solid #b094d4;
+  border-radius: 5px;
+  position:relative;
+}
+.fusion-row {
+  display:flex; align-items:center; gap:8px;
+  font-family: var(--serif-jp); font-size: 12px;
+}
+.fusion-from { color: var(--ink-500); }
+.fusion-arrow { color: #b094d4; font-weight: 900; }
+.fusion-to { color: var(--ink-900); font-weight:700; }
+.fusion-desc {
+  font-size: 11px; color: var(--ink-500); margin-top: 4px;
+  font-style: italic;
+}
+
+/* ============= 素材ピッカー モーダル ============= */
+.modal-overlay {
+  position:fixed; inset:0;
+  background: rgba(20,12,8,0.55);
+  backdrop-filter: blur(4px);
+  display:none; place-items:center;
+  z-index: 100;
+  animation: fade-in 0.2s ease;
+}
+.modal-overlay.open { display:grid; }
+@keyframes fade-in { from { opacity:0;} to { opacity:1;} }
+.modal {
+  width: min(560px, 92vw);
+  max-height: 80vh;
+  display:flex; flex-direction:column;
+  position:relative;
+  animation: scroll-unfurl 0.45s cubic-bezier(.22,1,.36,1);
+  transform-origin: top center;
+}
+@keyframes scroll-unfurl {
+  from { transform: scaleY(0.05) translateY(-30px); opacity:0; filter: blur(4px); }
+  60% { transform: scaleY(1.04) translateY(0); opacity:1; }
+  to { transform: scaleY(1) translateY(0); filter: blur(0); }
+}
+.modal .modal-list {
+  overflow-y:auto; padding: 8px 18px 18px;
+  flex:1; min-height:0;
+}
+.modal .modal-list::-webkit-scrollbar { width:8px; }
+.modal .modal-list::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--brass-300), var(--brass-500)); border-radius:4px; }
+
+.pick-item {
+  display:flex; align-items:center; gap:12px;
+  padding: 10px 14px; margin-bottom: 6px;
+  background: linear-gradient(180deg, rgba(255,245,210,0.5), rgba(243,223,168,0.3));
+  border: 1px solid rgba(94,62,16,0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pick-item:hover {
+  background: linear-gradient(180deg, rgba(255,245,210,0.8), rgba(243,223,168,0.55));
+  transform: translateX(3px);
+  border-color: var(--brass-500);
+}
+.pick-item .picon {
+  width: 38px; height:38px; border-radius:50%;
+  display:grid; place-items:center; font-size: 18px;
+  border: 1.5px solid var(--brass-500);
+  flex-shrink:0;
+}
+.pick-name { font-family: var(--serif-jp); font-weight:700; font-size: 13px; color: var(--ink-900); }
+.pick-traits { display:flex; gap:4px; margin-top: 3px; flex-wrap:wrap; }
+.pick-trait {
+  font-size: 9.5px; padding: 1px 6px; border-radius: 99px;
+  background: rgba(255,245,210,0.6); border: 1px solid rgba(94,62,16,0.3);
+  font-family: var(--serif-jp); font-weight:500;
+}
+.pick-trait.rar-rare { color: #1d4a52; background: rgba(106,186,203,0.25); border-color: rgba(106,186,203,0.6);}
+.pick-trait.rar-epic { color: #4a2a6e; background: rgba(195,155,234,0.25); border-color: rgba(195,155,234,0.6);}
+.pick-trait.rar-legendary { color: #5a3e0e; background: rgba(244,207,108,0.4); border-color: var(--brass-500);}
+
+.pick-q-pill {
+  margin-left:auto; flex-shrink:0;
+  font-family: var(--display); font-weight:900;
+  font-size: 12px;
+  padding: 3px 12px;
+  background: linear-gradient(180deg, var(--brass-100), var(--brass-300));
+  color: var(--ink-900);
+  border: 1px solid var(--brass-600);
+  border-radius: 99px;
+  box-shadow: inset 0 1px 0 rgba(255,240,180,0.6);
+}
+
+.modal-close {
+  position:absolute; top: 10px; right: 14px;
+  width:30px; height:30px;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 70%, #5e3e10 100%);
+  border: 1.5px solid var(--brass-600);
+  border-radius:50%;
+  color: var(--ink-900); font-weight:900; cursor:pointer;
+  display:grid; place-items:center;
+  font-family: serif; font-size: 16px;
+  z-index: 3;
+}
+.modal-close:hover { filter: brightness(1.1); }
+
+/* ============= 結果トースト ============= */
+.result-toast {
+  position:fixed; top: 50%; left:50%;
+  transform: translate(-50%,-50%) scale(0.6);
+  z-index: 200;
+  pointer-events:none;
+  opacity: 0;
+}
+.result-toast.show { animation: result-burst 2.4s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes result-burst {
+  0%   { opacity:0; transform: translate(-50%,-50%) scale(0.4); filter: blur(6px);}
+  20%  { opacity:1; transform: translate(-50%,-50%) scale(1.15); filter: blur(0);}
+  35%  { transform: translate(-50%,-50%) scale(1);}
+  80%  { opacity:1; }
+  100% { opacity:0; transform: translate(-50%,-50%) scale(0.95) translateY(-30px); }
+}
+.result-card {
+  background: radial-gradient(ellipse at 30% 0%, #fbeecc 0%, #f3dfa8 60%, #d4a14a 100%);
+  border: 2px solid var(--brass-500);
+  border-radius: 12px;
+  padding: 28px 56px;
+  box-shadow:
+    inset 0 0 0 4px rgba(255,245,210,0.5),
+    inset 0 0 60px rgba(244,207,108,0.4),
+    0 0 60px rgba(244,207,108,0.7),
+    0 16px 40px rgba(0,0,0,0.6);
+  text-align:center;
+  position:relative;
+}
+.result-card::before, .result-card::after {
+  content:""; position:absolute; width:36px; height:36px;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%238a5e1d' stroke-width='1.4' stroke-linecap='round'><path d='M3 18 Q3 3 18 3' stroke-width='1.6'/><path d='M3 10 Q10 10 14 4' opacity='0.7'/><path d='M8 3 Q14 9 16 16' opacity='0.6'/><circle cx='5' cy='5' r='1.6' fill='%23b6822e' stroke='none'/></svg>") center / contain no-repeat;
+}
+.result-card::before { top:6px; left:6px; }
+.result-card::after { bottom:6px; right:6px; transform: scale(-1,-1); }
+.result-card .ribbon {
+  font-family: var(--display); font-weight:700;
+  font-size: 11px; letter-spacing: 0.4em;
+  color: var(--ink-700);
+}
+.result-card .name {
+  font-family: var(--serif-jp); font-weight:900;
+  font-size: 32px; letter-spacing: 0.08em;
+  color: var(--ink-900);
+  margin: 6px 0;
+  text-shadow: 0 0 18px rgba(244,207,108,0.6);
+}
+.result-card .q {
+  font-family: var(--display); font-weight:900;
+  font-size: 36px;
+  background: linear-gradient(180deg, #f4cf6c, #8a5e1d);
+  -webkit-background-clip: text; background-clip:text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.06em;
+}
+
+/* 紙吹雪 */
+.spark-burst { position:fixed; left:50%; top:50%; pointer-events:none; z-index:199;}
+.spark {
+  position:absolute; width:6px; height:6px; border-radius:50%;
+  background: radial-gradient(circle, #fff5d8, #f4cf6c 50%, transparent 80%);
+  filter: blur(0.5px);
+  animation: spark-fly 1.6s cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes spark-fly {
+  0% { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+
+/* ============= ヘルパー ============= */
+.muted { color: var(--ink-500); font-size: 11px; font-style: italic; }
+
+/* インクの滲みアニメ */
+.ink-in {
+  animation: ink-in 0.45s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes ink-in {
+  from { opacity:0; filter: blur(4px); transform: translateY(4px); }
+  to   { opacity:1; filter: blur(0); transform: translateY(0); }
+}
+
+/* レスポンシブ */
+@media (max-width: 1100px) {
+  .spread { grid-template-columns: 300px 1fr 320px; }
+}
+@media (max-width: 900px) {
+  .spread { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+}
+</style>
+</head>
+<body>
+<div class="workshop">
+  <div class="motes" id="motes"></div>
+</div>
+
+<div class="app">
+  <!-- 看板 -->
+  <div class="signboard">
+    <div class="eyebrow">— ATELIER · ALCHEMY ·</div>
+    <h1>
+      <span class="alch-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f4cf6c" stroke-width="0.7"><circle cx="12" cy="12" r="11"/><circle cx="12" cy="12" r="7" stroke-dasharray="1 2"/><polygon points="12,3 16.5,16 5.5,8.5 18.5,8.5 7.5,16"/></svg>
+      </span>
+      錬<span class="alch-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f4cf6c" stroke-width="0.7"><circle cx="12" cy="12" r="11"/><circle cx="12" cy="12" r="7" stroke-dasharray="1 2"/><polygon points="12,3 16.5,16 5.5,8.5 18.5,8.5 7.5,16"/></svg>
+      </span>金<span class="alch-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f4cf6c" stroke-width="0.7"><circle cx="12" cy="12" r="11"/><circle cx="12" cy="12" r="7" stroke-dasharray="1 2"/><polygon points="12,3 16.5,16 5.5,8.5 18.5,8.5 7.5,16"/></svg>
+      </span>工<span class="alch-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f4cf6c" stroke-width="0.7"><circle cx="12" cy="12" r="11"/><circle cx="12" cy="12" r="7" stroke-dasharray="1 2"/><polygon points="12,3 16.5,16 5.5,8.5 18.5,8.5 7.5,16"/></svg>
+      </span>房
+    </h1>
+  </div>
+
+  <!-- ヘッダ -->
+  <div class="topbar">
+    <div class="atelier-name">~ Aria's Workshop · Vol. III ~</div>
+    <div class="badges">
+      <span class="badge"><span class="ico">⚱</span><span id="hb-gold">12,480</span> Cole</span>
+      <span class="badge"><span class="ico">📦</span><span id="hb-cap">42 / 80</span></span>
+      <span class="badge"><span class="ico">✦</span>Lv. 24</span>
+    </div>
+  </div>
+
+  <!-- メイン -->
+  <div class="main">
+    <div class="spread">
+
+      <!-- ===== LEFT: レシピ書 ===== -->
+      <div class="parchment recipe-panel">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="deco">❖</span>レシピ書<span class="en">Grimoire</span>
+          </div>
+          <span class="panel-meta" id="recipe-count">12 / 18</span>
+        </div>
+        <div class="recipe-body">
+          <div class="recipe-search">
+            <input type="text" id="recipe-search" placeholder="レシピを検索...">
+          </div>
+          <div class="filter-row" id="filter-row">
+            <button class="chip active" data-f="all">全て</button>
+            <button class="chip" data-f="weapon">武器</button>
+            <button class="chip" data-f="armor">防具</button>
+            <button class="chip" data-f="consumable">薬品</button>
+            <button class="chip" data-f="accessory">装飾品</button>
+          </div>
+          <div class="recipe-list" id="recipe-list"></div>
+        </div>
+      </div>
+
+      <!-- ===== CENTER: 工房 ===== -->
+      <div class="parchment workspace">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="deco">✦</span>調合<span class="en">Synthesis</span>
+          </div>
+          <span class="panel-meta" id="ws-meta">Empty Cauldron</span>
+        </div>
+        <div class="workspace-body">
+
+          <div class="target-card">
+            <div class="seal" id="t-seal">✦</div>
+            <div class="target-info">
+              <div class="target-tag">SYNTHESIS TARGET — 調合目標</div>
+              <div class="target-name" id="t-name">レシピを選択してください</div>
+              <div class="target-desc" id="t-desc">左の書から作りたい品を選び、素材を装填せよ。</div>
+            </div>
+            <div class="target-q" id="t-q">Q —</div>
+          </div>
+
+          <div class="cauldron-wrap" id="cauldron">
+            <div class="alch-circle-bg"></div>
+            <div class="cauldron-glow"></div>
+
+            <!-- 中央フラスコ -->
+            <div class="flask">
+              <svg viewBox="0 0 100 120">
+                <defs>
+                  <linearGradient id="flaskBody" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#fff5d8" stop-opacity="0.6"/>
+                    <stop offset="1" stop-color="#d4a14a" stop-opacity="0.25"/>
+                  </linearGradient>
+                  <linearGradient id="liquid" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#f4cf6c"/>
+                    <stop offset="1" stop-color="#b6822e"/>
+                  </linearGradient>
+                  <clipPath id="bodyClip">
+                    <path d="M 38 28 L 38 50 Q 16 78 28 100 Q 50 116 72 100 Q 84 78 62 50 L 62 28 Z"/>
+                  </clipPath>
+                </defs>
+                <!-- 蒸気 -->
+                <g opacity="0.8" id="steam">
+                  <circle cx="50" cy="20" r="0" fill="#fff5d8" opacity="0.5">
+                    <animate attributeName="r" values="0;6;0" dur="3s" repeatCount="indefinite"/>
+                    <animate attributeName="cy" values="22;-4;-10" dur="3s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0;0.5;0" dur="3s" repeatCount="indefinite"/>
+                  </circle>
+                  <circle cx="44" cy="20" r="0" fill="#fff5d8" opacity="0.4">
+                    <animate attributeName="r" values="0;5;0" dur="3.5s" begin="0.6s" repeatCount="indefinite"/>
+                    <animate attributeName="cy" values="22;-2;-12" dur="3.5s" begin="0.6s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0;0.4;0" dur="3.5s" begin="0.6s" repeatCount="indefinite"/>
+                  </circle>
+                  <circle cx="56" cy="20" r="0" fill="#fff5d8" opacity="0.4">
+                    <animate attributeName="r" values="0;4;0" dur="2.7s" begin="1.2s" repeatCount="indefinite"/>
+                    <animate attributeName="cy" values="22;-3;-10" dur="2.7s" begin="1.2s" repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0;0.4;0" dur="2.7s" begin="1.2s" repeatCount="indefinite"/>
+                  </circle>
+                </g>
+                <!-- 首 -->
+                <path d="M 38 28 L 38 50 Q 16 78 28 100 Q 50 116 72 100 Q 84 78 62 50 L 62 28"
+                      fill="url(#flaskBody)"
+                      stroke="#5e3e10" stroke-width="1.6"/>
+                <!-- 液体 -->
+                <g clip-path="url(#bodyClip)">
+                  <rect class="liquid-fill" id="liquidFill" x="0" y="100" width="100" height="0" fill="url(#liquid)"/>
+                  <!-- 表面の波 -->
+                  <ellipse class="liquid-fill" id="liquidSurface" cx="50" cy="100" rx="0" ry="2" fill="#fff5d8" opacity="0.7"/>
+                </g>
+                <!-- 口の縁 -->
+                <ellipse cx="50" cy="28" rx="13" ry="2.5" fill="none" stroke="#5e3e10" stroke-width="1.4"/>
+                <ellipse cx="50" cy="28" rx="13" ry="2.5" fill="#3a2515" opacity="0.4"/>
+                <!-- ハイライト -->
+                <path d="M 42 56 Q 32 76 38 96" stroke="#fff5d8" stroke-width="1.4" fill="none" opacity="0.45" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <!-- スロットを結ぶ線 -->
+            <svg class="slot-link" id="slotLinks" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+
+            <!-- 素材スロット -->
+            <div class="slots-ring" id="slotsRing"></div>
+          </div>
+
+          <button class="craft-btn" id="craft-btn" disabled>
+            <span class="deco">❖</span>調 合 す る<span class="deco">❖</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== RIGHT: 詳細 ===== -->
+      <div class="parchment detail-panel">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="panel-head">
+          <div class="panel-title">
+            <span class="deco">◈</span>仕様<span class="en">Specifications</span>
+          </div>
+          <span class="panel-meta" id="dt-meta">— · —</span>
+        </div>
+        <div class="detail-body" id="detail-body">
+          <div class="muted" style="text-align:center;padding: 40px 20px;">
+            ◇<br>レシピを選ぶと<br>ここに仕様が描かれます<br>◇
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 素材ピッカーモーダル -->
+<div class="modal-overlay" id="picker-overlay">
+  <div class="parchment modal">
+    <span class="corner tl"></span><span class="corner tr"></span>
+    <span class="corner bl"></span><span class="corner br"></span>
+    <button class="modal-close" id="picker-close">✕</button>
+    <div class="panel-head">
+      <div class="panel-title">
+        <span class="deco">◇</span>素材を選択<span class="en">Select Material</span>
+      </div>
+      <span class="panel-meta" id="picker-slot">スロット —</span>
+    </div>
+    <div class="modal-list" id="picker-list"></div>
+  </div>
+</div>
+
+<!-- 結果トースト -->
+<div class="result-toast" id="result-toast">
+  <div class="result-card">
+    <div class="ribbon">— ✦ SYNTHESIS COMPLETE ✦ —</div>
+    <div class="name" id="rt-name">—</div>
+    <div class="q" id="rt-q">Q —</div>
+  </div>
+</div>
+<div class="spark-burst" id="spark-burst"></div>
+
+<script>
+/* ============= データ定義 ============= */
+const ELEMENTS = {
+  fire: { label:'炎', color:'fire', icon:'🔥' },
+  water: { label:'水', color:'water', icon:'💧' },
+  leaf: { label:'草', color:'leaf', icon:'🌿' },
+  thunder: { label:'雷', color:'thunder', icon:'⚡' },
+  shadow: { label:'闇', color:'shadow', icon:'🌑' },
+  earth: { label:'地', color:'earth', icon:'⛰' },
+  none: { label:'無', color:'', icon:'✦' }
+};
+
+const TRAITS = {
+  '鋭利':       { rar:'common',    desc:'武器の攻撃力を僅かに上昇させる。' },
+  '頑強':       { rar:'common',    desc:'防具の防御力を僅かに上昇させる。' },
+  '燃えやすい': { rar:'uncommon',  desc:'炎属性ダメージに小ボーナス。' },
+  '霊薬の素':   { rar:'rare',      desc:'回復量+15%、効果時間+10%。' },
+  '稲妻の刻印': { rar:'rare',      desc:'雷属性発動率+8%。' },
+  '神秘の輝き': { rar:'epic',      desc:'品質上限を解放、特性スロット+1。' },
+  '賢者の刻印': { rar:'legendary', desc:'全ステータス+10%、回復+30%、特性融合確率+50%。' }
+};
+
+const FUSION = {
+  '鋭利': '貫通の極意',
+  '燃えやすい': '紅蓮の真髄',
+  '稲妻の刻印': '雷神の加護',
+  '霊薬の素': '黄金の万能薬'
+};
+const FUSED_DEFS = {
+  '貫通の極意':   { rar:'epic',      desc:'攻撃が敵の防御を貫通する。' },
+  '紅蓮の真髄':   { rar:'epic',      desc:'炎ダメージ+25%、燃焼時間2倍。' },
+  '雷神の加護':   { rar:'legendary', desc:'雷発動率+25%、連鎖2回まで延長。' },
+  '黄金の万能薬': { rar:'legendary', desc:'回復量2倍、効果時間2倍、復活効果。' }
+};
+
+// 素材在庫（プロト用）
+const MATERIALS = [
+  { uid:'m1', id:'mandragora', name:'マンドラゴラ', icon:'🌿', elem:'leaf', q: 84, traits:['霊薬の素','燃えやすい'], cat:['herb','plant'] },
+  { uid:'m2', id:'mandragora', name:'マンドラゴラ', icon:'🌿', elem:'leaf', q: 62, traits:['鋭利'], cat:['herb','plant'] },
+  { uid:'m3', id:'sun-petal',  name:'陽光の花弁',   icon:'🌼', elem:'leaf', q: 71, traits:['霊薬の素','神秘の輝き'], cat:['herb','plant','sun'] },
+  { uid:'m4', id:'flame-shard',name:'灼炎の結晶',   icon:'🔥', elem:'fire', q: 78, traits:['燃えやすい','鋭利'], cat:['mineral','fire'] },
+  { uid:'m5', id:'flame-shard',name:'灼炎の結晶',   icon:'🔥', elem:'fire', q: 92, traits:['燃えやすい','燃えやすい','賢者の刻印'], cat:['mineral','fire'] },
+  { uid:'m6', id:'spring-water',name:'清涼の泉水',  icon:'💧', elem:'water',q: 55, traits:['霊薬の素'], cat:['liquid','water'] },
+  { uid:'m7', id:'thunder-feather', name:'雷鳥の羽根', icon:'🪶', elem:'thunder', q: 88, traits:['稲妻の刻印','稲妻の刻印'], cat:['feather','thunder'] },
+  { uid:'m8', id:'shadow-ore',  name:'影鋼の鉱石',  icon:'⬛', elem:'shadow', q: 67, traits:['頑強','鋭利'], cat:['mineral','metal'] },
+  { uid:'m9', id:'earth-clay',  name:'古代の粘土',  icon:'🟫', elem:'earth', q: 49, traits:['頑強'], cat:['mineral','clay'] },
+  { uid:'m10',id:'star-dust',   name:'星屑の粉',    icon:'✨', elem:'none',  q: 95, traits:['神秘の輝き','賢者の刻印'], cat:['rare','sky'] }
+];
+
+// レシピ
+const RECIPES = [
+  { id:'flame-sword', name:'紅蓮の剣', icon:'⚔', elem:'fire', type:'weapon',
+    desc:'炎を纏う長剣。一閃ごとに敵を焦がす。',
+    slots:[
+      { label:'刃の核',   match:i=>i.cat.includes('metal')||i.cat.includes('mineral'), affinity:'物' },
+      { label:'炎の魂',   match:i=>i.elem==='fire', affinity:'火' },
+      { label:'触媒',     match:i=>i.cat.includes('herb')||i.cat.includes('rare'), affinity:'柔' }
+    ],
+    base:{ atk:48, spd:1.2, range:120 } },
+  { id:'healing-elixir', name:'霊薬エリクシール', icon:'🧪', elem:'leaf', type:'consumable',
+    desc:'飲めば深手も忽ち癒える秘薬。',
+    slots:[
+      { label:'薬草',     match:i=>i.cat.includes('herb'),  affinity:'薬' },
+      { label:'清水',     match:i=>i.cat.includes('liquid'),affinity:'水' },
+      { label:'秘めの素', match:i=>i.cat.includes('rare')||i.cat.includes('sky'), affinity:'秘' }
+    ],
+    base:{ heal:120, dur:8 } },
+  { id:'thunder-bow', name:'雷神の長弓', icon:'🏹', elem:'thunder', type:'weapon',
+    desc:'矢に雷を宿し、遥かな敵を貫く。',
+    slots:[
+      { label:'弓幹',     match:i=>i.cat.includes('plant')||i.cat.includes('feather'), affinity:'柔' },
+      { label:'雷の核',   match:i=>i.elem==='thunder', affinity:'雷' },
+      { label:'弦素材',   match:i=>i.cat.includes('herb')||i.cat.includes('feather'), affinity:'柔' }
+    ],
+    base:{ atk:32, spd:1.4, range:280 } },
+  { id:'iron-armor', name:'重騎士の鎧', icon:'🛡', elem:'earth', type:'armor',
+    desc:'古代の鋼で鍛えし重厚な鎧。',
+    slots:[
+      { label:'胸甲',   match:i=>i.cat.includes('metal')||i.cat.includes('mineral'), affinity:'物' },
+      { label:'裏地',   match:i=>i.cat.includes('plant')||i.cat.includes('herb'),    affinity:'柔' },
+      { label:'刻印石', match:i=>i.cat.includes('mineral')||i.cat.includes('rare'),  affinity:'秘' }
+    ],
+    base:{ def:38, hp:180 } },
+  { id:'star-amulet', name:'星屑の護符', icon:'✦', elem:'none', type:'accessory',
+    desc:'装着者に星々の祝福を与える護符。',
+    slots:[
+      { label:'核石', match:i=>i.cat.includes('rare')||i.cat.includes('sky'), affinity:'秘' },
+      { label:'紋様', match:i=>i.cat.includes('herb')||i.cat.includes('feather'), affinity:'柔' }
+    ],
+    base:{ spd:8, crit:5 } },
+  { id:'shadow-dagger', name:'影渡りの短剣', icon:'🗡', elem:'shadow', type:'weapon',
+    desc:'闇に紛れて急所を狙う暗器。', locked:true,
+    slots:[
+      { label:'刀身', match:i=>i.cat.includes('metal'), affinity:'物' },
+      { label:'闇の素', match:i=>i.elem==='shadow', affinity:'闇' }
+    ],
+    base:{ atk:28, spd:2.0, range:80 } },
+  { id:'mana-tonic', name:'魔力の妙薬', icon:'🍷', elem:'water', type:'consumable',
+    desc:'魔力を一時的に高める。',
+    slots:[
+      { label:'触媒水', match:i=>i.cat.includes('liquid'), affinity:'水' },
+      { label:'秘草',   match:i=>i.cat.includes('herb'),   affinity:'薬' }
+    ],
+    base:{ buff:20, dur:12 } },
+  { id:'fire-bomb', name:'爆裂瓶', icon:'💣', elem:'fire', type:'consumable',
+    desc:'投げると激しい炎が広がる。',
+    slots:[
+      { label:'発火源', match:i=>i.elem==='fire', affinity:'火' },
+      { label:'容器素', match:i=>i.cat.includes('mineral')||i.cat.includes('clay'), affinity:'物' }
+    ],
+    base:{ damage:160 } },
+];
+
+/* ============= 状態管理 ============= */
+const state = {
+  selected: null,             // 選択中レシピ
+  assigned: [],               // [matObj|null]
+  selectedTraits: [],         // string[]
+  filter: 'all',
+  search: '',
+  pickerSlot: null,           // 開いてるスロット index
+  crafting: false,
+};
+const MAX_TRAITS = 3;
+const Q_CAP = 120;
+
+/* ============= 初期化 ============= */
+function init() {
+  spawnMotes(18);
+  renderRecipes();
+  bindFilters();
+  document.getElementById('recipe-search').addEventListener('input', e => {
+    state.search = e.target.value.trim().toLowerCase();
+    renderRecipes();
+  });
+  document.getElementById('craft-btn').addEventListener('click', execCraft);
+  document.getElementById('picker-close').addEventListener('click', closePicker);
+  document.getElementById('picker-overlay').addEventListener('click', e => {
+    if (e.target.id === 'picker-overlay') closePicker();
+  });
+
+  // デフォで先頭レシピを選択
+  selectRecipe(RECIPES[0]);
+}
+
+function spawnMotes(n) {
+  const c = document.getElementById('motes');
+  for (let i=0;i<n;i++){
+    const m = document.createElement('div');
+    m.className = 'mote';
+    m.style.left = Math.random()*100 + 'vw';
+    m.style.animationDuration = (8 + Math.random()*10) + 's';
+    m.style.animationDelay = (-Math.random()*15) + 's';
+    m.style.transform = `scale(${0.5 + Math.random()})`;
+    c.appendChild(m);
+  }
+}
+
+/* ============= レシピ描画 ============= */
+function bindFilters() {
+  document.querySelectorAll('#filter-row .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('#filter-row .chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      state.filter = c.dataset.f;
+      renderRecipes();
+    });
+  });
+}
+
+function recipeAvail(r) {
+  // 各スロットに対応素材がいるか
+  const used = new Set();
+  for (const s of r.slots) {
+    const found = MATERIALS.find(m => !used.has(m.uid) && s.match(m));
+    if (!found) return false;
+    used.add(found.uid);
+  }
+  return true;
+}
+
+function renderRecipes() {
+  const list = document.getElementById('recipe-list');
+  list.innerHTML = '';
+  let shown = 0;
+  for (const r of RECIPES) {
+    if (state.filter !== 'all' && r.type !== state.filter) continue;
+    if (state.search && !r.name.toLowerCase().includes(state.search)) continue;
+    const avail = !r.locked && recipeAvail(r);
+    const el = document.createElement('div');
+    el.className = 'recipe-item ink-in' +
+      (r.locked ? ' locked' : '') +
+      (!avail && !r.locked ? ' unavailable' : '') +
+      (state.selected?.id === r.id ? ' active' : '');
+    const elemKey = ELEMENTS[r.elem]?.color || '';
+    el.innerHTML = `
+      <div class="recipe-icon elem-${elemKey}">${r.locked ? '?' : r.icon}</div>
+      <div class="recipe-info">
+        <div class="recipe-name">${r.locked ? '???' : r.name}</div>
+        <div class="recipe-sub">
+          ${r.locked ? '<span>未解放</span>' :
+            `<span class="elem-pip ${elemKey}"></span><span>${ELEMENTS[r.elem].label}</span>
+             <span>·</span><span>${typeLabel(r.type)}</span>
+             <span>·</span><span>${r.slots.length}素材</span>` }
+        </div>
+      </div>
+      ${ r.locked ? '<span class="recipe-lock">🔒</span>'
+                  : `<span class="recipe-q">${avail ? '◆' : '⨯'}</span>` }
+    `;
+    if (!r.locked) el.addEventListener('click', () => selectRecipe(r));
+    list.appendChild(el);
+    shown++;
+  }
+  document.getElementById('recipe-count').textContent = `${shown} / ${RECIPES.length}`;
+}
+
+function typeLabel(t) {
+  return { weapon:'武器', armor:'防具', consumable:'薬品', accessory:'装飾品' }[t] || t;
+}
+
+/* ============= レシピ選択 ============= */
+function selectRecipe(r) {
+  state.selected = r;
+  // 貪欲法: スロットを1つずつ埋め、使用済みUIDは除外
+  const used = new Set();
+  state.assigned = r.slots.map(s => {
+    const pick = bestFor(s, used);
+    if (pick) used.add(pick.uid);
+    return pick;
+  });
+  state.selectedTraits = computeAvailTraits().slice(0, MAX_TRAITS);
+  renderRecipes();
+  renderWorkspace();
+  renderDetail();
+}
+
+function bestFor(slot, usedUids = new Set()) {
+  // 品質+特性レアリティでソート
+  const order = { legendary:5, epic:4, rare:3, uncommon:2, common:1 };
+  const score = (m) => {
+    let mt = 0;
+    for (const t of m.traits) mt = Math.max(mt, order[TRAITS[t]?.rar || 'common']);
+    return m.q*10 + mt;
+  };
+  const cands = MATERIALS
+    .filter(m => !usedUids.has(m.uid) && slot.match(m))
+    .sort((a,b) => score(b) - score(a));
+  return cands[0] || null;
+}
+
+/* ============= ワークスペース描画 ============= */
+function renderWorkspace() {
+  const r = state.selected;
+  if (!r) return;
+  const el = ELEMENTS[r.elem];
+
+  document.getElementById('t-seal').textContent = r.icon;
+  document.getElementById('t-seal').style.background =
+    el.color ? `radial-gradient(circle at 30% 25%, #fff5d8, var(--rar-uncommon) 60%, #5e3e10 100%)` : '';
+  document.getElementById('t-name').textContent = r.name;
+  document.getElementById('t-desc').textContent = r.desc;
+  document.getElementById('ws-meta').textContent = `${typeLabel(r.type)} · ${r.slots.length} slots`;
+
+  // スロット
+  const ring = document.getElementById('slotsRing');
+  ring.innerHTML = '';
+  const n = r.slots.length;
+  // 親要素の実寸からピクセル半径を算出（コンテナの短辺の38-42%）
+  const ringRect = ring.getBoundingClientRect();
+  const minSide = Math.min(ringRect.width, ringRect.height);
+  const rRatio = n === 2 ? 0.36 : (n === 3 ? 0.38 : 0.40);
+  const radiusPx = Math.max(110, minSide * rRatio);
+  r.slots.forEach((slot, i) => {
+    const a = angleFor(i, n);
+    const x = Math.cos(a) * radiusPx;
+    const y = Math.sin(a) * radiusPx;
+    const m = state.assigned[i];
+    const traitRar = m ? topRarity(m) : null;
+    const btn = document.createElement('button');
+    btn.className = 'slot ' + (m ? 'filled' : 'empty') + (traitRar ? ` rar-${traitRar}` : '');
+    btn.style.setProperty('--x', x + 'px');
+    btn.style.setProperty('--y', y + 'px');
+    btn.innerHTML = `
+      <div class="slot-disc">
+        <span class="slot-icon">${m ? m.icon : '+'}</span>
+      </div>
+      ${ m ? `<span class="slot-q">Q${m.q}</span>` : '' }
+      <div class="slot-tag">${m ? m.name : slot.label}</div>
+    `;
+    btn.addEventListener('click', () => openPicker(i));
+    ring.appendChild(btn);
+  });
+
+  // 接続線
+  const links = document.getElementById('slotLinks');
+  links.innerHTML = '';
+  for (let i=0;i<n;i++){
+    const j = (i+1) % n;
+    const a = angleFor(i, n);
+    const b = angleFor(j, n);
+    const filled = state.assigned[i] && state.assigned[j];
+    // viewBoxは100x100、リングはコンテナのminSide基準。線も同じ半径に揃える
+    const r1pct = (radiusPx / minSide) * 100;
+    const lx1 = 50 + Math.cos(a) * r1pct, ly1 = 50 + Math.sin(a) * r1pct;
+    const lx2 = 50 + Math.cos(b) * r1pct, ly2 = 50 + Math.sin(b) * r1pct;
+    links.innerHTML += `<line x1="${lx1}" y1="${ly1}" x2="${lx2}" y2="${ly2}"
+      stroke="${filled ? '#f4cf6c' : '#8a5e1d'}" stroke-width="${filled?0.4:0.25}"
+      stroke-dasharray="${filled?'':'1.5 1.5'}" opacity="${filled?0.85:0.4}"
+      style="transition: stroke 0.5s, opacity 0.5s, stroke-width 0.5s;"/>`;
+  }
+
+  // フラスコ液体
+  const filled = state.assigned.filter(Boolean).length;
+  const ratio = n > 0 ? filled / n : 0;
+  const fillH = 70 * ratio;
+  const fillY = 100 - fillH;
+  const lq = document.getElementById('liquidFill');
+  const ls = document.getElementById('liquidSurface');
+  lq.setAttribute('y', fillY);
+  lq.setAttribute('height', fillH);
+  ls.setAttribute('cy', fillY);
+  ls.setAttribute('rx', filled > 0 ? 22 : 0);
+  // 液色を要素で変える
+  const liqColor = elementToColors(r.elem);
+  document.querySelector('#liquid stop:nth-child(1)').setAttribute('stop-color', liqColor[0]);
+  document.querySelector('#liquid stop:nth-child(2)').setAttribute('stop-color', liqColor[1]);
+
+  // craft btn
+  const can = state.assigned.every(Boolean);
+  document.getElementById('craft-btn').disabled = !can;
+}
+
+function angleFor(i, n) {
+  const offset = -Math.PI / 2;
+  return offset + (Math.PI*2 / n) * i;
+}
+
+function elementToColors(e) {
+  return ({
+    fire:    ['#ffb060','#a0381c'],
+    water:   ['#a8e0f4','#1d5070'],
+    leaf:    ['#c0e0a0','#2a4f1f'],
+    thunder: ['#f0e4a8','#604018'],
+    shadow:  ['#d8b8e8','#3a1c5a'],
+    earth:   ['#dcc098','#5a3a1c'],
+    none:    ['#fff5d8','#8a5e1d']
+  })[e] || ['#fff5d8','#8a5e1d'];
+}
+
+function topRarity(m) {
+  const order = { legendary:5, epic:4, rare:3, uncommon:2, common:1 };
+  let best = null;
+  for (const t of m.traits) {
+    const r = TRAITS[t]?.rar || 'common';
+    if (!best || order[r] > order[best]) best = r;
+  }
+  return best;
+}
+
+/* ============= 詳細パネル ============= */
+function computePreview() {
+  const r = state.selected;
+  if (!r) return null;
+  const allFilled = state.assigned.every(Boolean);
+  const qs = state.assigned.filter(Boolean).map(m => m.q);
+  const maxQ = qs.length ? Math.max(...qs) : 0;
+  // craft bonus from neutral (神秘の輝き)
+  let bonus = 0;
+  for (const m of state.assigned) {
+    if (!m) continue;
+    if (m.traits.includes('神秘の輝き')) bonus += 8;
+    if (m.traits.includes('賢者の刻印')) bonus += 12;
+  }
+  const finalQ = Math.min(Q_CAP, maxQ + bonus);
+  // 融合可能
+  const counts = {};
+  for (const m of state.assigned) {
+    if (!m) continue;
+    const seen = new Set();
+    for (const t of m.traits) {
+      if (seen.has(t)) continue;
+      seen.add(t);
+      counts[t] = (counts[t]||0)+1;
+    }
+  }
+  const fusionMap = {};
+  for (const [t,c] of Object.entries(counts)) {
+    if (c >= 2 && FUSION[t]) fusionMap[t] = FUSION[t];
+  }
+  return { allFilled, finalQ, fusionMap, maxQ, bonus };
+}
+
+function computeAvailTraits() {
+  const set = new Set();
+  for (const m of state.assigned) {
+    if (!m) continue;
+    for (const t of m.traits) set.add(t);
+  }
+  return [...set];
+}
+
+function renderDetail() {
+  const r = state.selected;
+  const body = document.getElementById('detail-body');
+  if (!r) return;
+  const pv = computePreview();
+  document.getElementById('dt-meta').textContent =
+    pv?.allFilled ? `Q${pv.finalQ} · 完成可能` : '素材不足';
+  document.getElementById('t-q').textContent = pv?.allFilled ? `Q ${pv.finalQ}` : 'Q —';
+
+  const avail = computeAvailTraits();
+  const fusion = pv?.fusionMap || {};
+
+  // tier definitions
+  const tiers = [
+    { name:'粗悪', min: 0,  cls:'' },
+    { name:'良',  min: 30, cls:'' },
+    { name:'優', min: 60, cls:'' },
+    { name:'極',   min: 90, cls:'' },
+    { name:'神話', min: 110, cls:'' }
+  ];
+  const curTierIdx = Math.max(0, tiers.findLastIndex(t => (pv?.finalQ||0) >= t.min));
+
+  // ステータスプレビュー（タイプ別）
+  let statHTML = '';
+  if (pv?.allFilled) {
+    if (r.type === 'weapon') {
+      const fq = pv.finalQ;
+      const atk = Math.round(r.base.atk + fq * 0.6);
+      const spd = (r.base.spd + fq/200).toFixed(2);
+      const rng = Math.round(r.base.range + fq * 0.8);
+      const old = { atk: r.base.atk + 30, spd: r.base.spd + 0.1, rng: r.base.range + 10 };
+      statHTML = `
+        ${statBar('攻撃力', atk, 200, 'atk', atk - old.atk)}
+        ${statBar('攻撃速度', +spd, 3, 'spd', (+spd) - old.spd, 2)}
+        ${statBar('射程', rng, 400, 'range', rng - old.rng)}
+      `;
+    } else if (r.type === 'armor') {
+      const fq = pv.finalQ;
+      const def = Math.round(r.base.def + fq * 0.5);
+      const hp = Math.round(r.base.hp + fq * 1.6);
+      statHTML = `
+        ${statBar('防御値', def, 200, 'def', def - r.base.def - 30)}
+        ${statBar('最大HP', hp, 600, 'atk', hp - r.base.hp - 100)}
+      `;
+    } else if (r.type === 'consumable') {
+      const fq = pv.finalQ;
+      if (r.base.heal) {
+        const heal = Math.round(r.base.heal + fq * 1.5);
+        statHTML = `
+          ${statBar('回復量', heal, 400, 'spd', heal - r.base.heal - 60)}
+          ${statBar('効果時間', r.base.dur, 20, 'range', 0, 0, '秒')}
+        `;
+      } else if (r.base.damage) {
+        const dmg = Math.round(r.base.damage + fq * 2);
+        statHTML = `${statBar('爆発威力', dmg, 500, 'atk', dmg - r.base.damage - 80)}`;
+      } else {
+        statHTML = `${statBar('効果量', r.base.buff + Math.round(pv.finalQ*0.3), 80, 'def', 0, 0, '%')}
+                    ${statBar('継続時間', r.base.dur, 30, 'range', 0, 0, '秒')}`;
+      }
+    } else if (r.type === 'accessory') {
+      statHTML = `
+        ${statBar('移動速度', r.base.spd + Math.round(pv.finalQ*0.05), 30, 'spd', 0, 0, '%')}
+        ${statBar('会心率', r.base.crit + Math.round(pv.finalQ*0.04), 30, 'def', 0, 0, '%')}
+      `;
+    }
+  } else {
+    statHTML = `<div class="muted" style="padding: 12px; text-align:center;">素材を全て装填するとプレビューが表示されます</div>`;
+  }
+
+  // 特性
+  const traitChips = avail.map(t => {
+    const def = TRAITS[t];
+    const sel = state.selectedTraits.includes(t);
+    const willFuse = !!fusion[t];
+    return `<button class="trait rar-${def.rar} ${sel?'selected':''} ${willFuse?'fuse-arrow':''}"
+              data-trait="${t}" title="${def.desc}">
+              <span class="pip"></span>${t}${willFuse?'':''}
+            </button>`;
+  }).join('') || `<div class="muted" style="padding: 6px;">利用可能な特性なし</div>`;
+
+  // 融合
+  const fusionHTML = Object.entries(fusion).map(([from, to]) => {
+    const f = FUSED_DEFS[to];
+    return `<div class="fusion-box ink-in">
+      <div class="fusion-row">
+        <span class="trait rar-${TRAITS[from]?.rar||'common'}"><span class="pip"></span>${from}</span>
+        <span class="fusion-arrow">×2 ✦→</span>
+        <span class="trait rar-${f?.rar||'epic'} selected"><span class="pip"></span>${to}</span>
+      </div>
+      <div class="fusion-desc">${f?.desc || ''}</div>
+    </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="ink-in">
+      <div class="q-card">
+        <div class="q-row">
+          <div class="q-label">完成品の品質<span class="en">Quality</span></div>
+          <div class="q-value">${pv?.allFilled ? pv.finalQ : '—'}<span class="max">/${Q_CAP}</span></div>
+        </div>
+        <div class="q-bar">
+          <div class="q-bar-fill" style="width: ${pv?.allFilled ? Math.min(100, pv.finalQ/Q_CAP*100) : 0}%"></div>
+          <div class="q-bar-cap"></div>
+        </div>
+        <div class="q-tier">
+          ${tiers.map((t,i) => {
+            const unlock = (pv?.finalQ||0) >= t.min;
+            const cur = i === curTierIdx && pv?.allFilled;
+            return `<span class="tier ${unlock?'unlocked':''} ${cur?'current':''}">${t.name} ≥${t.min}</span>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="sec-head"><span class="deco">◆</span>性能<span class="en" style="font-family:var(--display-it);font-style:italic;font-weight:500;font-size:11px;color:var(--ink-500);margin-left:auto;letter-spacing:0.1em">Performance</span></div>
+      <div style="padding: 4px 4px;">${statHTML}</div>
+
+      <div class="sec-head"><span class="deco">✦</span>引継特性 (${state.selectedTraits.length}/${MAX_TRAITS})<span class="en" style="font-family:var(--display-it);font-style:italic;font-weight:500;font-size:11px;color:var(--ink-500);margin-left:auto;letter-spacing:0.1em">Traits</span></div>
+      <div class="traits">${traitChips}</div>
+
+      ${ Object.keys(fusion).length > 0 ? `
+        <div class="sec-head"><span class="deco">⚯</span>特性融合<span class="en" style="font-family:var(--display-it);font-style:italic;font-weight:500;font-size:11px;color:var(--ink-500);margin-left:auto;letter-spacing:0.1em">Fusion</span></div>
+        ${fusionHTML}
+      ` : ''}
+    </div>
+  `;
+
+  // bind trait toggle
+  body.querySelectorAll('.trait[data-trait]').forEach(b => {
+    b.addEventListener('click', () => {
+      const t = b.dataset.trait;
+      const i = state.selectedTraits.indexOf(t);
+      if (i >= 0) state.selectedTraits.splice(i, 1);
+      else if (state.selectedTraits.length < MAX_TRAITS) state.selectedTraits.push(t);
+      renderDetail();
+    });
+  });
+}
+
+function statBar(label, val, max, cls, delta, dec=0, unit='') {
+  const w = Math.max(2, Math.min(100, (val / max) * 100));
+  const fixed = (typeof val === 'number') ? val.toFixed(dec) : val;
+  let dh = '';
+  if (delta) {
+    const sign = delta > 0 ? '+' : '';
+    const cls2 = delta > 0 ? 'up' : 'down';
+    dh = `<span class="stat-delta ${cls2}">${sign}${delta.toFixed(dec)}</span>`;
+  }
+  return `<div class="stat-row">
+    <span class="stat-label">${label}</span>
+    <div class="stat-bar"><div class="stat-bar-fill ${cls}" style="width: ${w}%"></div></div>
+    <span class="stat-value">${fixed}${unit}${dh}</span>
+  </div>`;
+}
+
+/* ============= 素材ピッカー ============= */
+function openPicker(slotIdx) {
+  state.pickerSlot = slotIdx;
+  const r = state.selected;
+  const slot = r.slots[slotIdx];
+  const usedUids = new Set(state.assigned.filter((m,i) => m && i!==slotIdx).map(m=>m.uid));
+  const cands = MATERIALS.filter(m => !usedUids.has(m.uid) && slot.match(m))
+    .sort((a,b) => b.q - a.q);
+
+  document.getElementById('picker-slot').textContent = `スロット: ${slot.label}`;
+  const list = document.getElementById('picker-list');
+  list.innerHTML = cands.length === 0 ?
+    `<div class="muted" style="text-align:center;padding:20px;">対応する素材がありません</div>` :
+    cands.map(m => `
+      <div class="pick-item ink-in" data-uid="${m.uid}">
+        <div class="picon">${m.icon}</div>
+        <div style="flex:1; min-width:0;">
+          <div class="pick-name">${m.name}</div>
+          <div class="pick-traits">
+            ${m.traits.map(t => `<span class="pick-trait rar-${TRAITS[t]?.rar||'common'}">${t}</span>`).join('')}
+          </div>
+        </div>
+        <span class="pick-q-pill">Q${m.q}</span>
+      </div>
+    `).join('');
+
+  list.querySelectorAll('.pick-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const uid = el.dataset.uid;
+      const m = MATERIALS.find(x => x.uid === uid);
+      if (m) {
+        state.assigned[state.pickerSlot] = m;
+        state.selectedTraits = computeAvailTraits().slice(0, MAX_TRAITS);
+        closePicker();
+        renderWorkspace();
+        renderDetail();
+      }
+    });
+  });
+  document.getElementById('picker-overlay').classList.add('open');
+}
+
+function closePicker() {
+  document.getElementById('picker-overlay').classList.remove('open');
+  state.pickerSlot = null;
+}
+
+/* ============= 調合実行 ============= */
+function execCraft() {
+  const pv = computePreview();
+  if (!pv?.allFilled || state.crafting) return;
+  state.crafting = true;
+  document.getElementById('craft-btn').disabled = true;
+  const cauldron = document.getElementById('cauldron');
+  cauldron.classList.add('crafting');
+
+  // 1.6sの調合演出 → 結果トースト
+  setTimeout(() => {
+    cauldron.classList.remove('crafting');
+    showResult(pv);
+  }, 1700);
+
+  setTimeout(() => {
+    state.crafting = false;
+    document.getElementById('craft-btn').disabled = !pv.allFilled;
+  }, 4200);
+}
+
+function showResult(pv) {
+  const r = state.selected;
+  document.getElementById('rt-name').textContent = r.name;
+  document.getElementById('rt-q').textContent = `◆ Q ${pv.finalQ}`;
+  const t = document.getElementById('result-toast');
+  t.classList.remove('show');
+  void t.offsetWidth;
+  t.classList.add('show');
+  // 紙吹雪
+  const burst = document.getElementById('spark-burst');
+  burst.innerHTML = '';
+  for (let i=0;i<26;i++){
+    const s = document.createElement('div');
+    s.className = 'spark';
+    const angle = (Math.PI*2/26) * i + Math.random()*0.4;
+    const dist = 140 + Math.random()*120;
+    s.style.setProperty('--dx', Math.cos(angle)*dist + 'px');
+    s.style.setProperty('--dy', Math.sin(angle)*dist + 'px');
+    s.style.animationDelay = (Math.random()*0.15) + 's';
+    s.style.background = i%3===0
+      ? 'radial-gradient(circle, #fff5d8, #f4cf6c 50%, transparent 80%)'
+      : (i%3===1 ? 'radial-gradient(circle, #fff5d8, #b094d4 50%, transparent 80%)'
+                 : 'radial-gradient(circle, #fff5d8, #ec8a3c 50%, transparent 80%)');
+    burst.appendChild(s);
+  }
+}
+
+/* ============= 起動 ============= */
+init();
+</script>
+</body>
+</html>

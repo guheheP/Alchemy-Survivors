@@ -1,5 +1,5 @@
 /* Atelier-style typography: Noto Serif JP (日本語見出し) + Noto Sans JP (本文) + Cinzel (欧文装飾) */
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=Cinzel:wght@500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap');
 
 /* ===== Alchemy Survivors — Global Styles (Atelier Workshop Theme) ===== */
 
@@ -88,8 +88,10 @@
 
   /* Typography */
   --font-display: 'Cinzel', 'Noto Serif JP', serif;           /* 欧文装飾見出し */
-  --font-heading: 'Noto Serif JP', 'Cinzel', serif;           /* 日本語見出し */
-  --font-body: 'Noto Sans JP', 'Noto Serif JP', sans-serif;   /* 本文 */
+  /* 日本語見出し・本文: 視認性優先のゴシック体。OS標準フォントを優先しFOITを回避、
+     最終フォールバックに Noto Sans JP (Webフォント) を持つ。*/
+  --font-heading: 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', sans-serif;
+  --font-body:    'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', sans-serif;
 
   /* Touch targets */
   --touch-target: 44px;
@@ -5860,3 +5862,2557 @@ button.slot-assigned:hover { background: rgba(212, 176, 98,0.1); border-color: #
   overflow-wrap: break-word;
   line-height: 1.35;
 }
+
+/* ============================================================================
+   ATELIER PROTOTYPE FOUNDATION — Phase A
+   ----------------------------------------------------------------------------
+   Design tokens + utility classes from Claude Design's Atelier Crafting
+   Prototype (Ryza-style: parchment + brass + workshop wood). All new identifiers
+   use the `.atelier-*` / `--atl-*` prefix to avoid collisions with the existing
+   stylesheet. Existing screens render unchanged until later phases opt in.
+   ============================================================================ */
+
+:root {
+  /* ===== Brass scale (真鍮) — for badges, buttons, ornaments ===== */
+  --atl-brass-50:  #fbeec5;
+  --atl-brass-100: #f4dca0;
+  --atl-brass-200: #e9c075;
+  --atl-brass-300: #d4a14a;
+  --atl-brass-400: #b6822e;
+  --atl-brass-500: #8a5e1d;
+  --atl-brass-600: #5e3e10;
+
+  /* ===== Parchment (羊皮紙) — for panel surfaces ===== */
+  --atl-parch-100: #fbeecc;
+  --atl-parch-200: #f3dfa8;
+  --atl-parch-300: #e6c984;
+  --atl-parch-400: #c9a45f;
+
+  /* ===== Ink (墨) — text on parchment ===== */
+  --atl-ink-900: #2a1a0e;
+  --atl-ink-700: #4a2f1a;
+  --atl-ink-500: #6e4a2c;
+  --atl-ink-300: #9a7649;
+
+  /* ===== Wood (工房の木壁) ===== */
+  --atl-wood-900: #1a0e08;
+  --atl-wood-800: #281810;
+  --atl-wood-700: #3a2516;
+  --atl-wood-600: #4d321f;
+
+  /* ===== Element tints (recipe icons, slot rings) ===== */
+  --atl-elem-fire:    #c75727;
+  --atl-elem-water:   #4a8db0;
+  --atl-elem-leaf:    #6c8b46;
+  --atl-elem-thunder: #a98a3a;
+  --atl-elem-shadow:  #6e4a90;
+  --atl-elem-earth:   #8a6a40;
+
+  /* ===== Rarity (Atelier-tinted) ===== */
+  --atl-rar-common:    #c9a97a;
+  --atl-rar-uncommon:  #8aac5e;
+  --atl-rar-rare:      #6abacb;
+  --atl-rar-epic:      #c39bea;
+  --atl-rar-legendary: #f4cf6c;
+
+  /* ===== Crimson / leaf / azure accents ===== */
+  --atl-crimson: #b94a3a;
+  --atl-leaf:    #6c8b46;
+  --atl-azure:   #4a8db0;
+
+  /* ===== Atelier font families ===== */
+  --atl-font-display:        'Cinzel', 'Cormorant Garamond', serif;
+  --atl-font-display-italic: 'Cormorant Garamond', 'Cinzel', serif;
+  /* 視認性優先のゴシック体。プロトタイプは明朝だったが、本文・見出しともに
+     OS標準ゴシック→Noto Sans JP の順で読みやすく統一。*/
+  --atl-font-serif-jp:       'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', sans-serif;
+  --atl-font-sans-jp:        'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', sans-serif;
+
+  /* ===== Atelier SVG assets (data URIs) =====
+     Centralized so every consumer references the same artwork. */
+
+  /* 木目テクスチャ — workshop wall grain (multiply blend) */
+  --atl-svg-wood-grain:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><filter id='w'><feTurbulence baseFrequency='0.012 0.7' numOctaves='3' seed='5'/><feColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.025 0 0 0 0 0.012 0 0 0 0.6 0'/></filter><rect width='400' height='200' filter='url(%23w)'/></svg>");
+
+  /* 微粒子（埃） — fine warm dust noise overlay */
+  --atl-svg-dust:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='800'><filter id='n'><feTurbulence baseFrequency='3' numOctaves='1' seed='7'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 0.85 0 0 0 0 0.55 0 0 0 0.06 0'/></filter><rect width='800' height='800' filter='url(%23n)'/></svg>");
+
+  /* 紙テクスチャ — parchment grain (multiply blend) */
+  --atl-svg-paper:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0 0.07 0 0 0 0.10 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");
+
+  /* コーナー唐草 — corner ornament (TL by default, others use transforms) */
+  --atl-svg-corner:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%238a5e1d' stroke-width='1.4' stroke-linecap='round'><path d='M3 18 Q3 3 18 3' stroke-width='1.6'/><path d='M3 10 Q10 10 14 4' opacity='0.7'/><path d='M8 3 Q14 9 16 16' opacity='0.6'/><path d='M11 18 Q19 11 24 8' opacity='0.45'/><circle cx='5' cy='5' r='1.6' fill='%23b6822e' stroke='none'/><circle cx='18' cy='3' r='1.2' fill='%23b6822e' stroke='none'/><circle cx='3' cy='18' r='1.2' fill='%23b6822e' stroke='none'/><path d='M22 6 Q26 4 30 6' opacity='0.4'/></svg>");
+
+  /* 看板の唐草フローリッシュ — signboard side flourish */
+  --atl-svg-flourish:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 18' fill='none' stroke='%23d4a14a' stroke-width='1.2' stroke-linecap='round'><path d='M2 9 H100' opacity='0.8'/><path d='M30 5 Q40 9 30 13'/><path d='M55 3 Q65 9 55 15' opacity='0.7'/><path d='M80 5 Q70 9 80 13' opacity='0.6'/><circle cx='105' cy='9' r='2' fill='%23f4cf6c' stroke='none'/></svg>");
+
+  /* 錬金陣 — alchemy circle (slow rotation when consumed) */
+  --atl-svg-alch-circle:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' fill='none' stroke='%238a5e1d' stroke-linecap='round' stroke-linejoin='round'><g><circle cx='200' cy='200' r='196' stroke-width='1'/><circle cx='200' cy='200' r='176' stroke-width='0.8' stroke-dasharray='2 4' opacity='0.7'/><circle cx='200' cy='200' r='140' stroke-width='1.2'/><circle cx='200' cy='200' r='100' stroke-width='0.8' stroke-dasharray='4 6'/><circle cx='200' cy='200' r='66' stroke-width='1'/><polygon points='200,60 260,260 120,140 280,140 140,260' stroke-width='1' opacity='0.85'/><g stroke-width='0.8' opacity='0.6'><line x1='200' y1='4' x2='200' y2='28'/><line x1='200' y1='372' x2='200' y2='396'/><line x1='4' y1='200' x2='28' y2='200'/><line x1='372' y1='200' x2='396' y2='200'/></g><g fill='%238a5e1d' stroke='none' opacity='0.85'><circle cx='200' cy='24' r='3'/><circle cx='200' cy='376' r='3'/><circle cx='24' cy='200' r='3'/><circle cx='376' cy='200' r='3'/></g></g></svg>");
+
+  /* 小さな錬金記号 — inline glyph for headings (★within★) */
+  --atl-svg-glyph-pent:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f4cf6c' stroke-width='0.8'><circle cx='12' cy='12' r='11'/><circle cx='12' cy='12' r='7' stroke-dasharray='1 2'/><polygon points='12,3 16.5,16 5.5,8.5 18.5,8.5 7.5,16'/></svg>");
+}
+
+/* ============================================================================
+   WORKSHOP BACKGROUND — wraps the entire page or a region
+   Use as: <div class="atelier-workshop"> ... </div>
+   Adds: candle-radial gradients + walnut wall + wood grain + dust noise
+   ============================================================================ */
+.atelier-workshop {
+  position: relative;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 18%, rgba(255, 210, 150, 0.35), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 88% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    linear-gradient(180deg, #3a2515 0%, #281810 50%, #1a0e08 100%);
+  overflow: hidden;
+  isolation: isolate; /* prevent ::before/::after blends from leaking */
+}
+.atelier-workshop::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--atl-svg-wood-grain);
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+.atelier-workshop::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--atl-svg-dust);
+  pointer-events: none;
+  opacity: 0.5;
+  z-index: 0;
+}
+.atelier-workshop > * { position: relative; z-index: 1; }
+
+/* ============================================================================
+   FLOATING MOTES — light particles drifting upward
+   Markup: <div class="atelier-motes"><div class="atelier-mote"></div>...</div>
+   Spawn via spawnAtelierMotes() helper in UIHelpers.js
+   ============================================================================ */
+.atelier-motes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.atelier-mote {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff7d8 0%, #f4cf6c 40%, transparent 70%);
+  filter: blur(1px);
+  opacity: 0;
+  animation: atl-mote-rise linear infinite;
+  will-change: transform, opacity;
+}
+@keyframes atl-mote-rise {
+  0%   { transform: translateY(110vh) translateX(0) scale(0.6); opacity: 0; }
+  10%  { opacity: 0.8; }
+  50%  { transform: translateY(50vh) translateX(20px) scale(1); }
+  90%  { opacity: 0.6; }
+  100% { transform: translateY(-10vh) translateX(-15px) scale(0.4); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atelier-mote { animation: none; opacity: 0; }
+}
+
+/* ============================================================================
+   PARCHMENT PANEL — primary surface for content cards
+   Use as: <div class="atelier-parchment"> ... </div>
+   Pair with .atelier-corner (4) for the full ornamented look.
+   ============================================================================ */
+.atelier-parchment {
+  position: relative;
+  background: radial-gradient(ellipse at 30% 0%, #fbeecc 0%, #f3dfa8 55%, #e6c984 100%);
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-400);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 2px rgba(94, 62, 16, 0.18),
+    inset 0 0 60px rgba(122, 82, 32, 0.18),
+    inset 0 30px 40px rgba(255, 245, 210, 0.55),
+    0 16px 36px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 235, 180, 0.05);
+}
+.atelier-parchment::before {
+  content: ""; position: absolute; inset: 0;
+  border-radius: inherit; pointer-events: none;
+  background-image: var(--atl-svg-paper);
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+.atelier-parchment::after {
+  content: ""; position: absolute; inset: 0;
+  border-radius: inherit; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 110%, rgba(122, 72, 28, 0.35), transparent 60%),
+    radial-gradient(ellipse at 0% 50%,  rgba(122, 72, 28, 0.18), transparent 50%),
+    radial-gradient(ellipse at 100% 50%, rgba(122, 72, 28, 0.18), transparent 50%);
+}
+.atelier-parchment > * { position: relative; z-index: 1; }
+
+/* ============================================================================
+   CORNER ORNAMENTS — 4 唐草 decorations for parchment / modal corners
+   Markup: place 4 spans inside .atelier-parchment:
+     <span class="atelier-corner tl"></span>
+     <span class="atelier-corner tr"></span>
+     <span class="atelier-corner bl"></span>
+     <span class="atelier-corner br"></span>
+   ============================================================================ */
+.atelier-corner {
+  position: absolute;
+  width: 48px; height: 48px;
+  pointer-events: none;
+  z-index: 2;
+  background: var(--atl-svg-corner) center / contain no-repeat;
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.45));
+}
+.atelier-corner.tl { top: 4px;    left: 4px; }
+.atelier-corner.tr { top: 4px;    right: 4px;  transform: scaleX(-1); }
+.atelier-corner.bl { bottom: 4px; left: 4px;   transform: scaleY(-1); }
+.atelier-corner.br { bottom: 4px; right: 4px;  transform: scale(-1, -1); }
+
+/* ============================================================================
+   SIGNBOARD HEADER — workshop entrance sign style
+   Markup:
+     <div class="atelier-signboard">
+       <div class="atelier-eyebrow">— ATELIER · ALCHEMY ·</div>
+       <h1>錬<span class="atelier-alch-glyph"></span>金<span class="atelier-alch-glyph"></span>工房</h1>
+     </div>
+   ============================================================================ */
+.atelier-signboard {
+  position: relative;
+  margin: 18px auto 8px;
+  padding: 10px 90px 14px;
+  max-width: min(96vw, 1500px);
+  text-align: center;
+  color: var(--atl-brass-100);
+}
+.atelier-signboard::before,
+.atelier-signboard::after {
+  content: ""; position: absolute; top: 50%;
+  width: 110px; height: 18px;
+  transform: translateY(-50%);
+  background: var(--atl-svg-flourish) center / contain no-repeat;
+}
+.atelier-signboard::before { left: 0;  transform: translateY(-50%) scaleX(-1); }
+.atelier-signboard::after  { right: 0; }
+
+.atelier-eyebrow {
+  font-family: var(--atl-font-display);
+  font-weight: 700;
+  letter-spacing: 0.42em;
+  font-size: 11px;
+  color: var(--atl-brass-200);
+  opacity: 0.8;
+}
+.atelier-signboard h1,
+.atelier-signboard .atelier-title {
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: 0.32em;
+  color: var(--atl-brass-100);
+  text-shadow: 0 0 18px rgba(244, 207, 108, 0.35), 0 1px 0 rgba(0, 0, 0, 0.6);
+  margin-top: 2px;
+}
+
+.atelier-alch-glyph {
+  display: inline-block;
+  width: 22px; height: 22px;
+  vertical-align: -4px;
+  margin: 0 14px;
+  opacity: 0.85;
+  background: var(--atl-svg-glyph-pent) center / contain no-repeat;
+  animation: atl-spin 60s linear infinite;
+}
+
+/* ============================================================================
+   BRASS BADGE — pill-shaped status badge (gold, capacity, level...)
+   Markup: <span class="atelier-brass-badge"><span class="atelier-ico">⚱</span>12,480</span>
+   ============================================================================ */
+.atelier-brass-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px;
+  background: linear-gradient(180deg, #f3dfa8 0%, #d4a14a 60%, #8a5e1d 100%);
+  color: var(--atl-ink-900);
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--atl-brass-600);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.5),
+    0 2px 5px rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(94, 62, 16, 0.4);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  white-space: nowrap;
+}
+.atelier-brass-badge .atelier-ico { font-size: 14px; line-height: 1; }
+
+/* ============================================================================
+   BRASS BUTTON — heavy 3D pressed metal button (the "craft" button)
+   Markup: <button class="atelier-brass-btn">調 合 す る</button>
+   Variant: .atelier-brass-btn--sm for compact use
+   ============================================================================ */
+.atelier-brass-btn {
+  display: inline-block;
+  padding: 14px 56px;
+  font-family: var(--atl-font-display);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.32em;
+  color: var(--atl-ink-900);
+  background: linear-gradient(180deg, #fbeec5 0%, #d4a14a 50%, #8a5e1d 100%);
+  border: 2px solid var(--atl-brass-600);
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.8),
+    inset 0 -3px 6px rgba(94, 62, 16, 0.5),
+    0 4px 0 var(--atl-brass-600),
+    0 6px 18px rgba(0, 0, 0, 0.55);
+  transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+}
+.atelier-brass-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.9),
+    inset 0 -3px 6px rgba(94, 62, 16, 0.5),
+    0 4px 0 var(--atl-brass-600),
+    0 8px 22px rgba(0, 0, 0, 0.6),
+    0 0 22px rgba(244, 207, 108, 0.7);
+}
+.atelier-brass-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.8),
+    inset 0 -3px 6px rgba(94, 62, 16, 0.5),
+    0 1px 0 var(--atl-brass-600),
+    0 2px 8px rgba(0, 0, 0, 0.55);
+}
+.atelier-brass-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.atelier-brass-btn .atelier-deco { color: var(--atl-ink-700); margin: 0 14px; font-size: 13px; }
+
+.atelier-brass-btn--sm {
+  padding: 8px 22px;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.8),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.5),
+    0 3px 0 var(--atl-brass-600),
+    0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.atelier-brass-btn--sm:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.8),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.5),
+    0 1px 0 var(--atl-brass-600),
+    0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================================
+   PANEL HEAD — title bar at top of a parchment panel (with center ornament)
+   Markup:
+     <div class="atelier-panel-head">
+       <div class="atelier-panel-title">
+         <span class="atelier-deco">❖</span>レシピ書<span class="atelier-en">Grimoire</span>
+       </div>
+       <span class="atelier-panel-meta">12 / 18</span>
+     </div>
+   ============================================================================ */
+.atelier-panel-head {
+  position: relative;
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 14px 22px 10px;
+  border-bottom: 1px solid rgba(94, 62, 16, 0.35);
+  margin: 0 12px;
+}
+.atelier-panel-head::after {
+  content: ""; position: absolute;
+  left: 50%; bottom: -4px;
+  transform: translateX(-50%);
+  width: 12px; height: 8px;
+  background: radial-gradient(circle, var(--atl-brass-400) 0%, var(--atl-brass-500) 50%, transparent 75%);
+}
+.atelier-panel-title {
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  color: var(--atl-ink-900);
+  display: flex; align-items: center; gap: 8px;
+}
+.atelier-panel-title .atelier-deco { color: var(--atl-brass-400); font-size: 13px; }
+.atelier-panel-title .atelier-en {
+  font-family: var(--atl-font-display-italic);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--atl-ink-500);
+  letter-spacing: 0.1em;
+  margin-left: 6px;
+}
+.atelier-panel-meta {
+  font-size: 11px;
+  color: var(--atl-ink-500);
+  font-family: var(--atl-font-display-italic);
+  font-style: italic;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================================================
+   SECTION HEAD — small inline divider with centered label
+   Markup:
+     <div class="atelier-sec-head"><span class="atelier-deco">◇</span>品 質</div>
+   ============================================================================ */
+.atelier-sec-head {
+  display: flex; align-items: center; gap: 8px;
+  margin: 16px 0 8px;
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.16em;
+  color: var(--atl-ink-900);
+}
+.atelier-sec-head::before,
+.atelier-sec-head::after {
+  content: ""; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(94, 62, 16, 0.5), transparent);
+  flex: 1;
+}
+.atelier-sec-head .atelier-deco { color: var(--atl-brass-500); font-size: 11px; }
+
+/* ============================================================================
+   QUALITY BAR — animated progress bar with shimmer + tier markers
+   Markup:
+     <div class="atelier-q-bar">
+       <div class="atelier-q-bar-fill" style="width: 65%;"></div>
+       <div class="atelier-q-bar-cap" style="right: 8%;"></div>
+     </div>
+   ============================================================================ */
+.atelier-q-bar {
+  position: relative;
+  height: 14px;
+  background: linear-gradient(180deg, #c9a45f 0%, #8a5e1d 100%);
+  border: 1px solid var(--atl-brass-600);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.atelier-q-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: linear-gradient(180deg, #fbeec5 0%, #f4cf6c 35%, #d4a14a 70%, #8a5e1d 100%);
+  border-right: 1px solid rgba(255, 240, 180, 0.6);
+  border-radius: 999px;
+  width: 0;
+  transition: width 0.7s cubic-bezier(.22, 1, .36, 1);
+  box-shadow: 0 0 12px rgba(244, 207, 108, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+}
+.atelier-q-bar-fill::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%);
+  animation: atl-shimmer 2.4s linear infinite;
+}
+.atelier-q-bar-cap {
+  position: absolute; top: -4px; bottom: -4px;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--atl-ink-900), transparent);
+  opacity: 0.5;
+}
+.atelier-q-value {
+  font-family: var(--atl-font-display);
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1;
+  background: linear-gradient(180deg, #f4cf6c 0%, #b6822e 70%, #5e3e10 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.3);
+}
+.atelier-q-value .atelier-q-max {
+  font-size: 12px;
+  color: var(--atl-ink-500);
+  -webkit-text-fill-color: var(--atl-ink-500);
+  margin-left: 2px;
+}
+
+/* Quality tier pills */
+.atelier-q-tiers { display: flex; gap: 5px; margin-top: 8px; font-family: var(--atl-font-display-italic); font-style: italic; font-size: 10px; color: var(--atl-ink-500); }
+.atelier-q-tier { padding: 1px 7px; border: 1px solid rgba(94, 62, 16, 0.3); border-radius: 999px; opacity: 0.4; }
+.atelier-q-tier.unlocked { opacity: 1; background: rgba(244, 207, 108, 0.3); border-color: var(--atl-brass-400); color: var(--atl-ink-900); font-weight: 700; }
+.atelier-q-tier.current {
+  background: linear-gradient(180deg, var(--atl-brass-200), var(--atl-brass-300));
+  color: var(--atl-ink-900); font-weight: 700;
+  border-color: var(--atl-brass-500);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 10px rgba(244, 207, 108, 0.6);
+}
+
+/* ============================================================================
+   STAT BARS — colored bars for atk/def/spd/range with delta chips
+   ============================================================================ */
+.atelier-stat-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px dashed rgba(94, 62, 16, 0.25);
+  font-size: 12.5px;
+}
+.atelier-stat-row:last-child { border-bottom: none; }
+.atelier-stat-label {
+  color: var(--atl-ink-500);
+  flex: 0 0 90px;
+  font-family: var(--atl-font-serif-jp);
+  letter-spacing: 0.06em;
+  font-size: 12px;
+}
+.atelier-stat-bar {
+  flex: 1; height: 8px;
+  background: rgba(94, 62, 16, 0.2);
+  border: 1px solid rgba(94, 62, 16, 0.35);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.atelier-stat-bar-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(.22, 1, .36, 1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.atelier-stat-bar-fill.atl-atk   { background: linear-gradient(90deg, #c75727, #ec8a3c); }
+.atelier-stat-bar-fill.atl-spd   { background: linear-gradient(90deg, #4a8db0, #80c1d8); }
+.atelier-stat-bar-fill.atl-range { background: linear-gradient(90deg, #6c8b46, #aacb6e); }
+.atelier-stat-bar-fill.atl-def   { background: linear-gradient(90deg, #6e4a90, #b094d4); }
+.atelier-stat-value {
+  flex: 0 0 auto;
+  font-family: var(--atl-font-display);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--atl-ink-900);
+  min-width: 56px;
+  text-align: right;
+}
+.atelier-stat-delta { font-family: var(--atl-font-display); font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: 3px; margin-left: 4px; }
+.atelier-stat-delta.up   { color: #2e5e1f; background: rgba(140, 200, 90, 0.25); }
+.atelier-stat-delta.down { color: #7a2a1a; background: rgba(200, 90, 60, 0.20); }
+
+/* ============================================================================
+   CHIPS — small filter / tag toggles
+   Markup: <button class="atelier-chip">全て</button>  /  .active for selected
+   ============================================================================ */
+.atelier-chip {
+  padding: 5px 10px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  background: rgba(255, 245, 210, 0.4);
+  border: 1px solid rgba(94, 62, 16, 0.35);
+  border-radius: 3px;
+  color: var(--atl-ink-500);
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+.atelier-chip:hover { color: var(--atl-ink-900); border-color: var(--atl-brass-400); }
+.atelier-chip.active {
+  background: linear-gradient(180deg, var(--atl-brass-200), var(--atl-brass-300));
+  color: var(--atl-ink-900);
+  border-color: var(--atl-brass-500);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 1px 2px rgba(94, 62, 16, 0.4);
+}
+
+/* ============================================================================
+   TRAIT PILLS — selectable trait tags with rarity dot
+   ============================================================================ */
+.atelier-trait {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px;
+  background: rgba(255, 245, 210, 0.6);
+  border: 1px solid rgba(94, 62, 16, 0.4);
+  border-radius: 999px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--atl-ink-900);
+  cursor: pointer;
+  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  position: relative;
+}
+.atelier-trait:hover { transform: translateY(-1px); border-color: var(--atl-brass-500); }
+.atelier-trait.selected {
+  background: linear-gradient(180deg, var(--atl-brass-100), var(--atl-brass-300));
+  border-color: var(--atl-brass-600);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 2px 4px rgba(94, 62, 16, 0.3);
+}
+.atelier-trait .atelier-pip { width: 6px; height: 6px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.3); }
+.atelier-trait.rar-common    .atelier-pip { background: var(--atl-rar-common); }
+.atelier-trait.rar-uncommon  .atelier-pip { background: var(--atl-rar-uncommon); }
+.atelier-trait.rar-rare      .atelier-pip { background: var(--atl-rar-rare); }
+.atelier-trait.rar-epic      .atelier-pip { background: var(--atl-rar-epic); }
+.atelier-trait.rar-legendary .atelier-pip { background: var(--atl-rar-legendary); box-shadow: 0 0 6px var(--atl-rar-legendary); }
+.atelier-trait.rar-rare.selected      { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 10px rgba(106, 186, 203, 0.5); }
+.atelier-trait.rar-epic.selected      { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 10px rgba(195, 155, 234, 0.5); }
+.atelier-trait.rar-legendary.selected { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 14px rgba(244, 207, 108, 0.85); animation: atl-leg-pulse 2s ease-in-out infinite; }
+
+/* ============================================================================
+   SCROLLBARS inside parchment panels (optional — apply by adding
+   `.atelier-scrollarea` to a scrollable container)
+   ============================================================================ */
+.atelier-scrollarea::-webkit-scrollbar { width: 8px; }
+.atelier-scrollarea::-webkit-scrollbar-track {
+  background: rgba(94, 62, 16, 0.1);
+  border-radius: 4px;
+}
+.atelier-scrollarea::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--atl-brass-300), var(--atl-brass-500));
+  border-radius: 4px;
+  border: 1px solid var(--atl-brass-600);
+}
+
+/* ============================================================================
+   ANIMATIONS — shared keyframes (atl-prefixed)
+   ============================================================================ */
+@keyframes atl-spin       { to { transform: rotate(360deg); } }
+@keyframes atl-spin-fast  { to { transform: rotate(360deg); } }
+@keyframes atl-shimmer    {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes atl-pulse-glow {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+@keyframes atl-leg-pulse  {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 14px rgba(244, 207, 108, 0.85); }
+  50%      { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 22px rgba(244, 207, 108, 1); }
+}
+@keyframes atl-fade-in    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes atl-ink-in     {
+  from { opacity: 0; filter: blur(4px); transform: translateY(4px); }
+  to   { opacity: 1; filter: blur(0);    transform: translateY(0); }
+}
+@keyframes atl-scroll-unfurl {
+  from { transform: scaleY(0.05) translateY(-30px); opacity: 0; filter: blur(4px); transform-origin: top center; }
+  60%  { transform: scaleY(1.04)  translateY(0);    opacity: 1; }
+  to   { transform: scaleY(1)     translateY(0);    filter: blur(0); }
+}
+@keyframes atl-result-burst {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); filter: blur(6px); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); filter: blur(0); }
+  35%  {              transform: translate(-50%, -50%) scale(1); }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.95) translateY(-30px); }
+}
+@keyframes atl-spark-fly {
+  0%   { transform: translate(0, 0) scale(1);                  opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+}
+
+/* Helpers */
+.atelier-ink-in { animation: atl-ink-in 0.45s cubic-bezier(.22, 1, .36, 1) both; }
+.atelier-muted  { color: var(--atl-ink-500); font-size: 11px; font-style: italic; }
+
+/* Reduce motion — disable spin/pulse/shimmer for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .atelier-alch-glyph,
+  .atelier-q-bar-fill::before,
+  .atelier-trait.rar-legendary.selected {
+    animation: none !important;
+  }
+}
+
+/* ===== End Atelier Foundation ============================================ */
+
+
+/* ============================================================================
+   PHASE B — HUB SHELL
+   ----------------------------------------------------------------------------
+   Atelier-style overrides for #hub-screen (workshop bg + signboard header +
+   brass badges + parchment-bookmark tabs). Declared AFTER the legacy hub
+   block (lines 729–860) so the cascade favors these rules. Legacy class
+   names are preserved so JS query selectors (.hub-content, #hub-gold,
+   #hub-item-count, .hub-tab) keep working without code changes.
+   ============================================================================ */
+
+/* ----- Workshop wall on the hub root ----- */
+#hub-screen {
+  position: relative;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 18%, rgba(255, 210, 150, 0.35), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 88% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    linear-gradient(180deg, #3a2515 0%, #281810 50%, #1a0e08 100%);
+  background-blend-mode: normal;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 50% 18%, rgba(255, 210, 150, 0.35), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 88% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    linear-gradient(180deg, #3a2515 0%, #281810 50%, #1a0e08 100%);
+  isolation: isolate;
+}
+#hub-screen::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--atl-svg-wood-grain);
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+#hub-screen::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--atl-svg-dust);
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+#hub-screen > * { position: relative; z-index: 1; }
+#hub-screen > .atelier-motes { z-index: 0; pointer-events: none; }
+
+/* ----- Header: signboard above, brass-badge row below ----- */
+.hub-header.atelier-hub-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 10px 1.2rem 12px;
+  background: linear-gradient(180deg,
+    rgba(74, 52, 32, 0.55) 0%,
+    rgba(58, 40, 24, 0.30) 70%,
+    transparent 100%);
+  border-bottom: 1px solid rgba(212, 176, 98, 0.22);
+  box-shadow: 0 1px 0 rgba(212, 176, 98, 0.08);
+}
+
+.hub-header.atelier-hub-header .hub-signboard {
+  margin: 0 auto;
+  padding: 4px 84px 6px;
+}
+.hub-header.atelier-hub-header h2.atelier-title {
+  font-size: 22px;
+  letter-spacing: 0.4em;
+  margin-top: 0;
+}
+
+.hub-header.atelier-hub-header .hub-info {
+  display: flex;
+  gap: 10px;
+  align-self: stretch;
+  justify-content: flex-end;
+  padding: 0 4px;
+}
+
+/* Brass badges replace the legacy medallion look on info items */
+.hub-info .hub-info-item.atelier-brass-badge {
+  background: linear-gradient(180deg, #f3dfa8 0%, #d4a14a 60%, #8a5e1d 100%);
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-600);
+  font-family: var(--atl-font-serif-jp);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.5),
+    0 2px 5px rgba(0, 0, 0, 0.6),
+    0 0 0 2px rgba(94, 62, 16, 0.4);
+}
+.hub-info #hub-gold.atelier-brass-badge { color: var(--atl-ink-900); }
+
+/* ----- Tabs: parchment bookmarks pinned to a brass rail ----- */
+.hub-tabs {
+  display: flex;
+  background: linear-gradient(180deg,
+    rgba(40, 24, 16, 0.85) 0%,
+    rgba(26, 14, 8, 0.75) 100%);
+  border-top: 1px solid rgba(212, 176, 98, 0.18);
+  border-bottom: 2px solid var(--atl-brass-500);
+  padding: 0 0.4rem;
+  position: relative;
+  /* brass nail trim */
+  box-shadow: inset 0 -3px 0 rgba(94, 62, 16, 0.5);
+}
+
+.hub-tab {
+  flex: 1;
+  padding: 10px 8px 12px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--atl-brass-200);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s, opacity 0.18s, transform 0.18s;
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  min-height: var(--touch-target);
+  white-space: nowrap;
+  position: relative;
+  opacity: 0.78;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+.hub-tab .hub-tab-icon { font-size: 1.05rem; flex-shrink: 0; opacity: 0.85; }
+.hub-tab .hub-tab-short { display: none; }
+
+.hub-tab:hover {
+  color: var(--atl-brass-100);
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(244, 207, 108, 0.08), transparent);
+}
+
+.hub-tab.active {
+  color: var(--atl-ink-900);
+  opacity: 1;
+  background: linear-gradient(180deg,
+    var(--atl-parch-100) 0%,
+    var(--atl-parch-200) 55%,
+    var(--atl-parch-300) 100%);
+  border-radius: 6px 6px 0 0;
+  border: 1px solid var(--atl-brass-500);
+  border-bottom: none;
+  font-weight: 700;
+  text-shadow: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 210, 0.7),
+    inset 0 0 0 1px rgba(94, 62, 16, 0.18),
+    0 -2px 8px rgba(244, 207, 108, 0.25);
+}
+.hub-tab.active .hub-tab-icon { opacity: 1; }
+
+/* Replace the legacy CSS-triangle ribbon with a brass nail-head */
+.hub-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  width: 9px; height: 9px;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 60%, #5e3e10 100%);
+  border: 1px solid var(--atl-brass-600);
+  border-top: 1px solid var(--atl-brass-600);
+  border-left: 1px solid var(--atl-brass-600);
+  border-right: 1px solid var(--atl-brass-600);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 245, 210, 0.45);
+}
+
+/* Hub content area becomes transparent so workshop bg shows through */
+.hub-content { background: transparent; }
+
+/* Mobile: signboard padding shrinks so it fits on narrow screens */
+@media (max-width: 720px) {
+  .hub-header.atelier-hub-header .hub-signboard {
+    padding: 4px 50px 6px;
+  }
+  .hub-header.atelier-hub-header h2.atelier-title {
+    font-size: 18px;
+    letter-spacing: 0.3em;
+  }
+  .atelier-signboard::before, .atelier-signboard::after { width: 60px; }
+  .hub-info .hub-info-item.atelier-brass-badge {
+    padding: 4px 12px;
+    font-size: 0.8rem;
+  }
+}
+@media (max-width: 480px) {
+  .hub-header.atelier-hub-header { padding: 8px 0.6rem 10px; }
+  .hub-header.atelier-hub-header h2.atelier-title { font-size: 16px; }
+  .atelier-signboard::before, .atelier-signboard::after { display: none; }
+  .hub-header.atelier-hub-header .hub-signboard { padding: 2px 8px 4px; }
+}
+
+/* ===== End Phase B — Hub Shell ============================================ */
+
+
+/* ============================================================================
+   PHASE C — CRAFTING SCREEN (Atelier prototype rebuild)
+   ----------------------------------------------------------------------------
+   Faithful reproduction of the Atelier Crafting Prototype: 3-column parchment
+   spread (Grimoire / Synthesis stage / Specifications), rotating alchemy
+   circle, central flask with rising liquid, circular material slots, animated
+   quality bar with shimmer, trait fusion preview, and brass craft button.
+   All new identifiers use `.atl-*` prefix to avoid collisions.
+   ============================================================================ */
+
+/* ----- Layout shell ----- */
+.atl-craft-screen { height: 100%; min-height: 0; display: flex; flex-direction: column; padding: 14px 14px 16px; }
+.atl-craft-layout {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-template-columns: 360px 1fr 380px;
+  gap: 14px;
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.atl-craft-recipes,
+.atl-craft-workspace,
+.atl-craft-detail {
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+
+/* ----- LEFT: Recipe Grimoire ----- */
+.atl-craft-recipe-body {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  padding: 8px 14px 14px;
+  position: relative;
+}
+.atl-recipe-search {
+  position: relative;
+  margin: 6px 6px 8px;
+}
+.atl-recipe-search input {
+  width: 100%;
+  padding: 9px 10px 9px 32px;
+  background: rgba(255, 245, 210, 0.5);
+  border: 1px solid rgba(94, 62, 16, 0.4);
+  border-radius: 4px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 13px;
+  color: var(--atl-ink-900);
+  box-shadow: inset 0 1px 3px rgba(94, 62, 16, 0.2);
+}
+.atl-recipe-search input:focus { outline: none; border-color: var(--atl-brass-400); }
+.atl-recipe-search input::placeholder { color: var(--atl-ink-300); font-style: italic; }
+.atl-recipe-search::before {
+  content: "🔍"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; opacity: 0.55;
+}
+
+.atl-filter-row { display: flex; gap: 4px; margin: 0 6px 6px; flex-wrap: wrap; }
+.atl-recipe-toggles { display: flex; gap: 10px; margin: 0 6px 8px; align-items: center; }
+.atl-recipe-toggles label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px; color: var(--atl-ink-700);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+.atl-recipe-toggles input[type="checkbox"] { accent-color: var(--atl-brass-500); cursor: pointer; }
+
+.atl-recipe-list {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding: 2px 6px 2px 4px;
+  margin: 0 0 0 2px;
+}
+
+.atl-recipe-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; margin-bottom: 5px;
+  background: linear-gradient(180deg, rgba(255, 245, 210, 0.5), rgba(243, 223, 168, 0.3));
+  border: 1px solid rgba(94, 62, 16, 0.25);
+  border-left: 3px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 0.18s, background 0.18s, border-color 0.18s;
+  position: relative;
+}
+.atl-recipe-item:hover {
+  border-color: rgba(94, 62, 16, 0.5);
+  background: linear-gradient(180deg, rgba(255, 245, 210, 0.7), rgba(243, 223, 168, 0.5));
+  transform: translateX(2px);
+}
+.atl-recipe-item.unavailable { opacity: 0.6; }
+.atl-recipe-item.locked       { opacity: 0.45; cursor: default; }
+.atl-recipe-item.locked:hover { transform: none; }
+.atl-recipe-item.active {
+  border-left: 3px solid var(--atl-brass-400);
+  background: linear-gradient(90deg, rgba(244, 207, 108, 0.4) 0%, rgba(255, 245, 210, 0.7) 30%);
+  box-shadow: inset 0 0 0 1px rgba(244, 207, 108, 0.4), 0 2px 6px rgba(94, 62, 16, 0.25);
+}
+.atl-recipe-item.active::after {
+  /* 栞 (bookmark) */
+  content: ""; position: absolute; right: -2px; top: -3px;
+  width: 16px; height: 28px;
+  background: linear-gradient(180deg, #c14a3a 0%, #8d2a1c 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  box-shadow: 1px 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.atl-recipe-icon {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 65%, #8a5e1d 100%);
+  border: 1.5px solid var(--atl-brass-500);
+  border-radius: 50%;
+  font-size: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.atl-recipe-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.atl-recipe-icon.elem-fire    { background: radial-gradient(circle at 30% 25%, #ffd9a8, #c75727 65%, #5b1d09 100%); }
+.atl-recipe-icon.elem-water   { background: radial-gradient(circle at 30% 25%, #c8e8f4, #4a8db0 65%, #1d3a52 100%); }
+.atl-recipe-icon.elem-leaf    { background: radial-gradient(circle at 30% 25%, #d4e8a8, #6c8b46 65%, #2a3a1c 100%); }
+.atl-recipe-icon.elem-thunder { background: radial-gradient(circle at 30% 25%, #efe2b0, #a98a3a 65%, #5e4514 100%); }
+.atl-recipe-icon.elem-shadow  { background: radial-gradient(circle at 30% 25%, #d4c0e0, #6e4a90 65%, #2a1a3e 100%); }
+.atl-recipe-icon.elem-earth   { background: radial-gradient(circle at 30% 25%, #d8c4a0, #8a6a40 65%, #3e2a18 100%); }
+
+.atl-recipe-info { flex: 1; min-width: 0; }
+.atl-recipe-name {
+  font-family: var(--atl-font-serif-jp); font-weight: 700;
+  font-size: 13px; color: var(--atl-ink-900);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: 0.04em;
+}
+.atl-recipe-sub {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--atl-ink-500);
+  font-family: var(--atl-font-display-italic); font-style: italic; letter-spacing: 0.06em;
+  margin-top: 1px;
+}
+.atl-recipe-lacking {
+  display: inline-block;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 9.5px; color: #7a2a1a;
+  background: rgba(200, 90, 60, 0.18);
+  padding: 1px 6px;
+  border-radius: 99px;
+  margin-left: 4px;
+  letter-spacing: 0.04em;
+}
+.atl-recipe-empty {
+  text-align: center;
+  color: var(--atl-ink-500);
+  font-style: italic;
+  font-size: 12px;
+  padding: 30px 12px;
+  font-family: var(--atl-font-serif-jp);
+}
+
+/* ----- CENTER: Synthesis Workspace ----- */
+.atl-workspace-body {
+  flex: 1; min-height: 0;
+  position: relative;
+  padding: 10px 18px 14px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.atl-target-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 16px;
+  margin: 4px 4px 12px;
+  background: linear-gradient(180deg, rgba(255, 245, 210, 0.8) 0%, rgba(243, 223, 168, 0.55) 100%);
+  border: 1px solid rgba(94, 62, 16, 0.35);
+  border-radius: 6px;
+  position: relative;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.atl-target-card.is-empty { opacity: 0.7; }
+.atl-target-card .atl-seal {
+  width: 46px; height: 46px;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 60%, #5e3e10 100%);
+  border: 2px solid var(--atl-brass-500);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 22px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 0 0 3px rgba(255, 245, 210, 0.4),
+    0 0 0 4px rgba(94, 62, 16, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.atl-target-card .atl-seal img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.atl-target-info { flex: 1; min-width: 0; }
+.atl-target-tag {
+  font-family: var(--atl-font-display-italic); font-style: italic; font-weight: 600;
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--atl-ink-500);
+}
+.atl-target-name {
+  font-family: var(--atl-font-serif-jp); font-weight: 700;
+  font-size: 22px; letter-spacing: 0.06em;
+  color: var(--atl-ink-900);
+  margin-top: 2px;
+}
+.atl-target-desc { font-size: 11.5px; color: var(--atl-ink-500); margin-top: 2px; line-height: 1.4; }
+.atl-target-q {
+  font-family: var(--atl-font-display); font-weight: 900;
+  font-size: 13px;
+  padding: 4px 14px;
+  background: linear-gradient(180deg, var(--atl-brass-100), var(--atl-brass-300) 60%, var(--atl-brass-500));
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-600);
+  border-radius: 99px;
+  letter-spacing: 0.06em;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Cauldron (alchemy circle + glow + flask + slots) */
+.atl-cauldron-wrap {
+  position: relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 540px;
+  aspect-ratio: 1 / 0.85;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.atl-alch-circle-bg {
+  position: absolute; inset: 4% 8% 6%;
+  pointer-events: none;
+  opacity: 0.55;
+  background: var(--atl-svg-alch-circle) center / contain no-repeat;
+  animation: atl-spin 90s linear infinite reverse;
+}
+.atl-cauldron-wrap.is-crafting .atl-alch-circle-bg {
+  animation: atl-spin-fast 6s linear infinite;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 12px rgba(244, 207, 108, 0.6));
+}
+.atl-cauldron-glow {
+  position: absolute; inset: 18% 22%;
+  background: radial-gradient(circle, rgba(244, 207, 108, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(8px);
+  opacity: 0.5;
+  transition: opacity 0.6s;
+}
+.atl-cauldron-wrap.is-crafting .atl-cauldron-glow { opacity: 1; animation: atl-pulse-glow 1.5s ease-in-out infinite; }
+
+/* Flask SVG container */
+.atl-flask {
+  position: absolute;
+  width: 28%;
+  aspect-ratio: 1 / 1.2;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  filter: drop-shadow(0 6px 12px rgba(94, 62, 16, 0.5));
+}
+.atl-flask svg { width: 100%; height: 100%; overflow: visible; }
+.atl-flask .atl-liquid-fill { transition: y 0.6s ease, height 0.6s ease, rx 0.6s ease; }
+
+/* Slots ring + slots */
+.atl-slot-link { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.atl-slots-ring { position: absolute; inset: 0; z-index: 1; }
+.atl-slot {
+  position: absolute;
+  width: 88px; height: 88px;
+  left: calc(50% + var(--x, 0px) - 44px);
+  top:  calc(50% + var(--y, 0px) - 44px);
+  cursor: pointer;
+  transition: filter 0.2s, left 0.4s ease, top 0.4s ease;
+  background: none; border: none; padding: 0; margin: 0;
+  font-family: inherit;
+  display: block;
+}
+.atl-slot:focus-visible { outline: none; }
+.atl-slot:hover { filter: brightness(1.08); }
+
+.atl-slot-disc {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #f3dfa8 50%, #d4a14a 100%);
+  border: 2px solid var(--atl-brass-500);
+  box-shadow:
+    inset 0 0 0 4px rgba(255, 245, 210, 0.7),
+    inset 0 0 12px rgba(94, 62, 16, 0.25),
+    0 0 0 2px rgba(94, 62, 16, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.5);
+  display: grid; place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.atl-slot-disc::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(244, 207, 108, 0.4) 25%, transparent 50%);
+  opacity: 0; transition: opacity 0.3s;
+  animation: atl-spin 4s linear infinite;
+}
+.atl-slot.is-filled .atl-slot-disc::before { opacity: 0.6; }
+
+.atl-slot-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+  display: grid; place-items: center;
+  width: 56px; height: 56px;
+}
+.atl-slot-icon img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+.atl-slot.is-empty .atl-slot-icon { font-size: 22px; opacity: 0.4; color: var(--atl-ink-500); }
+.atl-slot-icon-ghost { opacity: 0.35; filter: grayscale(0.5); }
+
+.atl-slot-tag {
+  position: absolute; left: 50%; top: calc(100% + 6px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px; font-weight: 700;
+  color: var(--atl-ink-900);
+  background: rgba(255, 245, 210, 0.85);
+  padding: 2px 9px;
+  border: 1px solid rgba(94, 62, 16, 0.4);
+  border-radius: 99px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+.atl-slot-q {
+  position: absolute; right: -4px; top: -4px;
+  font-family: var(--atl-font-display); font-size: 10px; font-weight: 900;
+  background: linear-gradient(180deg, var(--atl-brass-100), var(--atl-brass-400));
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-600);
+  border-radius: 99px;
+  padding: 1px 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+.atl-slot-clear {
+  position: absolute; left: -6px; top: -6px;
+  width: 22px; height: 22px;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #c14a3a 65%, #5e1d0e 100%);
+  border: 1.5px solid #5e1d0e;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: serif; font-size: 12px; font-weight: 900;
+  color: #fff5d8;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.atl-slot:hover .atl-slot-clear,
+.atl-slot:focus-within .atl-slot-clear { opacity: 1; }
+.atl-slot-clear:hover { filter: brightness(1.1); }
+
+/* Rarity glow on filled slots */
+.atl-slot.rar-rare .atl-slot-disc      { border-color: var(--atl-rar-rare);      box-shadow: inset 0 0 0 4px rgba(255, 245, 210, 0.7), 0 0 14px rgba(106, 186, 203, 0.6), 0 4px 10px rgba(0, 0, 0, 0.5); }
+.atl-slot.rar-epic .atl-slot-disc      { border-color: var(--atl-rar-epic);      box-shadow: inset 0 0 0 4px rgba(255, 245, 210, 0.7), 0 0 14px rgba(195, 155, 234, 0.6), 0 4px 10px rgba(0, 0, 0, 0.5); }
+.atl-slot.rar-legendary .atl-slot-disc { border-color: var(--atl-rar-legendary); box-shadow: inset 0 0 0 4px rgba(255, 245, 210, 0.7), 0 0 18px rgba(244, 207, 108, 0.85), 0 4px 10px rgba(0, 0, 0, 0.5); }
+
+/* Craft execute button — extends .atelier-brass-btn */
+.atl-craft-execute {
+  display: block;
+  margin: 14px auto 4px;
+  align-self: center;
+  flex-shrink: 0;
+}
+.atl-craft-warning {
+  margin: 6px 14px 0;
+  padding: 8px 12px;
+  background: rgba(200, 90, 60, 0.15);
+  border: 1px solid rgba(200, 90, 60, 0.45);
+  border-left: 3px solid #b94a3a;
+  border-radius: 4px;
+  color: #7a2a1a;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11.5px;
+  text-align: center;
+}
+
+/* ----- RIGHT: Specifications ----- */
+.atl-detail-body {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  padding: 8px 18px 18px;
+}
+.atl-detail-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--atl-ink-500);
+  font-family: var(--atl-font-serif-jp);
+  font-style: italic;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  line-height: 2;
+}
+
+.atl-craft-effect-info {
+  margin: 6px 4px 10px;
+  padding: 8px 12px;
+  background: rgba(255, 245, 210, 0.5);
+  border: 1px dashed rgba(94, 62, 16, 0.35);
+  border-radius: 4px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11.5px;
+  color: var(--atl-ink-700);
+}
+
+/* Quality card with bar */
+.atl-q-card {
+  margin: 4px 4px 10px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(255, 245, 210, 0.7), rgba(243, 223, 168, 0.4));
+  border: 1px solid rgba(94, 62, 16, 0.3);
+  border-radius: 6px;
+  position: relative;
+}
+.atl-q-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.atl-q-label {
+  font-family: var(--atl-font-serif-jp); font-weight: 700;
+  font-size: 13px; color: var(--atl-ink-900);
+  letter-spacing: 0.08em;
+}
+.atl-q-label .atelier-en {
+  font-family: var(--atl-font-display-italic); font-style: italic;
+  font-size: 10px; color: var(--atl-ink-500);
+  margin-left: 4px; letter-spacing: 0.1em;
+}
+
+/* Stat preview rows */
+.atl-stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 4px;
+  border-bottom: 1px dashed rgba(94, 62, 16, 0.18);
+  font-family: var(--atl-font-serif-jp);
+  font-size: 12px;
+  color: var(--atl-ink-700);
+}
+.atl-stat-row:last-child { border-bottom: none; }
+.atl-stat-row .atl-stat-label { color: var(--atl-ink-500); letter-spacing: 0.04em; }
+.atl-stat-row .atl-stat-val   { color: var(--atl-ink-900); font-weight: 700; font-family: var(--atl-font-display); font-size: 12px; }
+.atl-stat-section-head {
+  display: block;
+  margin: 14px 4px 6px;
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--atl-ink-700);
+  letter-spacing: 0.16em;
+  border-bottom: 1px solid rgba(94, 62, 16, 0.25);
+  padding-bottom: 3px;
+}
+.atl-preview-compare {
+  margin: 4px 4px 8px;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  color: var(--atl-ink-500);
+  background: rgba(94, 62, 16, 0.08);
+  border-radius: 3px;
+  font-family: var(--atl-font-display-italic); font-style: italic;
+  letter-spacing: 0.04em;
+}
+.atl-preview-diff { font-family: var(--atl-font-display); font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+.atl-preview-diff.up   { color: #2e5e1f; background: rgba(140, 200, 90, 0.25); }
+.atl-preview-diff.down { color: #7a2a1a; background: rgba(200, 90, 60, 0.20); }
+.atl-preview-diff.same { color: var(--atl-ink-500); background: rgba(94, 62, 16, 0.08); }
+.atl-preview-cap-badge {
+  font-family: var(--atl-font-display);
+  font-size: 9.5px;
+  background: rgba(244, 207, 108, 0.45);
+  border: 1px solid var(--atl-brass-500);
+  color: var(--atl-ink-900);
+  padding: 1px 5px;
+  border-radius: 99px;
+  margin-left: 4px;
+}
+
+/* Trait pool */
+.atl-trait-section { margin: 6px 4px 8px; }
+.atl-trait-section-head {
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--atl-ink-900);
+  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+}
+.atl-trait-section-head .atl-trait-counter { font-family: var(--atl-font-display); font-size: 10.5px; color: var(--atl-ink-500); margin-left: 6px; }
+.atl-trait-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.atl-trait-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px;
+  background: rgba(255, 245, 210, 0.6);
+  border: 1px solid rgba(94, 62, 16, 0.4);
+  border-radius: 99px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--atl-ink-900);
+  cursor: pointer;
+  transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  position: relative;
+}
+.atl-trait-toggle:hover { transform: translateY(-1px); border-color: var(--atl-brass-500); }
+.atl-trait-toggle:disabled { opacity: 0.35; cursor: not-allowed; }
+.atl-trait-toggle.selected {
+  background: linear-gradient(180deg, var(--atl-brass-100), var(--atl-brass-300));
+  border-color: var(--atl-brass-600);
+  box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 2px 4px rgba(94, 62, 16, 0.3);
+}
+.atl-trait-toggle .atl-trait-pip { width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.3); }
+.atl-trait-toggle.rar-common    .atl-trait-pip { background: var(--atl-rar-common); }
+.atl-trait-toggle.rar-uncommon  .atl-trait-pip { background: var(--atl-rar-uncommon); }
+.atl-trait-toggle.rar-rare      .atl-trait-pip { background: var(--atl-rar-rare); }
+.atl-trait-toggle.rar-epic      .atl-trait-pip { background: var(--atl-rar-epic); }
+.atl-trait-toggle.rar-legendary .atl-trait-pip { background: var(--atl-rar-legendary); box-shadow: 0 0 6px var(--atl-rar-legendary); }
+.atl-trait-toggle.rar-rare.selected      { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 10px rgba(106, 186, 203, 0.5); }
+.atl-trait-toggle.rar-epic.selected      { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 10px rgba(195, 155, 234, 0.5); }
+.atl-trait-toggle.rar-legendary.selected { box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6), 0 0 14px rgba(244, 207, 108, 0.85); animation: atl-leg-pulse 2s ease-in-out infinite; }
+.atl-trait-toggle.will-fuse::after {
+  content: "✨"; font-size: 9px; margin-left: 2px; line-height: 1;
+}
+
+/* Trait tooltip popup on hover */
+.atl-trait-item-wrap { position: relative; display: inline-flex; }
+.atl-trait-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  min-width: 200px;
+  max-width: 280px;
+  z-index: 30;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, var(--atl-parch-100), var(--atl-parch-200));
+  border: 1px solid var(--atl-brass-500);
+  border-radius: 5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px;
+  color: var(--atl-ink-900);
+}
+.atl-trait-item-wrap:hover .atl-trait-tooltip,
+.atl-trait-item-wrap:focus-within .atl-trait-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+.atl-trait-tooltip .atl-trait-tt-name { font-weight: 700; font-size: 12px; }
+.atl-trait-tooltip .atl-trait-tt-rarity {
+  display: inline-block; margin-left: 6px;
+  font-family: var(--atl-font-display-italic); font-style: italic;
+  font-size: 10px; color: var(--atl-ink-500);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.atl-trait-tooltip .atl-trait-tt-desc { margin-top: 4px; line-height: 1.4; color: var(--atl-ink-700); }
+.atl-trait-tooltip .atl-trait-tt-run  { margin-top: 4px; color: #2e5e1f; font-size: 10.5px; }
+.atl-trait-tooltip .atl-trait-tt-fuse { margin-top: 4px; color: var(--atl-brass-500); font-size: 10.5px; }
+
+.atl-trait-fuse-arrow { font-size: 9px; opacity: 0.85; margin-left: 3px; }
+.atl-trait-fuse-arrow .rarity-rare      { color: #1d4a52; }
+.atl-trait-fuse-arrow .rarity-epic      { color: #4a2a6e; }
+.atl-trait-fuse-arrow .rarity-legendary { color: #5a3e0e; }
+
+/* Rarity color helpers (text within preview) */
+.atl-detail-body .rarity-common    { color: var(--atl-rar-common); }
+.atl-detail-body .rarity-uncommon  { color: #2e5e1f; }
+.atl-detail-body .rarity-rare      { color: #1d4a52; }
+.atl-detail-body .rarity-epic      { color: #4a2a6e; }
+.atl-detail-body .rarity-legendary { color: #5a3e0e; font-weight: 700; }
+
+/* Fusion box */
+.atl-fusion-section { margin: 10px 4px 8px; }
+.atl-fusion-row {
+  display: flex; align-items: center; gap: 8px;
+  margin: 6px 0;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, rgba(195, 155, 234, 0.18) 0%, rgba(244, 207, 108, 0.22) 100%);
+  border: 1px solid rgba(94, 62, 16, 0.4);
+  border-left: 3px solid #b094d4;
+  border-radius: 5px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 12px;
+}
+.atl-fusion-from { color: var(--atl-ink-500); font-weight: 700; }
+.atl-fusion-arrow { color: #b094d4; font-weight: 900; }
+.atl-fusion-to { color: var(--atl-ink-900); font-weight: 700; }
+.atl-fusion-desc {
+  font-size: 10.5px; color: var(--atl-ink-500);
+  margin: 2px 4px 8px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* Tier rows for tiered consumables */
+.atl-tier-list { display: flex; flex-direction: column; gap: 3px; margin: 4px 0 6px; }
+.atl-tier-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px;
+  background: rgba(255, 245, 210, 0.4);
+  border-left: 2px solid transparent;
+}
+.atl-tier-row.tier-unlocked {
+  background: rgba(244, 207, 108, 0.2);
+  border-left-color: var(--atl-brass-400);
+  color: var(--atl-ink-900);
+}
+.atl-tier-row.tier-locked { color: var(--atl-ink-500); opacity: 0.7; }
+.atl-tier-q { font-family: var(--atl-font-display); font-weight: 700; font-size: 11px; flex-shrink: 0; }
+.atl-tier-effect { flex: 1; font-size: 10.5px; line-height: 1.3; }
+
+/* ----- MATERIAL PICKER MODAL ----- */
+.atl-craft-picker-overlay {
+  position: fixed; inset: 0;
+  background: rgba(20, 12, 8, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: grid; place-items: center;
+  z-index: 1000;
+  animation: atl-fade-in 0.2s ease;
+  padding: 2vh 2vw;
+}
+.atl-craft-picker {
+  width: min(560px, 92vw);
+  max-height: 92vh;
+  display: flex; flex-direction: column;
+  position: relative;
+  animation: atl-scroll-unfurl 0.45s cubic-bezier(.22, 1, .36, 1);
+  transform-origin: top center;
+}
+.atl-craft-picker-list {
+  overflow-y: auto;
+  padding: 8px 18px 18px;
+  flex: 1; min-height: 0;
+}
+.atl-craft-picker-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px; margin-bottom: 5px;
+  background: linear-gradient(180deg, rgba(255, 245, 210, 0.5), rgba(243, 223, 168, 0.3));
+  border: 1px solid rgba(94, 62, 16, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+}
+.atl-craft-picker-item:hover {
+  background: linear-gradient(180deg, rgba(255, 245, 210, 0.8), rgba(243, 223, 168, 0.55));
+  transform: translateX(3px);
+  border-color: var(--atl-brass-500);
+}
+.atl-craft-picker-item .atl-craft-picker-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 18px;
+  border: 1.5px solid var(--atl-brass-500);
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 65%, #8a5e1d 100%);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.atl-craft-picker-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.atl-craft-picker-name {
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700; font-size: 13px;
+  color: var(--atl-ink-900);
+}
+.atl-craft-picker-traits { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+.atl-craft-picker-trait {
+  font-size: 9.5px; padding: 1px 6px; border-radius: 99px;
+  background: rgba(255, 245, 210, 0.6);
+  border: 1px solid rgba(94, 62, 16, 0.3);
+  font-family: var(--atl-font-serif-jp); font-weight: 500;
+}
+.atl-craft-picker-trait.rarity-rare      { color: #1d4a52; background: rgba(106, 186, 203, 0.25); border-color: rgba(106, 186, 203, 0.6); }
+.atl-craft-picker-trait.rarity-epic      { color: #4a2a6e; background: rgba(195, 155, 234, 0.25); border-color: rgba(195, 155, 234, 0.6); }
+.atl-craft-picker-trait.rarity-legendary { color: #5a3e0e; background: rgba(244, 207, 108, 0.4); border-color: var(--atl-brass-500); }
+
+.atl-craft-picker-q-pill {
+  margin-left: auto; flex-shrink: 0;
+  font-family: var(--atl-font-display); font-weight: 900;
+  font-size: 12px;
+  padding: 3px 12px;
+  background: linear-gradient(180deg, var(--atl-brass-100), var(--atl-brass-300));
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-600);
+  border-radius: 99px;
+  box-shadow: inset 0 1px 0 rgba(255, 240, 180, 0.6);
+}
+.atl-craft-picker-info { flex: 1; min-width: 0; }
+
+.atl-craft-picker-close {
+  position: absolute; top: 10px; right: 14px;
+  width: 30px; height: 30px;
+  background: radial-gradient(circle at 30% 25%, #fff5d8, #d4a14a 70%, #5e3e10 100%);
+  border: 1.5px solid var(--atl-brass-600);
+  border-radius: 50%;
+  color: var(--atl-ink-900); font-weight: 900; cursor: pointer;
+  display: grid; place-items: center;
+  font-family: serif; font-size: 16px;
+  z-index: 3;
+}
+.atl-craft-picker-close:hover { filter: brightness(1.1); }
+.atl-craft-picker-empty {
+  text-align: center; padding: 30px 20px;
+  font-style: italic; color: var(--atl-ink-500);
+  font-family: var(--atl-font-serif-jp);
+}
+
+/* ----- RESULT TOAST + SPARK BURST ----- */
+.atl-craft-result-toast {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.6);
+  z-index: 1100;
+  pointer-events: none;
+  opacity: 0;
+}
+.atl-craft-result-toast.show { animation: atl-result-burst 2.4s cubic-bezier(.22, 1, .36, 1) forwards; }
+.atl-craft-result-card {
+  background: radial-gradient(ellipse at 30% 0%, #fbeecc 0%, #f3dfa8 60%, #d4a14a 100%);
+  border: 2px solid var(--atl-brass-500);
+  border-radius: 12px;
+  padding: 24px 48px;
+  box-shadow:
+    inset 0 0 0 4px rgba(255, 245, 210, 0.5),
+    inset 0 0 60px rgba(244, 207, 108, 0.4),
+    0 0 60px rgba(244, 207, 108, 0.7),
+    0 16px 40px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  position: relative;
+}
+.atl-craft-result-card::before, .atl-craft-result-card::after {
+  content: ""; position: absolute; width: 32px; height: 32px;
+  background: var(--atl-svg-corner) center / contain no-repeat;
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.4));
+}
+.atl-craft-result-card::before { top: 6px; left: 6px; }
+.atl-craft-result-card::after  { bottom: 6px; right: 6px; transform: scale(-1, -1); }
+.atl-craft-result-ribbon {
+  font-family: var(--atl-font-display); font-weight: 700;
+  font-size: 11px; letter-spacing: 0.4em;
+  color: var(--atl-ink-700);
+}
+.atl-craft-result-name {
+  font-family: var(--atl-font-serif-jp); font-weight: 900;
+  font-size: 28px; letter-spacing: 0.08em;
+  color: var(--atl-ink-900);
+  margin: 6px 0;
+  text-shadow: 0 0 18px rgba(244, 207, 108, 0.6);
+}
+.atl-craft-result-q {
+  font-family: var(--atl-font-display); font-weight: 900;
+  font-size: 32px;
+  background: linear-gradient(180deg, #f4cf6c, #8a5e1d);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.06em;
+}
+
+.atl-craft-spark-burst { position: fixed; left: 50%; top: 50%; pointer-events: none; z-index: 1099; }
+.atl-craft-spark {
+  position: absolute; width: 6px; height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff5d8, #f4cf6c 50%, transparent 80%);
+  filter: blur(0.5px);
+  animation: atl-spark-fly 1.6s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+/* ----- RESPONSIVE ----- */
+@media (max-width: 1100px) {
+  .atl-craft-layout { grid-template-columns: 280px 1fr 320px; }
+  .atl-target-name { font-size: 18px; }
+}
+@media (max-width: 900px) {
+  .atl-craft-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 10px;
+  }
+  .atl-craft-recipes,
+  .atl-craft-detail { max-height: none; }
+  .atl-craft-recipes { order: 1; }
+  .atl-craft-workspace { order: 2; }
+  .atl-craft-detail { order: 3; }
+  .atl-recipe-list { max-height: 280px; }
+  .atl-cauldron-wrap { max-width: 420px; }
+  .atl-slot { width: 76px; height: 76px; }
+  .atl-slot-icon { width: 48px; height: 48px; font-size: 26px; }
+}
+@media (max-width: 560px) {
+  .atl-craft-screen { padding: 8px 6px 10px; }
+  .atl-craft-layout { gap: 8px; }
+  .atl-target-name { font-size: 16px; letter-spacing: 0.04em; }
+  .atl-cauldron-wrap { max-width: 340px; }
+  .atl-slot { width: 64px; height: 64px; }
+  .atl-slot-icon { width: 38px; height: 38px; font-size: 22px; }
+  .atl-slot-tag { font-size: 10px; padding: 1px 6px; }
+  .atelier-corner { width: 36px; height: 36px; }
+}
+
+/* Compatibility shim — restyle output of preserved preview helper methods
+   (_renderConsumablePreview, _renderTieredConsumablePreview,
+   _renderShieldDualPreview, _renderPreview body) when rendered inside
+   the new .atl-detail-body container. */
+.atl-detail-body h4 {
+  font-family: var(--atl-font-serif-jp); font-weight: 700;
+  font-size: 12px; color: var(--atl-ink-700);
+  margin: 14px 4px 6px;
+  letter-spacing: 0.18em;
+  border-bottom: 1px solid rgba(94, 62, 16, 0.25);
+  padding-bottom: 3px;
+}
+.atl-detail-body h5 {
+  font-family: var(--atl-font-serif-jp); font-weight: 700;
+  font-size: 11.5px; color: var(--atl-ink-700);
+  margin: 8px 4px 4px;
+  letter-spacing: 0.1em;
+}
+.atl-detail-body .preview-stats { display: block; }
+.atl-detail-body .preview-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 4px;
+  border-bottom: 1px dashed rgba(94, 62, 16, 0.18);
+  font-family: var(--atl-font-serif-jp);
+  font-size: 12px;
+  color: var(--atl-ink-700);
+  gap: 8px;
+}
+.atl-detail-body .preview-row:last-child { border-bottom: none; }
+.atl-detail-body .preview-row > span:first-child { color: var(--atl-ink-500); letter-spacing: 0.04em; flex-shrink: 0; }
+.atl-detail-body .preview-val {
+  color: var(--atl-ink-900); font-weight: 700;
+  font-family: var(--atl-font-display); font-size: 12px;
+  text-align: right;
+}
+.atl-detail-body .preview-section > span:first-child {
+  font-weight: 700;
+  color: var(--atl-ink-900);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+.atl-detail-body .preview-skill {
+  background: rgba(195, 155, 234, 0.08);
+  border-left: 2px solid var(--atl-rar-epic);
+  padding-left: 8px;
+}
+.atl-detail-body .preview-skill-desc {
+  font-size: 10.5px;
+  color: var(--atl-ink-500);
+  font-family: var(--atl-font-display-italic);
+  font-style: italic;
+  text-align: right;
+  line-height: 1.4;
+}
+.atl-detail-body .preview-compare {
+  margin: 4px 4px 8px;
+  padding: 4px 8px;
+  font-size: 10.5px;
+  color: var(--atl-ink-500);
+  background: rgba(94, 62, 16, 0.08);
+  border-radius: 3px;
+  font-family: var(--atl-font-display-italic);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+.atl-detail-body .preview-cap-badge {
+  font-family: var(--atl-font-display);
+  font-size: 9.5px;
+  background: rgba(244, 207, 108, 0.45);
+  border: 1px solid var(--atl-brass-500);
+  color: var(--atl-ink-900);
+  padding: 1px 5px;
+  border-radius: 99px;
+  margin-left: 4px;
+}
+.atl-detail-body .preview-diff {
+  font-family: var(--atl-font-display);
+  font-size: 10px; font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+.atl-detail-body .preview-diff.up   { color: #2e5e1f; background: rgba(140, 200, 90, 0.25); }
+.atl-detail-body .preview-diff.down { color: #7a2a1a; background: rgba(200, 90, 60, 0.20); }
+.atl-detail-body .preview-diff.same { color: var(--atl-ink-500); background: rgba(94, 62, 16, 0.08); }
+
+.atl-detail-body .preview-fusion-section { margin: 10px 0 6px; }
+.atl-detail-body .preview-fusion-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: linear-gradient(135deg, rgba(195, 155, 234, 0.18) 0%, rgba(244, 207, 108, 0.22) 100%);
+  border: 1px solid rgba(94, 62, 16, 0.4);
+  border-left: 3px solid #b094d4;
+  border-radius: 5px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 12px;
+}
+.atl-detail-body .preview-fusion-desc {
+  font-size: 10.5px; color: var(--atl-ink-500);
+  margin: 2px 4px 8px;
+  font-style: italic;
+  line-height: 1.4;
+}
+.atl-detail-body .fusion-from   { color: var(--atl-ink-700); font-weight: 700; }
+.atl-detail-body .fusion-arrow  { color: #b094d4; font-weight: 900; margin: 0 2px; }
+.atl-detail-body .fusion-to     { color: var(--atl-ink-900); font-weight: 700; }
+
+.atl-detail-body .preview-traits-section { margin-top: 10px; }
+.atl-detail-body .preview-trait-fx {
+  font-size: 11px;
+  padding: 3px 6px;
+  line-height: 1.4;
+  font-family: var(--atl-font-serif-jp);
+}
+
+.atl-detail-body .preview-dual-section {
+  margin: 10px 4px;
+  padding: 10px 12px;
+  background: rgba(255, 245, 210, 0.4);
+  border: 1px solid rgba(94, 62, 16, 0.2);
+  border-radius: 5px;
+}
+.atl-detail-body .preview-dual-section h5 {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  color: var(--atl-ink-700);
+  font-family: var(--atl-font-serif-jp);
+  letter-spacing: 0.08em;
+}
+
+/* Tiered consumable preview */
+.atl-detail-body .tier-list {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  margin: 4px 0 8px;
+}
+.atl-detail-body .tier-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  font-family: var(--atl-font-serif-jp);
+  font-size: 11px;
+  background: rgba(255, 245, 210, 0.4);
+  border-left: 2px solid transparent;
+}
+.atl-detail-body .tier-row.tier-unlocked {
+  background: rgba(244, 207, 108, 0.22);
+  border-left-color: var(--atl-brass-400);
+  color: var(--atl-ink-900);
+}
+.atl-detail-body .tier-row.tier-locked { color: var(--atl-ink-500); opacity: 0.7; }
+.atl-detail-body .tier-q     { font-family: var(--atl-font-display); font-weight: 700; font-size: 11px; flex-shrink: 0; }
+.atl-detail-body .tier-effect { flex: 1; font-size: 10.5px; line-height: 1.35; }
+.atl-detail-body .tier-resolved-row {
+  background: rgba(244, 207, 108, 0.12);
+  border-bottom-color: rgba(244, 207, 108, 0.4);
+}
+
+/* Rarity color helpers (used by preserved helper output) */
+.atl-detail-body .rarity-common    { color: var(--atl-ink-700); }
+.atl-detail-body .rarity-uncommon  { color: #2e5e1f; }
+.atl-detail-body .rarity-rare      { color: #1d4a52; }
+.atl-detail-body .rarity-epic      { color: #4a2a6e; }
+.atl-detail-body .rarity-legendary { color: #5a3e0e; font-weight: 700; }
+
+/* ===== End Phase C — Crafting Screen ===================================== */
+
+
+/* ============================================================================
+   PHASE D — REMAINING HUB SCREENS (parchment frame chrome)
+   ----------------------------------------------------------------------------
+   Wraps each non-craft hub screen (Equipment / RunPrep / Warehouse / Shop /
+   Collection / Stats / Achievement / Leaderboard / Settings) in a brass-bordered
+   frame with 4 corner ornaments. Each screen's internal layout is unchanged;
+   only the outer chrome and h2/h3 headings are atelier-styled.
+   The wrapping is performed by HubManager._applyAtelierHostWrap().
+   ============================================================================ */
+.atl-screen-host {
+  position: relative;
+  margin: 0;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(212, 176, 98, 0.32);
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg,
+      rgba(74, 52, 32, 0.22) 0%,
+      rgba(40, 24, 16, 0.08) 70%,
+      transparent 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(212, 176, 98, 0.22),
+    inset 0 0 60px rgba(244, 207, 108, 0.04),
+    0 8px 22px rgba(0, 0, 0, 0.5);
+}
+.atl-screen-host > .atelier-corner { z-index: 5; }
+.atl-screen-host > *:not(.atelier-corner) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Heading restyle inside parchment frame — brass with ornament */
+.atl-screen-host h2 {
+  font-family: var(--atl-font-serif-jp);
+  color: var(--atl-brass-100);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-size: 1.15rem;
+  text-shadow: 0 0 12px rgba(244, 207, 108, 0.22), 0 1px 0 rgba(0, 0, 0, 0.55);
+  border-bottom: 1px solid rgba(212, 176, 98, 0.22);
+  padding: 0 0 8px 0;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.atl-screen-host h2::before {
+  content: "❖";
+  color: var(--atl-brass-300);
+  font-size: 0.78em;
+  opacity: 0.9;
+}
+
+.atl-screen-host h3 {
+  font-family: var(--atl-font-serif-jp);
+  color: var(--atl-brass-200);
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(212, 176, 98, 0.16);
+  padding-bottom: 4px;
+  margin-bottom: 8px;
+}
+
+.atl-screen-host h4 {
+  font-family: var(--atl-font-serif-jp);
+  color: var(--atl-brass-200);
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* ===== End Phase D — Hub Screens ========================================= */
+
+
+/* ============================================================================
+   PHASE E — IN-RUN UI + MODALS (Atelier finish)
+   ----------------------------------------------------------------------------
+   - TitleScreen / PauseMenu / LevelUpModal / RunResultScreen → full atelier
+   - RunHUD → minimal brass accents only (gameplay readability priority)
+   - GameTooltip / ToastManager → parchment-tinted bubbles
+   All overrides use cascade (later rule wins) to enhance existing markup
+   without JS edits.
+   ============================================================================ */
+
+/* ----- TitleScreen ----- */
+#title-screen {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 18%, rgba(255, 210, 150, 0.35), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 88% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    linear-gradient(180deg, #3a2515 0%, #281810 50%, #1a0e08 100%);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 50% 18%, rgba(255, 210, 150, 0.35), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 12% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 88% 70%, rgba(255, 180, 90, 0.18), transparent 60%),
+    linear-gradient(180deg, #3a2515 0%, #281810 50%, #1a0e08 100%);
+}
+#title-screen::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--atl-svg-wood-grain);
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+#title-screen::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: var(--atl-svg-dust);
+  pointer-events: none;
+  opacity: 0.45;
+  z-index: 0;
+}
+#title-screen > * { position: relative; z-index: 1; }
+
+.title-name {
+  font-family: var(--atl-font-serif-jp);
+  color: var(--atl-brass-100);
+  letter-spacing: 0.32em;
+  text-shadow: 0 0 22px rgba(244, 207, 108, 0.45), 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.title-sub {
+  font-family: var(--atl-font-display-italic);
+  font-style: italic;
+  color: var(--atl-brass-200);
+  letter-spacing: 0.18em;
+  opacity: 0.85;
+}
+.title-tagline {
+  font-family: var(--atl-font-serif-jp);
+  color: var(--atl-brass-200);
+  font-style: normal;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+}
+
+.title-buttons {
+  background: linear-gradient(180deg,
+    rgba(74, 52, 32, 0.42) 0%,
+    rgba(40, 24, 16, 0.22) 100%);
+  border: 1px solid rgba(212, 176, 98, 0.28);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 rgba(212, 176, 98, 0.22),
+    0 12px 30px rgba(0, 0, 0, 0.55);
+  padding: 22px 22px 18px;
+  position: relative;
+}
+/* Replace any existing ::before/::after corner decoration with brass corner ornaments */
+.title-buttons::before,
+.title-buttons::after {
+  content: ""; position: absolute;
+  width: 36px; height: 36px;
+  background: var(--atl-svg-corner) center / contain no-repeat;
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.5));
+  /* Remove any inherited color/border hacks from legacy rules */
+  border: none; transform: none;
+  pointer-events: none;
+  z-index: 2;
+}
+.title-buttons::before { top: 4px; left: 4px; }
+.title-buttons::after  { bottom: 4px; right: 4px; transform: scale(-1, -1); }
+
+/* Title buttons → brass medallion */
+.title-btn {
+  font-family: var(--atl-font-serif-jp);
+  background: linear-gradient(180deg, rgba(74, 52, 32, 0.55), rgba(40, 24, 16, 0.32));
+  border: 1px solid rgba(212, 176, 98, 0.45);
+  color: var(--atl-brass-100);
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(212, 176, 98, 0.22),
+    0 4px 10px rgba(0, 0, 0, 0.4);
+  transition: filter 0.15s, transform 0.12s, box-shadow 0.15s;
+}
+.title-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+  border-color: var(--atl-brass-300);
+  box-shadow:
+    inset 0 1px 0 rgba(212, 176, 98, 0.32),
+    0 6px 14px rgba(0, 0, 0, 0.5),
+    0 0 18px rgba(244, 207, 108, 0.3);
+  transform: translateY(-1px);
+}
+.title-btn-primary,
+.title-btn-continue {
+  background: linear-gradient(180deg, #fbeec5 0%, #d4a14a 50%, #8a5e1d 100%);
+  color: var(--atl-ink-900);
+  border: 2px solid var(--atl-brass-600);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.45),
+    0 4px 0 var(--atl-brass-600),
+    0 6px 16px rgba(0, 0, 0, 0.55);
+}
+.title-btn-primary:hover:not(:disabled),
+.title-btn-continue:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.title-btn-primary:active:not(:disabled),
+.title-btn-continue:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.45),
+    0 1px 0 var(--atl-brass-600),
+    0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.title-divider {
+  background: linear-gradient(90deg, transparent, rgba(212, 176, 98, 0.6), transparent);
+  height: 1px;
+}
+.title-hint {
+  font-family: var(--atl-font-display-italic);
+  font-style: italic;
+  color: var(--atl-brass-200);
+  opacity: 0.7;
+  letter-spacing: 0.08em;
+}
+
+/* ----- PauseMenu ----- */
+.pause-menu {
+  background: rgba(20, 12, 8, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: grid; place-items: center;
+  padding: 4vh 4vw;
+}
+.pause-menu .pause-menu-content,
+.pause-menu > div {
+  position: relative;
+  background: radial-gradient(ellipse at 30% 0%, #fbeecc 0%, #f3dfa8 55%, #e6c984 100%) !important;
+  color: var(--atl-ink-900) !important;
+  border: 1px solid var(--atl-brass-400);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 2px rgba(94, 62, 16, 0.18),
+    inset 0 0 60px rgba(122, 82, 32, 0.18),
+    inset 0 30px 40px rgba(255, 245, 210, 0.55),
+    0 16px 36px rgba(0, 0, 0, 0.55);
+  padding: 28px 32px;
+  min-width: 280px;
+  max-width: 92vw;
+}
+.pause-menu .pause-menu-content::before,
+.pause-menu > div::before {
+  content: "";
+  position: absolute; top: 4px; left: 4px;
+  width: 36px; height: 36px;
+  background: var(--atl-svg-corner) center / contain no-repeat;
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.4));
+  pointer-events: none;
+}
+.pause-menu .pause-menu-content::after,
+.pause-menu > div::after {
+  content: "";
+  position: absolute; bottom: 4px; right: 4px;
+  width: 36px; height: 36px;
+  background: var(--atl-svg-corner) center / contain no-repeat;
+  transform: scale(-1, -1);
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.4));
+  pointer-events: none;
+}
+.pause-menu h2,
+.pause-menu h3 {
+  color: var(--atl-ink-900);
+  font-family: var(--atl-font-serif-jp);
+  letter-spacing: 0.18em;
+  text-align: center;
+  border-bottom: 1px solid rgba(94, 62, 16, 0.3);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+.pause-menu button {
+  background: linear-gradient(180deg, #fbeec5 0%, #d4a14a 60%, #8a5e1d 100%);
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-600);
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.45),
+    0 3px 0 var(--atl-brass-600),
+    0 4px 12px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  transition: filter 0.12s, transform 0.12s, box-shadow 0.12s;
+}
+.pause-menu button:hover:not(:disabled) { filter: brightness(1.08); }
+.pause-menu button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.45),
+    0 1px 0 var(--atl-brass-600),
+    0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* ----- LevelUpModal ----- */
+.levelup-modal { background: rgba(20, 12, 8, 0.55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.levelup-modal-content {
+  background: radial-gradient(ellipse at 30% 0%, #fbeecc 0%, #f3dfa8 55%, #e6c984 100%) !important;
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-400);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 2px rgba(94, 62, 16, 0.18),
+    inset 0 0 60px rgba(122, 82, 32, 0.18),
+    inset 0 30px 40px rgba(255, 245, 210, 0.55),
+    0 16px 36px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+.levelup-modal-content::before,
+.levelup-modal-content::after {
+  /* Override legacy decorative pseudo-elements with brass corner ornaments */
+  content: "" !important;
+  position: absolute;
+  width: 40px; height: 40px;
+  background: var(--atl-svg-corner) center / contain no-repeat !important;
+  background-color: transparent !important;
+  border: none !important;
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.45));
+  pointer-events: none;
+  z-index: 2;
+}
+.levelup-modal-content::before { top: 6px; left: 6px; transform: none; }
+.levelup-modal-content::after  { bottom: 6px; right: 6px; transform: scale(-1, -1); }
+.levelup-modal h2,
+.levelup-modal h3 {
+  color: var(--atl-ink-900);
+  font-family: var(--atl-font-serif-jp);
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+.levelup-modal h3 {
+  border-bottom: 1px solid rgba(94, 62, 16, 0.3);
+  padding-bottom: 8px;
+}
+/* Choice cards (level-up upgrade options) */
+.levelup-modal .choice-card,
+.levelup-modal .upgrade-card,
+.levelup-modal .levelup-choice {
+  background: linear-gradient(180deg, rgba(255, 245, 210, 0.85), rgba(243, 223, 168, 0.6));
+  color: var(--atl-ink-900);
+  border: 1px solid rgba(94, 62, 16, 0.35);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 210, 0.7),
+    0 2px 8px rgba(94, 62, 16, 0.25);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.levelup-modal .choice-card:hover:not(:disabled),
+.levelup-modal .upgrade-card:hover:not(:disabled),
+.levelup-modal .levelup-choice:hover:not(:disabled) {
+  border-color: var(--atl-brass-500);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 210, 0.85),
+    0 6px 18px rgba(94, 62, 16, 0.35),
+    0 0 18px rgba(244, 207, 108, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ----- RunResultScreen ----- */
+.run-result {
+  background: rgba(20, 12, 8, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.run-result > div,
+.run-result-content {
+  background: radial-gradient(ellipse at 30% 0%, #fbeecc 0%, #f3dfa8 55%, #e6c984 100%) !important;
+  color: var(--atl-ink-900) !important;
+  border: 1px solid var(--atl-brass-400);
+  border-radius: 12px;
+  box-shadow:
+    inset 0 0 0 2px rgba(94, 62, 16, 0.18),
+    inset 0 0 60px rgba(122, 82, 32, 0.2),
+    inset 0 30px 40px rgba(255, 245, 210, 0.55),
+    0 16px 40px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+.run-result > div::before,
+.run-result-content::before {
+  content: ""; position: absolute; top: 6px; left: 6px;
+  width: 40px; height: 40px;
+  background: var(--atl-svg-corner) center / contain no-repeat;
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.45));
+  pointer-events: none; z-index: 2;
+}
+.run-result > div::after,
+.run-result-content::after {
+  content: ""; position: absolute; bottom: 6px; right: 6px;
+  width: 40px; height: 40px;
+  background: var(--atl-svg-corner) center / contain no-repeat;
+  transform: scale(-1, -1);
+  filter: drop-shadow(0 0 3px rgba(244, 207, 108, 0.45));
+  pointer-events: none; z-index: 2;
+}
+.run-result h1,
+.run-result h2 {
+  font-family: var(--atl-font-serif-jp);
+  color: var(--atl-ink-900);
+  letter-spacing: 0.32em;
+  text-align: center;
+  text-shadow: 0 0 18px rgba(244, 207, 108, 0.4), 0 1px 0 rgba(255, 240, 180, 0.4);
+  border-bottom: 1px solid rgba(94, 62, 16, 0.35);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+.run-result button {
+  background: linear-gradient(180deg, #fbeec5 0%, #d4a14a 60%, #8a5e1d 100%);
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-600);
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.45),
+    0 3px 0 var(--atl-brass-600),
+    0 4px 12px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.5);
+  transition: filter 0.12s, transform 0.12s;
+}
+.run-result button:hover:not(:disabled) { filter: brightness(1.08); }
+.run-result button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 180, 0.7),
+    inset 0 -2px 4px rgba(94, 62, 16, 0.45),
+    0 1px 0 var(--atl-brass-600),
+    0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* ----- RunHUD (minimal — gameplay readability priority) -----
+   Only retouch borders and accent colors. Backgrounds stay dark for contrast. */
+#run-hud .health-bar,
+#run-hud .exp-bar,
+#run-hud .ui-bar {
+  border: 1px solid rgba(212, 176, 98, 0.5);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(94, 62, 16, 0.5);
+}
+#run-hud .health-fill {
+  /* keep red but add brass top edge */
+  border-top: 1px solid rgba(244, 207, 108, 0.3);
+}
+#run-hud .exp-fill {
+  /* enhance with brass accent */
+  border-top: 1px solid rgba(244, 207, 108, 0.35);
+}
+/* Wave / timer / coin counter labels — subtle brass tint */
+#run-hud .ui-label,
+#run-hud .ui-stat-label,
+#run-hud .timer-label,
+#run-hud .wave-label {
+  color: var(--atl-brass-200);
+  font-family: var(--atl-font-serif-jp);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+/* ----- GameTooltip — parchment bubble ----- */
+.game-tooltip {
+  background: linear-gradient(180deg, var(--atl-parch-100), var(--atl-parch-200));
+  border: 1px solid var(--atl-brass-500);
+  color: var(--atl-ink-900);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 210, 0.7),
+    inset 0 0 0 1px rgba(94, 62, 16, 0.18),
+    0 8px 22px rgba(0, 0, 0, 0.55);
+  font-family: var(--atl-font-serif-jp);
+}
+.game-tooltip-title {
+  color: var(--atl-ink-900);
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-bottom: 1px dashed rgba(94, 62, 16, 0.3);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+}
+.game-tooltip-title.tooltip-common    { color: var(--atl-ink-700); }
+.game-tooltip-title.tooltip-uncommon  { color: #2e5e1f; }
+.game-tooltip-title.tooltip-rare      { color: #1d4a52; }
+.game-tooltip-title.tooltip-epic      { color: #4a2a6e; }
+.game-tooltip-title.tooltip-legendary { color: #5a3e0e; text-shadow: 0 0 6px rgba(244, 207, 108, 0.6); }
+.game-tooltip-body {
+  color: var(--atl-ink-700);
+  font-family: var(--atl-font-serif-jp);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+/* ----- ToastManager — parchment-tinted toast ----- */
+.toast {
+  background: linear-gradient(180deg, var(--atl-parch-100), var(--atl-parch-300)) !important;
+  color: var(--atl-ink-900) !important;
+  border: 1px solid var(--atl-brass-500);
+  border-left-width: 4px;
+  border-radius: 6px;
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 245, 210, 0.7),
+    0 6px 18px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 0 rgba(255, 240, 180, 0.4);
+}
+.toast.toast-success,
+.toast.toast-green {
+  border-left-color: #6c8b46;
+}
+.toast.toast-error,
+.toast.toast-red {
+  border-left-color: #b94a3a;
+}
+.toast.toast-info {
+  border-left-color: #4a8db0;
+}
+.toast.toast-warning {
+  border-left-color: #d9a847;
+}
+.toast .toast-text {
+  color: var(--atl-ink-900);
+}
+.toast .toast-detail-btn {
+  background: linear-gradient(180deg, var(--atl-brass-200), var(--atl-brass-400));
+  color: var(--atl-ink-900);
+  border: 1px solid var(--atl-brass-600);
+  border-radius: 4px;
+  font-family: var(--atl-font-serif-jp);
+  font-weight: 700;
+}
+
+/* ===== End Phase E — In-Run UI + Modals ================================== */
+
+
+/* ============================================================================
+   FONT SIZE ADJUSTMENT — boost smallest text by 1–2px for legibility.
+   Only `font-size` is overridden; all other declarations on the targeted
+   classes are untouched (cascade wins because this block is later).
+   ============================================================================ */
+
+/* ----- Atelier foundation (Phase A) ----- */
+.atelier-eyebrow                   { font-size: 12px; }
+.atelier-panel-title               { font-size: 17px; }
+.atelier-panel-title .atelier-en   { font-size: 13px; }
+.atelier-panel-meta                { font-size: 12px; }
+.atelier-chip                      { font-size: 12px; }
+.atelier-trait                     { font-size: 12px; }
+.atelier-stat-row                  { font-size: 13px; }
+.atelier-stat-label                { font-size: 13px; }
+.atelier-stat-value                { font-size: 13px; }
+.atelier-stat-delta                { font-size: 11px; }
+.atelier-q-tier                    { font-size: 11px; }
+.atelier-q-bar-cap::after          { font-size: 10px; }
+
+/* ----- Hub Shell (Phase B) ----- */
+.hub-info .hub-info-item.atelier-brass-badge { font-size: 0.96rem; }
+.hub-tab                           { font-size: 1rem; }
+
+/* ----- Crafting Screen (Phase C) ----- */
+.atl-recipe-name                   { font-size: 14px; }
+.atl-recipe-sub                    { font-size: 11.5px; }
+.atl-recipe-empty                  { font-size: 13px; }
+.atl-recipe-lacking                { font-size: 10.5px; }
+.atl-recipe-search input           { font-size: 14px; }
+.atl-recipe-toggles label          { font-size: 12px; }
+.atl-target-tag                    { font-size: 11px; }
+.atl-target-name                   { font-size: 24px; }
+.atl-target-desc                   { font-size: 12.5px; }
+.atl-target-q                      { font-size: 14px; }
+.atl-q-label                       { font-size: 14px; }
+.atl-q-label .atelier-en           { font-size: 11px; }
+.atl-trait-section-head            { font-size: 13px; }
+.atl-trait-counter                 { font-size: 11.5px; }
+.atl-trait-toggle                  { font-size: 12px; }
+.atl-craft-warning                 { font-size: 12.5px; }
+.atl-craft-effect-info             { font-size: 12.5px; }
+.atl-craft-picker-name             { font-size: 14px; }
+.atl-craft-picker-trait            { font-size: 11px; }
+.atl-craft-picker-q-pill           { font-size: 13px; }
+.atl-craft-picker-empty            { font-size: 13px; }
+.atl-craft-result-ribbon           { font-size: 12px; }
+.atl-craft-result-name             { font-size: 30px; }
+.atl-craft-result-q                { font-size: 34px; }
+.atl-detail-empty                  { font-size: 13px; }
+.atl-stat-row                      { font-size: 13px; }
+.atl-stat-section-head             { font-size: 13px; }
+.atl-stat-row .atl-stat-label      { font-size: 13px; }
+.atl-stat-row .atl-stat-val        { font-size: 13px; }
+.atl-fusion-row                    { font-size: 13px; }
+.atl-fusion-desc                   { font-size: 11.5px; }
+.atl-tier-row                      { font-size: 12px; }
+.atl-tier-q                        { font-size: 12px; }
+.atl-tier-effect                   { font-size: 11.5px; }
+.atl-trait-tooltip                 { font-size: 12px; }
+.atl-trait-tooltip .atl-trait-tt-name   { font-size: 13px; }
+.atl-trait-tooltip .atl-trait-tt-rarity { font-size: 11px; }
+.atl-trait-tooltip .atl-trait-tt-desc   { font-size: 11.5px; }
+
+/* ----- Detail body inherited preview rows (compatibility shim, Phase C) ----- */
+.atl-detail-body h4                          { font-size: 13px; }
+.atl-detail-body h5                          { font-size: 12.5px; }
+.atl-detail-body .preview-row                { font-size: 13px; }
+.atl-detail-body .preview-val                { font-size: 13px; }
+.atl-detail-body .preview-section > span:first-child { font-size: 13px; }
+.atl-detail-body .preview-skill-desc         { font-size: 11.5px; }
+.atl-detail-body .preview-compare            { font-size: 11.5px; }
+.atl-detail-body .preview-cap-badge          { font-size: 11px; }
+.atl-detail-body .preview-diff               { font-size: 11px; }
+.atl-detail-body .preview-fusion-row         { font-size: 13px; }
+.atl-detail-body .preview-fusion-desc        { font-size: 11.5px; }
+.atl-detail-body .preview-trait-fx           { font-size: 12px; }
+.atl-detail-body .preview-dual-section h5    { font-size: 12.5px; }
+.atl-detail-body .tier-q                     { font-size: 12px; }
+.atl-detail-body .tier-effect                { font-size: 11.5px; }
+
+/* ----- In-Run UI (Phase E) ----- */
+.game-tooltip                      { font-size: 0.92rem; }
+.game-tooltip-title                { font-size: 0.95rem; }
+.game-tooltip-body                 { font-size: 0.85rem; }
+.toast                             { font-size: 0.95rem; }
+
+/* ----- Mobile breakpoints — keep everything readable on narrow screens ----- */
+@media (max-width: 720px) {
+  .hub-header.atelier-hub-header h2.atelier-title { font-size: 19px; }
+  .hub-info .hub-info-item.atelier-brass-badge { font-size: 0.88rem; }
+}
+@media (max-width: 480px) {
+  .hub-header.atelier-hub-header h2.atelier-title { font-size: 17px; }
+  .hub-info .hub-info-item.atelier-brass-badge { font-size: 0.82rem; }
+}
+@media (max-width: 900px) {
+  .atl-target-name { font-size: 19px; }
+}
+@media (max-width: 560px) {
+  .atl-target-name { font-size: 17px; }
+  .atl-slot-tag    { font-size: 11px; }
+}
+
+/* ===== End Font Size Adjustment ========================================== */
+
+
+/* ============================================================================
+   MATERIAL SLOT ICON — circular crop on the crafting cauldron.
+   The slot's brass disc is already circular (border-radius:50%), but the
+   inner img used `object-fit: contain` so square images sat inside the disc
+   with a visible bounding box. This block enlarges the icon area to fill
+   the disc and crops the image to a circle.
+   ============================================================================ */
+.atl-slot-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.atl-slot-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.atl-slot-icon-ghost {
+  /* The unfilled-slot ghost preview: keep faint, still circular */
+  opacity: 0.35;
+  filter: grayscale(0.5);
+}
+
+/* Mobile breakpoints: keep icons proportional to smaller slots */
+@media (max-width: 900px) {
+  .atl-slot-icon { width: 60px; height: 60px; }
+}
+@media (max-width: 560px) {
+  .atl-slot-icon { width: 50px; height: 50px; }
+}
+
+/* ===== End Material Slot Icon Fix ======================================== */

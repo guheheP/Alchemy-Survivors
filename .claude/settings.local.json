@@ -7,7 +7,11 @@
       "mcp__plugin_playwright_playwright__browser_close",
       "mcp__plugin_playwright_playwright__browser_console_messages",
       "Bash(pkill -f \"vite\")",
-      "mcp__plugin_playwright_playwright__browser_take_screenshot"
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "Bash(cp \"/c/Users/fundb/.claude/projects/C--LocalProject-Alchemy-Survivors/119047d8-3f16-4a44-9a65-29e97ba2dcac/tool-results/webfetch-1777616242231-5pxpe1.bin\" /tmp/design.tar.gz)",
+      "Bash(mkdir -p /tmp/design-bundle)",
+      "Bash(tar -xzf /tmp/design.tar.gz -C /tmp/design-bundle)",
+      "Read(//tmp/**)"
     ]
   }
 }
