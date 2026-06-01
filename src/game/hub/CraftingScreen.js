@@ -96,7 +96,7 @@ export class CraftingScreen {
               <div class="atl-slots-ring" id="atl-slots-ring"></div>
             </div>
             <button class="atelier-brass-btn atl-craft-execute" id="atl-craft-execute" disabled>
-              <span class="atelier-deco">❖</span>調 合 す る<span class="atelier-deco">❖</span>
+              <span class="atelier-deco">❖</span>調合する<span class="atelier-deco">❖</span>
             </button>
             <div id="atl-craft-warning-host"></div>
           </div>
@@ -119,31 +119,65 @@ export class CraftingScreen {
           </div>
         </div>
       </div>
+
+      <div class="atl-mobile-craft" aria-label="モバイル調合">
+        <section class="atl-mobile-recipe-panel">
+          <div class="atl-mobile-section-head">
+            <div>
+              <span class="atl-mobile-eyebrow">Recipe</span>
+              <h3>調合レシピ</h3>
+            </div>
+            <span class="atl-mobile-count" id="mobile-recipe-count">— / —</span>
+          </div>
+          <div class="atl-mobile-search-row">
+            <input type="text" id="mobile-recipe-search" placeholder="レシピ検索" />
+            <label class="atl-mobile-craftable">
+              <input type="checkbox" id="mobile-craftable-only" />
+              <span>作成可</span>
+            </label>
+          </div>
+          <div class="atl-mobile-filter-row">
+            <button class="atelier-chip active" data-filter="all">全て</button>
+            <button class="atelier-chip" data-filter="equipment">装備</button>
+            <button class="atelier-chip" data-filter="consumable">薬品</button>
+            <button class="atelier-chip" data-filter="accessory">飾</button>
+            <button class="atelier-chip" data-filter="material">素材</button>
+          </div>
+          <div class="atl-mobile-recipe-list" id="mobile-recipe-list"></div>
+        </section>
+
+        <section class="atl-mobile-workbench" id="mobile-workbench">
+          <div class="atl-mobile-empty">レシピを選択してください</div>
+        </section>
+      </div>
     `;
     this.container.appendChild(this.el);
 
     // Filter chips
-    this.el.querySelectorAll('.atl-filter-row .atelier-chip').forEach(btn => {
+    this.el.querySelectorAll('.atl-filter-row .atelier-chip, .atl-mobile-filter-row .atelier-chip').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.el.querySelectorAll('.atl-filter-row .atelier-chip').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.typeFilter = btn.dataset.filter;
-        this._renderRecipeList();
+        this._setTypeFilter(btn.dataset.filter);
       });
     });
 
     // Craftable-only toggle
     const craftableToggle = this.el.querySelector('#craftable-only');
     craftableToggle.addEventListener('change', (e) => {
-      this.craftableOnly = e.target.checked;
-      this._renderRecipeList();
+      this._setCraftableOnly(e.target.checked);
+    });
+    const mobileCraftableToggle = this.el.querySelector('#mobile-craftable-only');
+    mobileCraftableToggle.addEventListener('change', (e) => {
+      this._setCraftableOnly(e.target.checked);
     });
 
     // Search
     const searchInput = this.el.querySelector('#recipe-search');
     searchInput.addEventListener('input', (e) => {
-      this.searchText = e.target.value.trim().toLowerCase();
-      this._renderRecipeList();
+      this._setSearchText(e.target.value);
+    });
+    const mobileSearchInput = this.el.querySelector('#mobile-recipe-search');
+    mobileSearchInput.addEventListener('input', (e) => {
+      this._setSearchText(e.target.value);
     });
 
     // Craft button
@@ -155,6 +189,8 @@ export class CraftingScreen {
     window.addEventListener('resize', this._resizeHandler);
 
     this._renderRecipeList();
+    this._renderMobileRecipeList();
+    this._renderMobileWorkbench();
     return this.el;
   }
 
@@ -169,6 +205,69 @@ export class CraftingScreen {
   // ============================================================
   // Recipe list (left panel)
   // ============================================================
+
+  _setTypeFilter(filter) {
+    this.typeFilter = filter || 'all';
+    this._syncFilterChips();
+    this._renderRecipeList();
+    this._renderMobileRecipeList();
+  }
+
+  _setCraftableOnly(value) {
+    this.craftableOnly = !!value;
+    this._syncCraftableToggles();
+    this._renderRecipeList();
+    this._renderMobileRecipeList();
+  }
+
+  _setSearchText(value) {
+    this.searchText = String(value || '').trim().toLowerCase();
+    this._syncSearchInputs(value || '');
+    this._renderRecipeList();
+    this._renderMobileRecipeList();
+  }
+
+  _syncFilterChips() {
+    this.el.querySelectorAll('.atl-filter-row .atelier-chip, .atl-mobile-filter-row .atelier-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === this.typeFilter);
+    });
+  }
+
+  _syncCraftableToggles() {
+    this.el.querySelectorAll('#craftable-only, #mobile-craftable-only').forEach(input => {
+      input.checked = this.craftableOnly;
+    });
+  }
+
+  _syncSearchInputs(value) {
+    this.el.querySelectorAll('#recipe-search, #mobile-recipe-search').forEach(input => {
+      if (input.value !== value) input.value = value;
+    });
+  }
+
+  _getFilteredRecipes() {
+    let total = 0;
+    const entries = [];
+    for (const [id, recipe] of Object.entries(Recipes)) {
+      if (!recipe.unlocked) continue;
+      const bp = ItemBlueprints[recipe.targetId];
+      if (!bp) continue;
+      total++;
+      if (this.typeFilter !== 'all' && bp.type !== this.typeFilter) continue;
+      if (this.searchText && !bp.name.toLowerCase().includes(this.searchText)) continue;
+
+      const craftable = this._hasEnoughMaterials(recipe);
+      if (this.craftableOnly && !craftable) continue;
+      entries.push({ id, recipe, bp, craftable });
+    }
+    return { entries, total };
+  }
+
+  _buildRecipeIconHTML(bp) {
+    return bp.image
+      ? `<img src="${assetPath(bp.image)}" onerror="this.style.display='none'" alt="">`
+      : `<span>${bp.element === 'none' ? '✦' : '◇'}</span>`;
+  }
 
   _renderRecipeList() {
     const listEl = this.el.querySelector('#recipe-list');
@@ -217,6 +316,148 @@ export class CraftingScreen {
   }
 
   /** レシピに必要な素材が全て揃っているか判定 */
+  _renderMobileRecipeList() {
+    const listEl = this.el.querySelector('#mobile-recipe-list');
+    const countEl = this.el.querySelector('#mobile-recipe-count');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const { entries, total } = this._getFilteredRecipes();
+    if (countEl) countEl.textContent = `${entries.length} / ${total}`;
+    if (entries.length === 0) {
+      listEl.innerHTML = '<div class="atl-mobile-empty">該当するレシピがありません</div>';
+      return;
+    }
+
+    for (const { id, recipe, bp, craftable } of entries) {
+      const elemCls = bp.element ? `elem-${bp.element}` : '';
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'atl-mobile-recipe-item' + (id === this.selectedRecipeId ? ' active' : '') + (craftable ? '' : ' unavailable');
+      item.innerHTML = `
+        <span class="atl-mobile-recipe-icon ${elemCls}">${this._buildRecipeIconHTML(bp)}</span>
+        <span class="atl-mobile-recipe-main">
+          <span class="atl-mobile-recipe-name">${bp.name}</span>
+          <span class="atl-mobile-recipe-meta">${recipe.materials.length}素材 ${craftable ? '作成可' : '不足'}</span>
+        </span>
+      `;
+      item.addEventListener('click', () => this._selectRecipe(id));
+      listEl.appendChild(item);
+    }
+  }
+
+  _getSlotLabel(slot) {
+    return isCategorySlot(slot)
+      ? (MaterialCategories[getCategoryId(slot)]?.name || slot)
+      : (ItemBlueprints[slot]?.name || slot);
+  }
+
+  _renderMobileWorkbench() {
+    const host = this.el.querySelector('#mobile-workbench');
+    if (!host) return;
+
+    const recipe = Recipes[this.selectedRecipeId];
+    if (!recipe) {
+      host.innerHTML = '<div class="atl-mobile-empty">レシピを選択してください</div>';
+      return;
+    }
+
+    const bp = ItemBlueprints[recipe.targetId];
+    const preview = this._canCraft() ? this._computePreviewResult() : null;
+    const finalQ = preview?.finalQ ?? 0;
+    const cap = getCurrentQualityCap();
+    const pct = Math.max(0, Math.min(100, (finalQ / cap) * 100));
+    const filledCount = this.assignedMaterials.filter(Boolean).length;
+    const missingCount = Math.max(0, recipe.materials.length - filledCount);
+    const canCraft = this._canCraft();
+    const iconHtml = bp.image
+      ? `<img src="${assetPath(bp.image)}" onerror="this.style.display='none'" alt="">`
+      : '<span>✦</span>';
+
+    const slotsHtml = recipe.materials.map((slot, i) => {
+      const assigned = this.assignedMaterials[i];
+      const assignedBp = assigned ? ItemBlueprints[assigned.blueprintId] : null;
+      const slotLabel = this._getSlotLabel(slot);
+      const assignedImg = assignedBp?.image
+        ? `<img src="${assetPath(assignedBp.image)}" onerror="this.style.display='none'" alt="">`
+        : `<span>${assigned ? '◆' : '+'}</span>`;
+      return `
+        <div class="atl-mobile-material-row ${assigned ? 'is-filled' : 'is-empty'}">
+          <button type="button" class="atl-mobile-material-pick" data-slot="${i}">
+            <span class="atl-mobile-material-icon">${assignedImg}</span>
+            <span class="atl-mobile-material-main">
+              <span class="atl-mobile-material-label">${slotLabel}</span>
+              <span class="atl-mobile-material-name">${assigned ? `${assigned.name} / Q${assigned.quality}` : '素材を選択'}</span>
+            </span>
+          </button>
+          ${assigned ? `<button type="button" class="atl-mobile-material-clear" data-slot="${i}" aria-label="${assigned.name}を外す">×</button>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const traitSummary = (preview?.finalTraits || this.selectedTraits || [])
+      .slice(0, GameConfig.maxTraitSlots)
+      .map(t => {
+        const rar = TraitDefs[t]?.rarity || 'common';
+        return `<span class="atl-mobile-trait rarity-${rar}">${t}</span>`;
+      }).join('');
+
+    host.innerHTML = `
+      <div class="atl-mobile-target">
+        <span class="atl-mobile-target-icon">${iconHtml}</span>
+        <span class="atl-mobile-target-main">
+          <span class="atl-mobile-eyebrow">Target</span>
+          <strong>${bp.name}</strong>
+        </span>
+        <span class="atl-mobile-q-pill">Q${finalQ}</span>
+      </div>
+
+      <div class="atl-mobile-quality">
+        <div class="atl-mobile-quality-head">
+          <span>品質</span>
+          <span>${finalQ} / ${cap}</span>
+        </div>
+        <div class="atelier-q-bar">
+          <div class="atelier-q-bar-fill" style="width: ${pct}%;"></div>
+        </div>
+      </div>
+
+      <div class="atl-mobile-materials">
+        <div class="atl-mobile-subhead">素材 ${filledCount}/${recipe.materials.length}</div>
+        ${slotsHtml}
+      </div>
+
+      ${traitSummary ? `
+        <div class="atl-mobile-traits">
+          <div class="atl-mobile-subhead">引き継ぎ特性</div>
+          <div class="atl-mobile-trait-list">${traitSummary}</div>
+        </div>
+      ` : ''}
+
+      <div class="atl-mobile-action">
+        <button type="button" class="atelier-brass-btn atl-mobile-craft-execute" ${canCraft ? '' : 'disabled'}>
+          ${canCraft ? '調合する' : `素材不足 ${missingCount}`}
+        </button>
+      </div>
+    `;
+
+    host.querySelectorAll('.atl-mobile-material-pick').forEach(btn => {
+      btn.addEventListener('click', () => this._openMaterialPicker(parseInt(btn.dataset.slot, 10)));
+    });
+    host.querySelectorAll('.atl-mobile-material-clear').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.assignedMaterials[parseInt(btn.dataset.slot, 10)] = null;
+        this._renderCauldron();
+        this._renderTargetCard();
+        this._renderDetail();
+        this._updateCraftButton();
+        this._renderMobileWorkbench();
+      });
+    });
+    const craftBtn = host.querySelector('.atl-mobile-craft-execute');
+    if (craftBtn) craftBtn.addEventListener('click', () => this._executeCraft());
+  }
+
   _hasEnoughMaterials(recipe) {
     const available = this.inventory.getItemsByType('material');
     const used = new Set();
@@ -254,6 +495,8 @@ export class CraftingScreen {
     this._renderCauldron();
     this._renderDetail();
     this._updateCraftButton();
+    this._renderMobileRecipeList();
+    this._renderMobileWorkbench();
     this._scrollWorkspaceToBottomMobile();
   }
 
@@ -296,7 +539,18 @@ export class CraftingScreen {
   _scrollWorkspaceToBottomMobile() {
     if (!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches)) return;
     requestAnimationFrame(() => {
+      const mobileWorkbench = this.el.querySelector('#mobile-workbench');
+      if (mobileWorkbench && window.getComputedStyle(mobileWorkbench).display !== 'none') {
+        mobileWorkbench.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       const workspace = this.el.querySelector('.atl-craft-workspace');
+      const craftLayout = this.el.querySelector('.atl-craft-layout');
+      if (workspace && craftLayout) {
+        const top = Math.max(0, workspace.offsetTop + workspace.offsetHeight - craftLayout.clientHeight);
+        craftLayout.scrollTo({ top, behavior: 'smooth' });
+        return;
+      }
       if (workspace && typeof workspace.scrollIntoView === 'function') {
         workspace.scrollIntoView({ behavior: 'smooth', block: 'end' });
       }
@@ -422,6 +676,7 @@ export class CraftingScreen {
         this._renderTargetCard();
         this._renderDetail();
         this._updateCraftButton();
+        this._renderMobileWorkbench();
       });
     });
 
@@ -458,12 +713,16 @@ export class CraftingScreen {
     const n = slots.length;
     const startDeg = -90; // top
     const positions = [];
+    const formatCssPx = (value) => `${Math.abs(value) < 0.001 ? 0 : Number(value.toFixed(3))}px`;
     slots.forEach((slot, i) => {
       const ang = (startDeg + (360 / n) * i) * Math.PI / 180;
       const x = Math.cos(ang) * radius;
       const y = Math.sin(ang) * radius;
-      slot.style.setProperty('--x', `${x}px`);
-      slot.style.setProperty('--y', `${y}px`);
+      const cssX = formatCssPx(x);
+      const cssY = formatCssPx(y);
+      slot.style.setProperty('--x', cssX);
+      slot.style.setProperty('--y', cssY);
+      slot.style.transform = `translate(${cssX}, ${cssY}) translate(-50%, -50%)`;
       positions.push({ x: cx + x, y: cy + y });
     });
     this._drawSlotLinks(positions);
@@ -557,6 +816,9 @@ export class CraftingScreen {
   _updateCraftButton() {
     const btn = this.el.querySelector('#atl-craft-execute');
     if (btn) btn.disabled = !this._canCraft();
+    this.el.querySelectorAll('.atl-mobile-craft-execute').forEach(mobileBtn => {
+      mobileBtn.disabled = !this._canCraft();
+    });
     const warningHost = this.el.querySelector('#atl-craft-warning-host');
     if (warningHost) warningHost.innerHTML = this._renderCapacityWarning();
   }
@@ -882,6 +1144,7 @@ export class CraftingScreen {
           this._renderTargetCard();
           this._renderDetail();
           this._updateCraftButton();
+          this._renderMobileWorkbench();
           const allFilled = this.assignedMaterials.length > 0 && this.assignedMaterials.every(m => m != null);
           if (allFilled) this._scrollWorkspaceToBottomMobile();
         }
@@ -1468,6 +1731,8 @@ export class CraftingScreen {
         this._renderDetail();
         this._updateCraftButton();
         this._renderRecipeList();
+        this._renderMobileRecipeList();
+        this._renderMobileWorkbench();
       }, 1600);
     } catch (err) {
       eventBus.emit('toast', { message: `調合失敗: ${err.message}`, type: 'error' });

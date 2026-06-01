@@ -10,6 +10,8 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  font-family: var(--font-body, 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Meiryo', system-ui, sans-serif);
+  line-height: 1.5;
 }
 
 .casino-lobby {
@@ -2188,4 +2190,27 @@
 
 .casino-rtm-phase[data-phase="TENJOU"] {
   color: #ff6688;
+}
+
+/* Readable UI text; keep numeric/effect displays on their specialized fonts. */
+.casino-screen :is(
+  h1,
+  h2,
+  h3,
+  h4,
+  button,
+  input,
+  select,
+  label,
+  .casino-lobby-title,
+  .casino-lobby-subtitle,
+  .casino-balance-label,
+  .casino-machine-name,
+  .casino-machine-description,
+  .casino-exchange-rate,
+  .casino-slot-status-label
+) {
+  font-family: var(--font-body, 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic UI', 'Yu Gothic', 'Meiryo', system-ui, sans-serif);
+  line-height: 1.35;
+  letter-spacing: 0;
 }
